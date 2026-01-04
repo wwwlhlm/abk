@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Times</title>
+  <style>
+    @font-face {
+      font-family: 'Arial Narrow';
+      src: local('Arial Narrow'),
+           local('ArialNarrow'),
+           url('assets/Arial-Narrow.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+    
+    @font-face {
+      font-family: 'Arial Narrow';
+      src: local('Arial Narrow Italic'),
+           local('ArialNarrow-Italic'),
+           url('assets/Arial-Narrow-Italic.ttf') format('truetype');
+      font-weight: normal;
+      font-style: italic;
+    }
+    
+    :root {
+      --bg: #FFFFFF;
+      --text: #C2DDB9;
+      --active: #222222;
+    }
+    
+    [data-theme="dark"] {
+      --bg: #131313;
+      --text: #5034CB;
+      --active: #FCF2F2;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: 'Arial Narrow', Arial, sans-serif;
+      font-size: 33px;
+      line-height: 32px;
+      background: var(--bg);
+      color: var(--text);
+      font-weight: 400;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+      overflow-y: auto;
+    }
+    
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+    
+    /* Left Side - Calendar */
+    .left-side {
+      width: 47%;
+      display: flex;
+      flex-direction: column;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    
+    .calendar {
+      display: flex;
+      gap: 72px;
+      flex-grow: 1;
+    }
+    
+    .years, .months {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .year-item, .month-item {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text);
+      padding-left: 28px;
+      margin-left: -28px;
+    }
+    
+    .year-item:hover, .month-item:hover,
+    .year-item.active, .month-item.active {
+      transform: translateX(28px);
+      color: var(--active);
+    }
+    
+    .consumption {
+      margin-top: auto;
+      padding-top: 20px;
+    }
+    
+    .consumption-item {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .consumption-label {
+      min-width: 120px;
+      color: var(--text);
+    }
+    
+    .consumption-value {
+      color: var(--active);
+      text-align: right;
+      min-width: 80px;
+      font-variant-numeric: tabular-nums;
+    }
+    
+    /* Right Side - Entries */
+    .right-side {
+      width: 53%;
+      overflow-y: auto;
+      padding: 15px 48px 50vh 0;
+      position: relative;
+      scroll-behavior: smooth;
+    }
+    
+    .entry {
+      margin-bottom: 16px;
+      color: var(--text);
+      transition: color 0.3s ease, opacity 0.15s ease;
+      position: relative;
+      opacity: 1;
+    }
+    
+    .entry.month-start {
+      padding-top: 48px;
+      margin-top: 144px;
+    }
+    
+    .entry.month-start::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 12px;
+      right: 0;
+      height: 2px;
+      background: var(--text);
+    }
+    
+    .entry.first-entry {
+      padding-top: 50vh;
+      margin-top: 0;
+    }
+    
+    .entry.first-entry::before {
+      display: none;
+    }
+    
+    .entry.active {
+      color: var(--active);
+    }
+    
+    /* Page Header - volle Breite */
+    .page-header {
+      height: 65vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 15px;
+      margin-bottom: 20px;
+      color: var(--bg);
+      background: var(--active);
+    }
+    
+    .header-title {
+      text-transform: uppercase;
+      margin-bottom: 28px;
+      margin-left: 47%;
+      padding-right: 48px;
+    }
+    
+    .header-text {
+      margin-left: 47%;
+      padding-right: 48px;
+      text-indent: 28px;
+      max-width: none;
+    }
+    
+    /* Main Content Wrapper */
+    .main-content {
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .entry-header {
+      display: flex;
+      gap: 28px;
+    }
+    
+    .entry-number {
+      min-width: 50px;
+      text-align: right;
+    }
+    
+    .entry-number.sunday {
+      font-style: italic;
+    }
+    
+    .entry-text {
+      flex: 1;
+      letter-spacing: 0.01em;
+      white-space: pre-wrap;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+      -ms-hyphens: auto;
+      hyphenate-limit-chars: 6 3 3;
+      text-indent: 28px;
+    }
+    
+    .quote {
+      font-style: italic;
+    }
+    
+    /* Scroll Toggle Button */
+    .scroll-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      color: var(--text);
+      transition: color 0.2s ease;
+      z-index: 20;
+    }
+    
+    .scroll-toggle:hover {
+      color: var(--active);
+    }
+    
+    .scroll-toggle svg {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .scroll-toggle .arrow-up {
+      opacity: 1;
+    }
+    
+    .scroll-toggle .arrow-down {
+      opacity: 0;
+    }
+    
+    .scroll-toggle.on-header {
+      color: var(--bg);
+    }
+    
+    .scroll-toggle.on-header:hover {
+      color: var(--text);
+    }
+    
+    .scroll-toggle.on-header .arrow-up {
+      opacity: 0;
+    }
+    
+    .scroll-toggle.on-header .arrow-down {
+      opacity: 1;
+    }
+    
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: var(--active);
+      gap: 8px;
+    }
+    
+    .loading-item {
+      opacity: 0;
+      animation: fadeIn 0.5s ease forwards;
+    }
+    
+    .loading-item:nth-child(1) { animation-delay: 0s; }
+    .loading-item:nth-child(2) { animation-delay: 0.3s; }
+    .loading-item:nth-child(3) { animation-delay: 0.6s; }
+    .loading-item:nth-child(4) { animation-delay: 0.9s; }
+    .loading-item:nth-child(5) { animation-delay: 1.2s; }
+    .loading-item:nth-child(6) { animation-delay: 1.5s; }
+    
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+      }
+    }
+    
+    /* Theme Toggle */
+    .theme-toggle {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 3px solid var(--text);
+      background: transparent;
+      cursor: pointer;
+      transition: border-color 0.2s ease, opacity 0.3s ease;
+      z-index: 20;
+      opacity: 1;
+    }
+    
+    .theme-toggle.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .theme-toggle:hover {
+      border-color: var(--active);
+    }
+    
+    /* Mobile */
+    @media (max-width: 768px) {
+      body {
+        font-size: 24px;
+        line-height: 28px;
+      }
+      
+      .container {
+        flex-direction: column;
+      }
+      
+      .left-side {
+        display: none;
+      }
+      
+      .right-side {
+        width: 100%;
+        padding: 15px;
+        padding-bottom: 50vh;
+      }
+      
+      .mobile-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 15px;
+        z-index: 10;
+        display: flex;
+        gap: 20px;
+        color: var(--active);
+      }
+      
+      .mobile-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 15px;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        color: var(--text);
+      }
+      
+      .mobile-footer .consumption-value {
+        color: var(--active);
+      }
+      
+      .header {
+        margin-top: 50px;
+      }
+      
+      .entry {
+        margin-bottom: 12px;
+      }
+      
+      .entry-number {
+        min-width: 20px;
+      }
+      
+      .entry-header {
+        gap: 16px;
+      }
+      
+      .entry-text {
+        text-indent: 16px;
+      }
+      
+      .entry.month-start {
+        margin-top: 116px;
+        padding-top: 28px;
+      }
+      
+      .entry.month-start::before {
+        left: 0;
+        height: 1.5px;
+      }
+      
+      .scroll-top, .theme-toggle {
+        display: none;
+      }
+    }
+    
+    @media (min-width: 769px) {
+      .mobile-header, .mobile-footer {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="theme-toggle hidden" onclick="toggleTheme()"></div>
+  <div class="loading">
+    <div class="loading-item">Lädt Einträge...</div>
+  </div>
+
+  <script>
+    const DATA_PATH = './data/';
+    const STATS_FILE = './data/stats.md';
+    const HEADER_FILE = './data/header.md';
+    
+    let YEARS = [];
+    let allEntries = [];
+    let headerData = { title: '', text: '' };
+    let activeEntryIndex = 0;
+    let consumptionMode = 'day'; // 'day', 'month', 'year'
+    let isJumping = false; // Flag für programmatisches Scrollen
+    let bypassResistance = false; // Flag um Scroll-Widerstand zu umgehen
+    
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    }
+    
+    // Theme beim Laden anwenden
+    (function() {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+      }
+    })();
+    
+    // Lade alle Einträge aus JSON-Dateien
+    async function loadAllEntries() {
+      const entries = [];
+      
+      for (const year of YEARS) {
+        try {
+          const response = await fetch(`${DATA_PATH}${year}.json`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            // Einträge hinzufügen
+            for (const entry of data.entries) {
+              // Datum an das Jahr der JSON-Datei anpassen
+              const adjustedDate = entry.date.replace(/^\d{4}/, year.toString());
+              
+              entries.push({
+                date: adjustedDate,
+                year: year,
+                month: parseInt(adjustedDate.split('-')[1]),
+                day: parseInt(adjustedDate.split('-')[2]),
+                data: {
+                  apples: entry.apples || 0,
+                  bananas: entry.bananas || 0,
+                  coffee: entry.coffee || 0,
+                  mood: entry.mood || 0,
+                  cycling_km: entry.cycling_km || 0,
+                  weekday_index: entry.weekday_index
+                },
+                text: formatText(entry.text)
+              });
+            }
+          }
+        } catch (error) {
+          console.log(`Konnte ${year}.json nicht laden`);
+        }
+      }
+      
+      // Sort by date descending (newest first)
+      entries.sort((a, b) => b.date.localeCompare(a.date));
+      
+      return entries;
+    }
+    
+    // Formatiere Text
+    function formatText(text) {
+      text = text.replace(/ \/ /g, '  /  ');
+      text = text.replace(/\\\*/g, '*');
+      text = text.replace(/\[\[([^\]]+)\]\]/g, (match, name) => name.charAt(0) + '.');
+      text = text.replace(/<span class="quote">(.*?)<\/span>/g, '<span class="quote">$1</span>');
+      return text;
+    }
+    
+    // Berechne Konsum basierend auf Modus
+    function calculateConsumption() {
+      const activeEntry = allEntries[activeEntryIndex];
+      let entries = [];
+      
+      if (consumptionMode === 'day') {
+        entries = [activeEntry];
+      } else if (consumptionMode === 'month') {
+        entries = allEntries.filter(e => 
+          e.year === activeEntry.year && e.month === activeEntry.month
+        );
+      } else if (consumptionMode === 'year') {
+        entries = allEntries.filter(e => e.year === activeEntry.year);
+      }
+      
+      return {
+        apples: entries.reduce((sum, e) => sum + (e.data.apples || 0), 0),
+        bananas: entries.reduce((sum, e) => sum + (e.data.bananas || 0), 0),
+        coffee: entries.reduce((sum, e) => sum + (e.data.coffee || 0), 0)
+      };
+    }
+    
+    // Rendere UI
+    function renderUI() {
+      const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                         'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+      
+      // Get unique years and months
+      const years = [...new Set(allEntries.map(e => e.year))];
+      const currentYear = allEntries[activeEntryIndex]?.year || 2025;
+      const currentMonth = allEntries[activeEntryIndex]?.month || 1;
+      
+      // Get months for current year
+      const monthsInYear = [...new Set(
+        allEntries.filter(e => e.year === currentYear).map(e => e.month)
+      )].sort((a, b) => b - a);
+      
+      // Calculate consumption
+      const consumption = calculateConsumption();
+      
+      document.body.innerHTML = `
+        <div class="page-header" id="page-header">
+          <div class="header-title">${headerData.title}</div>
+          <div class="header-text">${headerData.text}</div>
+        </div>
+        
+        <div class="main-content" id="main-content">
+          <div class="container">
+            <div class="left-side">
+              <div class="calendar">
+                <div class="years">
+                  ${years.map(year => `
+                    <div class="year-item ${year === currentYear ? 'active' : ''}" data-year="${year}">
+                      ${year}
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="months">
+                  ${monthsInYear.map(month => `
+                    <div class="month-item ${month === currentMonth ? 'active' : ''}" data-month="${month}">
+                      ${monthNames[month - 1]}
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+              
+              <div class="consumption">
+                <div class="consumption-item">
+                  <span class="consumption-label">Äpfel</span>
+                  <span class="consumption-value">${consumption.apples}</span>
+                </div>
+                <div class="consumption-item">
+                  <span class="consumption-label">Bananen</span>
+                  <span class="consumption-value">${consumption.bananas}</span>
+                </div>
+                <div class="consumption-item">
+                  <span class="consumption-label">Kaffees</span>
+                  <span class="consumption-value">${consumption.coffee}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="right-side">
+              <div class="mobile-header">
+                <span class="mobile-year"></span>
+                <span class="mobile-month"></span>
+              </div>
+              ${allEntries.map((entry, index) => {
+                const isMonthStart = index > 0 && (
+                  allEntries[index - 1].month !== entry.month ||
+                  allEntries[index - 1].year !== entry.year
+                );
+                const isFirst = index === 0;
+                
+                return `
+                <div class="entry ${index === activeEntryIndex ? 'active' : ''} ${isMonthStart ? 'month-start' : ''} ${isFirst ? 'first-entry' : ''}" data-index="${index}">
+                  <div class="entry-header">
+                    <div class="entry-number ${entry.data.weekday_index === 0 ? 'sunday' : ''}">${entry.day}.</div>
+                    <div class="entry-text">${entry.text}</div>
+                  </div>
+                </div>
+              `}).join('')}
+            </div>
+            
+            <div class="mobile-footer">
+              <div class="consumption-item">
+                <span class="consumption-label">Äpfel</span>
+                <span class="consumption-value mobile-apples"></span>
+              </div>
+              <div class="consumption-item">
+                <span class="consumption-label">Bananen</span>
+                <span class="consumption-value mobile-bananas"></span>
+              </div>
+              <div class="consumption-item">
+                <span class="consumption-label">Kaffees</span>
+                <span class="consumption-value mobile-coffee"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="scroll-toggle" id="scroll-toggle" onclick="scrollToTop()">
+          <svg class="arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+          <svg class="arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        
+        <div class="theme-toggle" onclick="toggleTheme()"></div>
+      `;
+      
+      attachHoverListeners();
+      attachObservers();
+      attachScrollResistance();
+      
+      // Scroll-Toggle Listener
+      window.addEventListener('scroll', updateScrollToggle, { passive: true });
+      updateScrollToggle();
+    }
+    
+    // Intersection Observers für aktiven Eintrag und Fade-Effekt
+    function attachObservers() {
+      const rightSide = document.querySelector('.right-side');
+      const entries = document.querySelectorAll('.entry');
+      const isMobile = window.innerWidth <= 768;
+      
+      // Observer für aktiven Eintrag (Mitte des Containers)
+      const activeObserver = new IntersectionObserver((observerEntries) => {
+        if (isJumping) return;
+        
+        observerEntries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.dataset.index);
+            if (activeEntryIndex !== index) {
+              activeEntryIndex = index;
+              updateActiveEntry();
+            }
+          }
+        });
+      }, {
+        root: rightSide,
+        rootMargin: '-46% 0px -46% 0px',
+        threshold: 0
+      });
+      
+      entries.forEach(entry => activeObserver.observe(entry));
+      
+      // Fade-Effekt mit Scroll-Event (Intersection Observer kann keine graduellen Opacity-Werte)
+      const fadeDistanceTop = isMobile ? 300 : 150;
+      const fadeDistanceBottom = isMobile ? 300 : 150;
+      
+      const updateOpacity = () => {
+        const containerRect = rightSide.getBoundingClientRect();
+        const containerTop = containerRect.top;
+        const containerBottom = containerRect.bottom;
+        
+        entries.forEach(entry => {
+          const rect = entry.getBoundingClientRect();
+          const entryMiddle = rect.top + rect.height / 2;
+          
+          let opacity = 1;
+          
+          if (entryMiddle < containerTop + fadeDistanceTop) {
+            const distance = entryMiddle - containerTop;
+            opacity = Math.max(0, distance / fadeDistanceTop);
+          }
+          
+          if (entryMiddle > containerBottom - fadeDistanceBottom) {
+            const distance = containerBottom - entryMiddle;
+            opacity = Math.max(0, distance / fadeDistanceBottom);
+          }
+          
+          entry.style.opacity = opacity;
+        });
+      };
+      
+      rightSide.addEventListener('scroll', updateOpacity, { passive: true });
+      updateOpacity();
+    }
+    
+    // Scroll Toggle - zwischen Header und Kalenderansicht
+    function scrollToTop() {
+      const mainContent = document.getElementById('main-content');
+      const pageHeader = document.getElementById('page-header');
+      const scrollY = window.scrollY || window.pageYOffset;
+      const headerHeight = pageHeader ? pageHeader.offsetHeight : 0;
+      
+      bypassResistance = true;
+      
+      // Wenn wir in der Kalenderansicht sind (unter dem Header), scroll zum Header
+      if (scrollY >= headerHeight - 50) {
+        pageHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        // Sonst scroll zur Kalenderansicht
+        mainContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      
+      setTimeout(() => {
+        bypassResistance = false;
+      }, 1000);
+    }
+    
+    // Button-Zustand basierend auf Scroll-Position aktualisieren
+    function updateScrollToggle() {
+      const scrollToggle = document.getElementById('scroll-toggle');
+      const pageHeader = document.getElementById('page-header');
+      if (!scrollToggle || !pageHeader) return;
+      
+      const headerHeight = pageHeader.offsetHeight;
+      const scrollY = window.scrollY || window.pageYOffset;
+      
+      if (scrollY < headerHeight - 50) {
+        scrollToggle.classList.add('on-header');
+      } else {
+        scrollToggle.classList.remove('on-header');
+      }
+    }
+    
+    // Hover Listener für Konsum
+    function attachHoverListeners() {
+      const leftSide = document.querySelector('.left-side');
+      const years = document.querySelectorAll('.year-item');
+      const months = document.querySelectorAll('.month-item');
+      
+      let isHoveringItem = false;
+      
+      years.forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          isHoveringItem = true;
+          consumptionMode = 'year';
+          
+          // Temporarily set active year for calculation
+          const hoveredYear = parseInt(el.dataset.year);
+          const tempActiveEntry = allEntries.find(e => e.year === hoveredYear);
+          if (tempActiveEntry) {
+            const tempIndex = activeEntryIndex;
+            activeEntryIndex = allEntries.indexOf(tempActiveEntry);
+            updateConsumption();
+            activeEntryIndex = tempIndex; // Restore
+          }
+        });
+        
+        el.addEventListener('mouseleave', () => {
+          isHoveringItem = false;
+          setTimeout(() => {
+            if (!isHoveringItem) {
+              consumptionMode = 'day';
+              updateConsumption();
+            }
+          }, 10);
+        });
+        
+        el.addEventListener('click', () => {
+          const year = parseInt(el.dataset.year);
+          jumpToLastDayOfYear(year);
+        });
+      });
+      
+      months.forEach(el => {
+        el.addEventListener('mouseenter', (e) => {
+          e.stopPropagation();
+          isHoveringItem = true;
+          consumptionMode = 'month';
+          
+          // Temporarily set active month for calculation
+          const hoveredMonth = parseInt(el.dataset.month);
+          const activeEntry = allEntries[activeEntryIndex];
+          const tempActiveEntry = allEntries.find(e => 
+            e.year === activeEntry.year && e.month === hoveredMonth
+          );
+          if (tempActiveEntry) {
+            const tempIndex = activeEntryIndex;
+            activeEntryIndex = allEntries.indexOf(tempActiveEntry);
+            updateConsumption();
+            activeEntryIndex = tempIndex; // Restore
+          }
+        });
+        
+        el.addEventListener('mouseleave', () => {
+          isHoveringItem = false;
+          setTimeout(() => {
+            if (!isHoveringItem) {
+              consumptionMode = 'day';
+              updateConsumption();
+            }
+          }, 10);
+        });
+        
+        el.addEventListener('click', () => {
+          const month = parseInt(el.dataset.month);
+          const activeEntry = allEntries[activeEntryIndex];
+          jumpToLastDayOfMonth(activeEntry.year, month);
+        });
+      });
+    }
+    
+    // Spring zum letzten Tag des Jahres (neuester Tag)
+    function jumpToLastDayOfYear(year) {
+      const yearEntries = allEntries.filter(e => e.year === year);
+      if (yearEntries.length > 0) {
+        const lastEntry = yearEntries[0]; // Erster = neuester wegen Sort
+        activeEntryIndex = allEntries.indexOf(lastEntry);
+        updateActiveEntry();
+        scrollToActiveEntry();
+      }
+    }
+    
+    // Spring zum letzten Tag des Monats (neuester Tag)
+    function jumpToLastDayOfMonth(year, month) {
+      const monthEntries = allEntries.filter(e => 
+        e.year === year && e.month === month
+      );
+      if (monthEntries.length > 0) {
+        const lastEntry = monthEntries[0]; // Erster = neuester wegen Sort
+        activeEntryIndex = allEntries.indexOf(lastEntry);
+        updateActiveEntry();
+        scrollToActiveEntry();
+      }
+    }
+    
+    // Update nur Konsum
+    function updateConsumption() {
+      const consumption = calculateConsumption();
+      document.querySelectorAll('.consumption-value')[0].textContent = consumption.apples;
+      document.querySelectorAll('.consumption-value')[1].textContent = consumption.bananas;
+      document.querySelectorAll('.consumption-value')[2].textContent = consumption.coffee;
+    }
+    
+    // Update aktiver Eintrag
+    function updateActiveEntry() {
+      document.querySelectorAll('.entry').forEach((el, i) => {
+        el.classList.toggle('active', i === activeEntryIndex);
+      });
+      
+      const activeEntry = allEntries[activeEntryIndex];
+      document.querySelectorAll('.year-item').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.year) === activeEntry.year);
+      });
+      document.querySelectorAll('.month-item').forEach(el => {
+        el.classList.toggle('active', parseInt(el.dataset.month) === activeEntry.month);
+      });
+      
+      // Update consumption when switching days
+      if (consumptionMode === 'day') {
+        updateConsumption();
+      }
+      
+      // Update mobile header
+      const mobileYear = document.querySelector('.mobile-year');
+      const mobileMonth = document.querySelector('.mobile-month');
+      if (mobileYear) mobileYear.textContent = activeEntry.year;
+      if (mobileMonth) {
+        const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                           'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+        mobileMonth.textContent = monthNames[activeEntry.month - 1];
+      }
+      
+      // Update mobile footer
+      const mobileApples = document.querySelector('.mobile-apples');
+      const mobileBananas = document.querySelector('.mobile-bananas');
+      const mobileCoffee = document.querySelector('.mobile-coffee');
+      if (mobileApples) mobileApples.textContent = activeEntry.data.apples || 0;
+      if (mobileBananas) mobileBananas.textContent = activeEntry.data.bananas || 0;
+      if (mobileCoffee) mobileCoffee.textContent = activeEntry.data.coffee || 0;
+      
+      // Show/hide scroll-top button and theme toggle
+      const scrollTopBtn = document.querySelector('.scroll-top');
+      const themeToggle = document.querySelector('.theme-toggle');
+    }
+    
+    // Init
+    async function init() {
+      // Lade Stats zuerst (schnell)
+      await loadAndShowStats();
+      
+      // Lade Header
+      await loadHeader();
+      
+      // Dann die Einträge aus JSON
+      allEntries = await loadAllEntries();
+      
+      if (allEntries.length > 0) {
+        // Prüfe URL-Hash für spezifisches Datum
+        const hash = window.location.hash.substring(1);
+        
+        if (hash) {
+          const dateIndex = allEntries.findIndex(e => e.date === hash);
+          if (dateIndex !== -1) {
+            activeEntryIndex = dateIndex;
+          } else {
+            activeEntryIndex = Math.floor(Math.random() * allEntries.length);
+          }
+        } else {
+          activeEntryIndex = Math.floor(Math.random() * allEntries.length);
+        }
+        
+        renderUI();
+        scrollToActiveEntry();
+        
+        // Initial mobile header/footer updaten
+        const activeEntry = allEntries[activeEntryIndex];
+        const mobileYear = document.querySelector('.mobile-year');
+        const mobileMonth = document.querySelector('.mobile-month');
+        if (mobileYear) mobileYear.textContent = activeEntry.year;
+        if (mobileMonth) {
+          const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
+                             'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+          mobileMonth.textContent = monthNames[activeEntry.month - 1];
+        }
+        const mobileApples = document.querySelector('.mobile-apples');
+        const mobileBananas = document.querySelector('.mobile-bananas');
+        const mobileCoffee = document.querySelector('.mobile-coffee');
+        if (mobileApples) mobileApples.textContent = activeEntry.data.apples || 0;
+        if (mobileBananas) mobileBananas.textContent = activeEntry.data.bananas || 0;
+        if (mobileCoffee) mobileCoffee.textContent = activeEntry.data.coffee || 0;
+      } else {
+        document.body.innerHTML = '<div class="loading">Keine Einträge gefunden.</div>';
+      }
+    }
+    
+    // Lade Header
+    async function loadHeader() {
+      try {
+        const response = await fetch(HEADER_FILE);
+        if (response.ok) {
+          const content = await response.text();
+          const lines = content.split('\n');
+          let inFrontmatter = false;
+          let frontmatterData = {};
+          let textLines = [];
+          
+          for (const line of lines) {
+            if (line.trim() === '---') {
+              inFrontmatter = !inFrontmatter;
+              continue;
+            }
+            if (inFrontmatter) {
+              const colonIndex = line.indexOf(':');
+              if (colonIndex > -1) {
+                const key = line.substring(0, colonIndex).trim();
+                const value = line.substring(colonIndex + 1).trim();
+                frontmatterData[key] = value;
+              }
+            } else {
+              textLines.push(line);
+            }
+          }
+          
+          headerData.title = frontmatterData.title || '';
+          headerData.text = formatText(textLines.join('\n').trim()) || '';
+        }
+      } catch (error) {
+        console.log('Header nicht gefunden');
+      }
+    }
+    
+    // Lade und zeige Stats
+    async function loadAndShowStats() {
+      const loadingDiv = document.querySelector('.loading');
+      
+      try {
+        const response = await fetch(STATS_FILE);
+        
+        if (response.ok) {
+          const content = await response.text();
+          const lines = content.split('\n');
+          let inFrontmatter = false;
+          let data = {};
+          
+          for (const line of lines) {
+            if (line.trim() === '---') {
+              inFrontmatter = !inFrontmatter;
+              continue;
+            }
+            if (inFrontmatter) {
+              const colonIndex = line.indexOf(':');
+              if (colonIndex > -1) {
+                const key = line.substring(0, colonIndex).trim();
+                const value = line.substring(colonIndex + 1).trim();
+                data[key] = isNaN(value) ? value : parseFloat(value);
+              }
+            }
+          }
+          
+          // Jahre aus year_range generieren (z.B. "2021 – 2025")
+          if (data.year_range) {
+            const match = data.year_range.match(/(\d{4})\s*[–-]\s*(\d{4})/);
+            if (match) {
+              const startYear = parseInt(match[1]);
+              const endYear = parseInt(match[2]);
+              for (let y = endYear; y >= startYear; y--) {
+                YEARS.push(y);
+              }
+            }
+          }
+          
+          const messages = [
+            'Lädt Einträge...',
+            data.year_range,
+            `${data.total_days} Tage`,
+            `${data.total_apples} Äpfel`,
+            `${data.total_bananas} Bananen`,
+            `${data.total_coffee} Kaffees`
+          ];
+          
+          for (let i = 0; i < messages.length; i++) {
+            loadingDiv.innerHTML = `<div class="loading-item">${messages[i]}</div>`;
+            const delay = i === 0 ? 1000 : 600;
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      } catch (error) {
+        console.log('Stats nicht gefunden');
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+    
+    // Scroll zu aktivem Eintrag
+    function scrollToActiveEntry() {
+      isJumping = true;
+      
+      // Erst zum main-content scrollen
+      document.getElementById('main-content').scrollIntoView({ behavior: 'instant' });
+      
+      setTimeout(() => {
+        const activeEntry = document.querySelector('.entry.active');
+        if (activeEntry) {
+          const rightSide = document.querySelector('.right-side');
+          const entryTop = activeEntry.offsetTop;
+          const containerHeight = rightSide.offsetHeight;
+          const entryHeight = activeEntry.offsetHeight;
+          
+          rightSide.scrollTop = entryTop - (containerHeight / 2) + (entryHeight / 2);
+        }
+        
+        setTimeout(() => {
+          isJumping = false;
+        }, 1000);
+      }, 100);
+    }
+    
+    // Scroll-Widerstand beim Übergang vom ersten Eintrag zum Header
+    function attachScrollResistance() {
+      let lastScrollTop = 0;
+      let resistanceActive = false;
+      
+      window.addEventListener('scroll', () => {
+        if (bypassResistance) {
+          lastScrollTop = window.scrollY;
+          return;
+        }
+        
+        const mainContent = document.getElementById('main-content');
+        const mainContentTop = mainContent.getBoundingClientRect().top;
+        const scrollTop = window.scrollY;
+        const scrollingUp = scrollTop < lastScrollTop;
+        
+        // Wenn wir am main-content sind und nach oben scrollen wollen
+        if (scrollingUp && mainContentTop >= -50 && mainContentTop <= 50 && !resistanceActive) {
+          resistanceActive = true;
+          window.scrollTo({ top: mainContent.offsetTop, behavior: 'instant' });
+          
+          setTimeout(() => {
+            resistanceActive = false;
+          }, 300); // 300ms Widerstand
+        }
+        
+        lastScrollTop = scrollTop;
+      }, { passive: true });
+    }
+    
+    init();
+  </script>
+</body>
+</html>
