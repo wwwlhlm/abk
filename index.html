@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Random Times</title>
+  <title>A–B–K</title>
   <style>
     @font-face {
       font-family: 'Arial Narrow';
@@ -493,8 +493,8 @@
         }
       }
       
-      // Sort by date descending (newest first)
-      entries.sort((a, b) => b.date.localeCompare(a.date));
+      // Sort by date ascending (oldest first)
+      entries.sort((a, b) => a.date.localeCompare(b.date));
       
       return entries;
     }
@@ -535,15 +535,15 @@
       const monthNames = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 
                          'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
       
-      // Get unique years and months
-      const years = [...new Set(allEntries.map(e => e.year))];
+      // Get unique years (descending - newest first) and months
+      const years = [...new Set(allEntries.map(e => e.year))].sort((a, b) => b - a);
       const currentYear = allEntries[activeEntryIndex]?.year || 2025;
       const currentMonth = allEntries[activeEntryIndex]?.month || 1;
       
-      // Get months for current year
+      // Get months for current year (ascending - January first)
       const monthsInYear = [...new Set(
         allEntries.filter(e => e.year === currentYear).map(e => e.month)
-      )].sort((a, b) => b - a);
+      )].sort((a, b) => a - b);
       
       // Calculate consumption
       const consumption = calculateConsumption();
@@ -785,7 +785,7 @@
         
         el.addEventListener('click', () => {
           const year = parseInt(el.dataset.year);
-          jumpToLastDayOfYear(year);
+          jumpToFirstDayOfYear(year);
         });
       });
       
@@ -822,30 +822,30 @@
         el.addEventListener('click', () => {
           const month = parseInt(el.dataset.month);
           const activeEntry = allEntries[activeEntryIndex];
-          jumpToLastDayOfMonth(activeEntry.year, month);
+          jumpToFirstDayOfMonth(activeEntry.year, month);
         });
       });
     }
     
-    // Spring zum letzten Tag des Jahres (neuester Tag)
-    function jumpToLastDayOfYear(year) {
+    // Spring zum ersten Tag des Jahres (ältester Tag)
+    function jumpToFirstDayOfYear(year) {
       const yearEntries = allEntries.filter(e => e.year === year);
       if (yearEntries.length > 0) {
-        const lastEntry = yearEntries[0]; // Erster = neuester wegen Sort
-        activeEntryIndex = allEntries.indexOf(lastEntry);
+        const firstEntry = yearEntries[0]; // Erster = ältester wegen Sort
+        activeEntryIndex = allEntries.indexOf(firstEntry);
         updateActiveEntry();
         scrollToActiveEntry();
       }
     }
     
-    // Spring zum letzten Tag des Monats (neuester Tag)
-    function jumpToLastDayOfMonth(year, month) {
+    // Spring zum ersten Tag des Monats (ältester Tag)
+    function jumpToFirstDayOfMonth(year, month) {
       const monthEntries = allEntries.filter(e => 
         e.year === year && e.month === month
       );
       if (monthEntries.length > 0) {
-        const lastEntry = monthEntries[0]; // Erster = neuester wegen Sort
-        activeEntryIndex = allEntries.indexOf(lastEntry);
+        const firstEntry = monthEntries[0]; // Erster = ältester wegen Sort
+        activeEntryIndex = allEntries.indexOf(firstEntry);
         updateActiveEntry();
         scrollToActiveEntry();
       }
