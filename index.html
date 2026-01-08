@@ -65,7 +65,7 @@
     
     /* Left Side - Calendar */
     .left-side {
-      width: 47%;
+      width: 25%;
       display: flex;
       flex-direction: column;
       padding: 15px;
@@ -121,19 +121,26 @@
     
     /* Right Side - Entries */
     .right-side {
-      width: 53%;
+      width: 75%;
       overflow-y: auto;
-      padding: 15px 48px 50vh 0;
+      padding: 15px 48px 50vh calc(25% - 15px);
       position: relative;
       scroll-behavior: smooth;
     }
     
     .entry {
-      margin-bottom: 16px;
+      margin-bottom: 0;
+      padding-bottom: 16px;
       color: var(--text);
       transition: color 0.3s ease, opacity 0.15s ease;
       position: relative;
       opacity: 1;
+      cursor: pointer;
+      will-change: opacity;
+    }
+    
+    .entry:hover {
+      color: var(--active);
     }
     
     .entry.month-start {
@@ -179,15 +186,16 @@
     .header-title {
       text-transform: uppercase;
       margin-bottom: 28px;
-      margin-left: 47%;
+      margin-left: 25%;
       padding-right: 48px;
+      max-width: 50%;
     }
     
     .header-text {
-      margin-left: 47%;
+      margin-left: 25%;
       padding-right: 48px;
       text-indent: 28px;
-      max-width: none;
+      max-width: 50%;
     }
     
     /* Main Content Wrapper */
@@ -198,7 +206,7 @@
 
     .entry-header {
       display: flex;
-      gap: 28px;
+      gap: 20px;
     }
     
     .entry-number {
@@ -644,10 +652,53 @@
       attachHoverListeners();
       attachObservers();
       attachScrollResistance();
+      attachEntryClickListeners();
       
       // Scroll-Toggle Listener
       window.addEventListener('scroll', updateScrollToggle, { passive: true });
       updateScrollToggle();
+    }
+    
+    // Klick-Listener für Einträge
+    function attachEntryClickListeners() {
+      const entries = document.querySelectorAll('.entry');
+      let isHoveringEntry = false;
+      let leaveTimeout = null;
+      
+      entries.forEach((entry, index) => {
+        entry.addEventListener('click', () => {
+          activeEntryIndex = index;
+          updateActiveEntryUI();
+          scrollToActiveEntry();
+        });
+        
+        entry.addEventListener('mouseenter', () => {
+          isHoveringEntry = true;
+          if (leaveTimeout) {
+            clearTimeout(leaveTimeout);
+            leaveTimeout = null;
+          }
+          // Entferne active von allen, setze nur auf gehoverten
+          entries.forEach(e => e.classList.remove('active'));
+          entry.classList.add('active');
+          // Zeige Konsum des gehovertenEintrags
+          const hoveredEntry = allEntries[index];
+          document.querySelectorAll('.consumption-value')[0].textContent = hoveredEntry.data.apples || 0;
+          document.querySelectorAll('.consumption-value')[1].textContent = hoveredEntry.data.bananas || 0;
+          document.querySelectorAll('.consumption-value')[2].textContent = hoveredEntry.data.coffee || 0;
+        });
+        
+        entry.addEventListener('mouseleave', () => {
+          isHoveringEntry = false;
+          leaveTimeout = setTimeout(() => {
+            if (!isHoveringEntry) {
+              // Zurück zum aktiven Eintrag
+              entries.forEach((e, i) => e.classList.toggle('active', i === activeEntryIndex));
+              updateConsumption();
+            }
+          }, 100);
+        });
+      });
     }
     
     // Intersection Observers für aktiven Eintrag und Fade-Effekt
@@ -656,28 +707,55 @@
       const entries = document.querySelectorAll('.entry');
       const isMobile = window.innerWidth <= 768;
       
-      // Observer für aktiven Eintrag (Mitte des Containers)
-      const activeObserver = new IntersectionObserver((observerEntries) => {
+      // Throttle-Funktion
+      const throttle = (func, limit) => {
+        let inThrottle;
+        return function(...args) {
+          if (!inThrottle) {
+            func.apply(this, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+          }
+        };
+      };
+      
+      // Scroll Listener für aktiven Eintrag (optimiert)
+      const updateActiveEntry = () => {
         if (isJumping) return;
         
-        observerEntries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const index = parseInt(entry.target.dataset.index);
-            if (activeEntryIndex !== index) {
-              activeEntryIndex = index;
-              updateActiveEntry();
-            }
+        const containerRect = rightSide.getBoundingClientRect();
+        const containerCenter = containerRect.top + containerRect.height / 2;
+        
+        // Nur Einträge in der Nähe des aktiven prüfen (±20)
+        const startIndex = Math.max(0, activeEntryIndex - 20);
+        const endIndex = Math.min(entries.length, activeEntryIndex + 20);
+        
+        let closestEntry = null;
+        let closestDistance = Infinity;
+        
+        for (let i = startIndex; i < endIndex; i++) {
+          const entry = entries[i];
+          const rect = entry.getBoundingClientRect();
+          const entryCenter = rect.top + rect.height / 2;
+          const distance = Math.abs(entryCenter - containerCenter);
+          
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestEntry = i;
           }
-        });
-      }, {
-        root: rightSide,
-        rootMargin: '-46% 0px -46% 0px',
-        threshold: 0
-      });
+        }
+        
+        if (closestEntry !== null && activeEntryIndex !== closestEntry) {
+          activeEntryIndex = closestEntry;
+          updateActiveEntryUI();
+        }
+      };
       
-      entries.forEach(entry => activeObserver.observe(entry));
+      // Throttled Version (50ms auf Mobile, 16ms auf Desktop)
+      const throttledUpdateActive = throttle(updateActiveEntry, isMobile ? 50 : 16);
+      rightSide.addEventListener('scroll', throttledUpdateActive, { passive: true });
       
-      // Fade-Effekt mit Scroll-Event (Intersection Observer kann keine graduellen Opacity-Werte)
+      // Fade-Effekt mit Scroll-Event (optimiert)
       const fadeDistanceTop = isMobile ? 300 : 150;
       const fadeDistanceBottom = isMobile ? 300 : 150;
       
@@ -686,7 +764,12 @@
         const containerTop = containerRect.top;
         const containerBottom = containerRect.bottom;
         
-        entries.forEach(entry => {
+        // Nur sichtbare Einträge + Puffer prüfen
+        const startIndex = Math.max(0, activeEntryIndex - 15);
+        const endIndex = Math.min(entries.length, activeEntryIndex + 15);
+        
+        for (let i = startIndex; i < endIndex; i++) {
+          const entry = entries[i];
           const rect = entry.getBoundingClientRect();
           const entryMiddle = rect.top + rect.height / 2;
           
@@ -703,10 +786,12 @@
           }
           
           entry.style.opacity = opacity;
-        });
+        }
       };
       
-      rightSide.addEventListener('scroll', updateOpacity, { passive: true });
+      // Throttled Version für Opacity
+      const throttledUpdateOpacity = throttle(updateOpacity, isMobile ? 50 : 16);
+      rightSide.addEventListener('scroll', throttledUpdateOpacity, { passive: true });
       updateOpacity();
     }
     
@@ -833,7 +918,7 @@
       if (yearEntries.length > 0) {
         const firstEntry = yearEntries[0]; // Erster = ältester wegen Sort
         activeEntryIndex = allEntries.indexOf(firstEntry);
-        updateActiveEntry();
+        updateActiveEntryUI();
         scrollToActiveEntry();
       }
     }
@@ -846,7 +931,7 @@
       if (monthEntries.length > 0) {
         const firstEntry = monthEntries[0]; // Erster = ältester wegen Sort
         activeEntryIndex = allEntries.indexOf(firstEntry);
-        updateActiveEntry();
+        updateActiveEntryUI();
         scrollToActiveEntry();
       }
     }
@@ -860,7 +945,7 @@
     }
     
     // Update aktiver Eintrag
-    function updateActiveEntry() {
+    function updateActiveEntryUI() {
       document.querySelectorAll('.entry').forEach((el, i) => {
         el.classList.toggle('active', i === activeEntryIndex);
       });
@@ -1065,10 +1150,16 @@
           const entryHeight = activeEntry.offsetHeight;
           
           rightSide.scrollTop = entryTop - (containerHeight / 2) + (entryHeight / 2);
+          
+          // Manuell Scroll-Event triggern für Opacity-Update
+          rightSide.dispatchEvent(new Event('scroll'));
         }
         
         setTimeout(() => {
           isJumping = false;
+          // Nochmal triggern nach isJumping = false
+          const rightSide = document.querySelector('.right-side');
+          if (rightSide) rightSide.dispatchEvent(new Event('scroll'));
         }, 1000);
       }, 100);
     }
@@ -1096,7 +1187,7 @@
           
           setTimeout(() => {
             resistanceActive = false;
-          }, 300); // 300ms Widerstand
+          }, 600); // 600ms Widerstand
         }
         
         lastScrollTop = scrollTop;
