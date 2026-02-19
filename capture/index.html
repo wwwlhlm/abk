@@ -201,6 +201,7 @@
 <div class="header-inner">
   <div class="header-left">
     <span class="header-title">Tagebuch</span>
+    <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
   </div>
   <div class="header-center">
     <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
@@ -395,11 +396,15 @@ let currentDate=todayISO(), originalBodyText='';
 let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport:[], people:[] };
 
 let isDirty=false;
-
-function markDirty(){ isDirty=true; }
+let inactivityTimer;
+function markDirty(){
+  isDirty=true;
+  clearTimeout(inactivityTimer);
+  inactivityTimer=setTimeout(()=>{ if(isDirty) autoSave(); }, 10000);
+}
 
 document.addEventListener('DOMContentLoaded',()=>{
-  updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC();
+  updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC(); updateLastEditedBtn();
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
@@ -452,6 +457,7 @@ async function autoSave(){
     const w=await fileHandle.createWritable();
     await w.write(buildContent()); await w.close();
     isDirty=false;
+    localStorage.setItem('lastEditedDate', currentDate);
     showSaveNotif(currentDate);
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
 }
@@ -478,7 +484,7 @@ async function navigateToDate(dateStr){
 
 window.addEventListener('beforeunload',()=>{ if(fileHandle) autoSave(); });
 async function loadFile(date){
-  currentDate=date; updateHeaderDate();
+  currentDate=date; updateHeaderDate(); updateLastEditedBtn();
   const yyyy=date.split('-')[0], fname=date+'.md';
   showSpinner();
   try{
@@ -865,6 +871,22 @@ function dpSelectDate(iso){
   navigateToDate(iso);
 }
 // ──────────────────────────────────────────────────────────────
+
+function updateLastEditedBtn(){
+  const last=localStorage.getItem('lastEditedDate');
+  const btn=document.getElementById('lastEditedBtn');
+  if(last && last!==currentDate){
+    const d=new Date(last+'T12:00:00');
+    btn.textContent=d.toLocaleDateString('de-CH',{day:'numeric',month:'short'});
+    btn.classList.remove('hidden');
+  } else {
+    btn.classList.add('hidden');
+  }
+}
+async function navigateToLastEdited(){
+  const last=localStorage.getItem('lastEditedDate');
+  if(last) await navigateToDate(last);
+}
 
 function toggleEntryPosition(){
   const page=document.querySelector('.page');
