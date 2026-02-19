@@ -982,6 +982,8 @@ document.addEventListener('keydown',e=>{
       else if(e.shiftKey) navigateYears(1);
       else navigateDay(1);
       break;
+    case 'c': case 'C': e.preventDefault(); copyDay(); break;
+    case 'v': case 'V': e.preventDefault(); pasteDay(); break;
     case 'k': case 'K': e.preventDefault(); toggleDatePicker(); break;
   }
 });
