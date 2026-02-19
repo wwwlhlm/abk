@@ -889,10 +889,17 @@ function updateLastEditedBtn(){
   }
 }
 function updateHeaderState(){
-  const title=document.getElementById('headerTitle');
-  title.style.color='';
   const folderBtn=document.querySelector('.icon-btn[onclick="openFolder()"]');
-  if(folderBtn) folderBtn.style.color=fileHandle?'':'var(--accent)';
+  if(!folderBtn) return;
+  if(fileHandle){
+    folderBtn.style.color='';
+    folderBtn.style.background='';
+    folderBtn.style.borderColor='';
+  } else {
+    folderBtn.style.color='var(--accent)';
+    folderBtn.style.background='var(--accent-bg)';
+    folderBtn.style.borderColor='rgba(253,147,159,.4)';
+  }
 }
 async function navigateToLastEdited(){
   const last=localStorage.getItem('lastEditedDate');
