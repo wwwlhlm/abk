@@ -200,8 +200,7 @@
 <div class="header-wrap">
 <div class="header-inner">
   <div class="header-left">
-    <span class="header-title">Tagebuch</span>
-    <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
+    <span class="header-title" id="headerTitle">Tagebuch</span>
   </div>
   <div class="header-center">
     <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
@@ -225,6 +224,7 @@
   </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
+    <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
     <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
     </button>
@@ -417,6 +417,8 @@ function updateHeaderDate(){
   document.getElementById('headerDate').textContent=d.toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
   const btn=document.getElementById('todayBtn');
   if(btn) btn.classList.toggle('hidden',currentDate===todayISO());
+  updateLastEditedBtn();
+  updateHeaderState();
 }
 function showSpinner(){ document.getElementById('spinner').classList.remove('hidden'); }
 function hideSpinner(){ document.getElementById('spinner').classList.add('hidden'); }
@@ -495,9 +497,11 @@ async function loadFile(date){
       fileHandle=await yearDir.getFileHandle(fname,{create:false});
       const file=await fileHandle.getFile();
       populate(await file.text());
+      updateHeaderState();
       showStatus('Geladen', yyyy+'/'+fname, true);
     }catch{
       fileHandle=null;
+      updateHeaderState();
       showStatus('Nicht gefunden', yyyy+'/'+fname, false);
       resetDefaults(); toast('Datei nicht vorhanden','err');
     }
@@ -874,14 +878,19 @@ function dpSelectDate(iso){
 
 function updateLastEditedBtn(){
   const last=localStorage.getItem('lastEditedDate');
-  const btn=document.getElementById('lastEditedBtn');
-  if(last && last!==currentDate){
+  const lastBtn=document.getElementById('lastEditedBtn');
+  const todayShown=!document.getElementById('todayBtn').classList.contains('hidden');
+  if(last && last!==currentDate && !todayShown){
     const d=new Date(last+'T12:00:00');
-    btn.textContent=d.toLocaleDateString('de-CH',{day:'numeric',month:'short'});
-    btn.classList.remove('hidden');
+    lastBtn.textContent=d.toLocaleDateString('de-CH',{day:'numeric',month:'short'});
+    lastBtn.classList.remove('hidden');
   } else {
-    btn.classList.add('hidden');
+    lastBtn.classList.add('hidden');
   }
+}
+function updateHeaderState(){
+  const title=document.getElementById('headerTitle');
+  title.style.color=fileHandle?'':'var(--accent)';
 }
 async function navigateToLastEdited(){
   const last=localStorage.getItem('lastEditedDate');
