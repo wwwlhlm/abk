@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erfassen</title>
+  <style>
+    :root {
+      --bg:        #1a1a1a;
+      --surface:   #262626;
+      --surface-2: #2f2f2f;
+      --border:    #383838;
+      --border-2:  #444;
+      --text:      #ececec;
+      --text-2:    #a0a0a0;
+      --text-3:    #666;
+      --accent:    #FD939F;
+      --accent-bg: rgba(253,147,159,.12);
+      --error:     #e57373;
+      --good:      #81c784;
+      --radius:    10px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.5;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+    header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 20px; border-bottom:1px solid var(--border);
+      background:var(--bg); position:sticky; top:0; z-index:50;
+    }
+    .header-left { display:flex; align-items:center; gap:10px; }
+    .logo {
+      width:28px; height:28px;
+      background:linear-gradient(135deg,#FD939F,#e07080);
+      border-radius:6px; display:flex; align-items:center; justify-content:center;
+    }
+    .logo svg { width:16px; height:16px; }
+    .header-title { font-size:15px; font-weight:500; }
+    .header-date { font-size:13px; color:var(--text-2); }
+    .icon-btn {
+      width:34px; height:34px; border-radius:8px;
+      border:1px solid var(--border); background:transparent;
+      color:var(--text-2); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; transition:all .15s;
+    }
+    .icon-btn:hover { background:var(--surface-2); color:var(--text); border-color:var(--border-2); }
+    .icon-btn svg { width:15px; height:15px; stroke:currentColor; fill:none; stroke-width:1.8; }
+    .page {
+      max-width:580px; margin:0 auto;
+      padding:20px 16px 100px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .btn-small {
+      font-size:12px;font-weight:500;color:var(--accent);
+      background:var(--accent-bg);border:1px solid rgba(253,147,159,.25);
+      border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;transition:all .15s;
+    }
+    .btn-small:hover { background:rgba(253,147,159,.2); }
+    .card { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden; }
+    .card-head { display:flex;align-items:center;gap:8px;padding:11px 14px 10px;border-bottom:1px solid var(--border); }
+    .card-move-btns { display:flex;gap:2px;margin-left:auto; }
+    .card-move-btn { width:20px;height:20px;border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;border-radius:4px;padding:0;transition:color .15s;flex-shrink:0; }
+    .card-move-btn:hover { color:var(--text); }
+    .card-head svg { width:13px;height:13px;stroke:var(--text-3);fill:none;stroke-width:2;flex-shrink:0; }
+    .card-head-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3); }
+    .card-body { padding:14px; }
+    .mic-btn {
+      width:44px;height:44px;border-radius:50%;
+      border:1.5px solid rgba(253,147,159,.4);background:var(--accent-bg);
+      color:var(--accent);display:flex;align-items:center;justify-content:center;
+      cursor:pointer;flex-shrink:0;transition:all .2s;
+    }
+    .mic-btn:hover { background:rgba(253,147,159,.2);border-color:rgba(253,147,159,.6); }
+    .mic-btn.on { border-color:var(--error);color:var(--error);background:rgba(229,115,115,.1);animation:pulse .9s ease infinite; }
+    .mic-btn svg { width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+    .status-line { display:flex;align-items:baseline;gap:8px;font-size:12px;min-height:16px;opacity:0;transition:opacity .3s ease; }
+    .status-line.show { opacity:1; }
+    .status-label { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);flex-shrink:0; }
+    .status-text { color:var(--text-2);font-style:italic;font-size:12px; }
+    .status-text.active { color:var(--text);font-style:normal; }
+    .counters { display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px; }
+    .counter { display:flex;flex-direction:column;gap:6px; }
+    .counter-label { font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.4px; }
+    .counter-ctrl { display:flex;align-items:center;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;overflow:hidden;height:38px; }
+    .counter-ctrl:focus-within { border-color:var(--accent); }
+    .c-btn { width:28px;height:38px;border:none;background:transparent;color:var(--text-3);font-size:18px;cursor:pointer;flex-shrink:0;transition:all .1s;display:flex;align-items:center;justify-content:center; }
+    .c-btn:hover { color:var(--accent);background:var(--accent-bg); }
+    .c-input { flex:1;width:0;border:none;outline:none;background:transparent;text-align:center;font-size:15px;font-weight:500;color:var(--text);min-width:0; }
+    .c-input::-webkit-outer-spin-button,.c-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+    .c-input[type=number] { -moz-appearance:textfield; }
+    .mood-row { display:flex;align-items:center;gap:12px; }
+    .mood-val { font-size:22px;font-weight:500;min-width:52px;text-align:center;font-variant-numeric:tabular-nums;transition:color .2s; }
+    .mood-track { flex:1;position:relative; }
+    input[type=range] { width:100%;height:3px;-webkit-appearance:none;appearance:none;border-radius:2px;background:linear-gradient(to right,#e57373 0%,#9aa0a6 50%,#81c784 100%);outline:none;cursor:pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.5);transition:transform .1s; }
+    input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.2); }
+    .mood-ticks { display:flex;justify-content:space-between;margin-top:3px; }
+    .mood-ticks span { font-size:10px;color:var(--text-3); }
+    .chip-row { display:flex;flex-wrap:wrap;gap:6px;align-items:center; }
+    .chip { height:28px;padding:0 10px;border-radius:14px;border:1px solid var(--border);background:transparent;font-size:13px;color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap; }
+    .chip:hover { border-color:var(--border-2);color:var(--text); }
+    .chip.on { background:var(--accent-bg);border-color:rgba(253,147,159,.4);color:var(--accent); }
+    .chip.on .chip-x { display:inline-block; }
+    .chip-x { display:none;font-size:10px;opacity:.6; }
+    .chip-dot { width:5px;height:5px;border-radius:50%;background:var(--accent);display:none; }
+    .chip.on .chip-dot { display:inline-block; }
+    .ac-wrap { position:relative; }
+    .chip-input { height:28px;padding:0 10px;border-radius:14px;border:1px dashed var(--border-2);background:transparent;font-size:13px;color:var(--text);outline:none;min-width:110px;transition:all .15s; }
+    .chip-input:focus { border-style:solid;border-color:var(--accent); }
+    .chip-input::placeholder { color:var(--text-3); }
+    .ac-dropdown { position:fixed;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;min-width:160px;max-height:180px;overflow-y:auto;display:none; }
+    .ac-dropdown.open { display:block; }
+    .ac-item { padding:8px 12px;font-size:13px;color:var(--text-2);cursor:pointer;transition:background .1s; }
+    .ac-item:hover { background:var(--border);color:var(--text); }
+    .velo-km { height:28px;width:72px;padding:0 10px;border-radius:14px;border:1px solid rgba(253,147,159,.4);background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:500;outline:none;text-align:center;display:none; }
+    .velo-km.show { display:inline-block; }
+    .velo-km::placeholder { color:rgba(253,147,159,.4);font-weight:400; }
+    .velo-km::-webkit-outer-spin-button,.velo-km::-webkit-inner-spin-button { -webkit-appearance:none; }
+    .velo-km[type=number] { -moz-appearance:textfield; }
+    .entry-area { width:100%;min-height:80px;background:transparent;border:none;outline:none;font-size:14px;line-height:1.7;color:var(--text);resize:vertical;font-family:inherit; }
+    .entry-area::placeholder { color:var(--text-3); }
+    .entry-hint { font-size:11px;color:var(--text-3);margin-top:6px; }
+    .mic-bar { position:fixed;bottom:0;left:0;right:0;padding:10px 16px 14px;background:linear-gradient(to top,var(--bg) 60%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:40; }
+    .toast { position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;white-space:nowrap;z-index:99; }
+    .toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
+    .toast.ok { border-color:rgba(129,199,132,.4);color:var(--good); }
+    .toast.err { border-color:rgba(229,115,115,.4);color:var(--error); }
+    .spinner-overlay { position:fixed;inset:0;background:rgba(26,26,26,.8);display:flex;align-items:center;justify-content:center;z-index:200; }
+    .spinner { width:28px;height:28px;border:2.5px solid var(--border-2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .hidden { display:none!important; }
+    .inline-fields { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+    .inline-field label { font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px; }
+    .inline-input { width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);outline:none;transition:border-color .15s; }
+    .inline-input:focus { border-color:var(--accent); }
+    .inline-input::placeholder { color:var(--text-3); }
+    .header-wrap { position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border); }
+    .header-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;position:relative; }
+    .header-center { position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px; }
+    .nav-btn { width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0; }
+    .nav-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .nav-btn svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5; }
+    .today-btn { font-size:11px;font-weight:500;color:var(--accent);background:var(--accent-bg);border:1px solid rgba(253,147,159,.25);border-radius:6px;padding:3px 8px;cursor:pointer;transition:all .15s;white-space:nowrap; }
+    .today-btn:hover { background:rgba(253,147,159,.2); }
+    .today-btn.hidden { display:none; }
+    .header-date { font-size:13px;color:var(--text-2);cursor:pointer;border-bottom:1px dashed var(--border-2);padding-bottom:1px;transition:color .15s;user-select:none; }
+    .header-date:hover { color:var(--text); }
+    /* Custom Datepicker */
+    .dp-overlay { position:fixed;inset:0;z-index:200;display:none; }
+    .dp-overlay.open { display:block; }
+    .dp-backdrop { position:absolute;inset:0; }
+    .dp-panel {
+      position:absolute;top:58px;left:50%;transform:translateX(-50%);
+      background:var(--surface);border:1px solid var(--border-2);
+      border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);
+      padding:16px;width:280px;user-select:none;
+    }
+    .dp-head { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
+    .dp-title { font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:color .15s; }
+    .dp-title:hover { color:var(--accent); }
+    .dp-nav { width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0; }
+    .dp-nav:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .dp-nav svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5; }
+    .dp-weekdays { display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:6px; }
+    .dp-wd { text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;padding:4px 0; }
+    .dp-days { display:grid;grid-template-columns:repeat(7,1fr);gap:2px; }
+    .dp-day {
+      aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+      font-size:13px;border-radius:7px;cursor:pointer;transition:all .15s;
+      color:var(--text-2);border:1px solid transparent;background:transparent;
+    }
+    .dp-day:hover { background:var(--surface-2);color:var(--text);border-color:var(--border); }
+    .dp-day.today { color:var(--accent);font-weight:600; }
+    .dp-day.selected { background:var(--accent);color:#fff;border-color:var(--accent); }
+    .dp-day.selected:hover { background:#e07080; }
+    .dp-day.other-month { color:var(--text-3);opacity:.4; }
+    .dp-day.empty { cursor:default; }
+    .dp-years { display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px; }
+    .dp-year-btn {
+      padding:8px 4px;border-radius:7px;border:1px solid var(--border);background:transparent;
+      font-size:13px;color:var(--text-2);cursor:pointer;transition:all .15s;text-align:center;
+    }
+    .dp-year-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .dp-year-btn.selected { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
+  </style>
+</head>
+<body>
+
+<div class="spinner-overlay hidden" id="spinner"><div class="spinner"></div></div>
+
+
+<div class="header-wrap">
+<div class="header-inner">
+  <div class="header-left">
+    <span class="header-title">Tagebuch</span>
+  </div>
+  <div class="header-center">
+    <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="header-date" id="headerDate" onclick="toggleDatePicker()" title="Datum wählen"></span>
+    <div class="dp-overlay" id="dpOverlay">
+      <div class="dp-backdrop" onclick="closeDatePicker()"></div>
+      <div class="dp-panel" id="dpPanel">
+        <div class="dp-head">
+          <button class="dp-nav" onclick="dpShiftMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="dp-title" id="dpTitle" onclick="toggleYearView()"></span>
+          <button class="dp-nav" onclick="dpShiftMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div id="dpBody"></div>
+      </div>
+    </div>
+    <button class="nav-btn" onclick="navigateDay(1)" title="Nächster Tag">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+    </button>
+    <button class="icon-btn" onclick="openFolder()" title="Ordner wählen">
+      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+    </button>
+  </div>
+</div>
+</div>
+
+<div class="page">
+
+
+  <div class="card">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span class="card-head-title">Konsum & Stimmung</span>
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+      <div class="counters">
+        <div class="counter">
+          <div class="counter-label">Äpfel</div>
+          <div class="counter-ctrl">
+            <button class="c-btn" onclick="adj('apples',-1)">−</button>
+            <input class="c-input" type="number" id="apples" value="0" min="0" step="1">
+            <button class="c-btn" onclick="adj('apples',1)">+</button>
+          </div>
+        </div>
+        <div class="counter">
+          <div class="counter-label">Bananen</div>
+          <div class="counter-ctrl">
+            <button class="c-btn" onclick="adj('bananas',-1)">−</button>
+            <input class="c-input" type="number" id="bananas" value="0" min="0" step="1">
+            <button class="c-btn" onclick="adj('bananas',1)">+</button>
+          </div>
+        </div>
+        <div class="counter">
+          <div class="counter-label">Kaffee</div>
+          <div class="counter-ctrl">
+            <button class="c-btn" onclick="adj('coffee',-1)">−</button>
+            <input class="c-input" type="number" id="coffee" value="0" min="0" step="1">
+            <button class="c-btn" onclick="adj('coffee',1)">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="mood-row">
+        <div class="mood-val" id="moodVal">0</div>
+        <div class="mood-track">
+          <input type="range" id="moodSlider" min="-2" max="2" step="0.5" value="0" oninput="setMood(this.value)">
+          <div class="mood-ticks"><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-card="location">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      <span class="card-head-title">Ort & Land</span>
+      
+    </div>
+    <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+      <div class="chip-row" id="locationChips"></div>
+      <div class="chip-row" id="countryChips"></div>
+    </div>
+  </div>
+
+  <div class="card" data-card="coffee">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      <span class="card-head-title">Kaffee-Orte</span>
+      
+    </div>
+    <div class="card-body">
+      <div class="chip-row" id="coffeeChips"></div>
+    </div>
+  </div>
+
+  <div class="card" data-card="sport">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      <span class="card-head-title">Sport</span>
+      
+    </div>
+    <div class="card-body">
+      <div class="chip-row" id="sportChips">
+        <input class="velo-km" type="number" id="veloKm" placeholder="km" min="0" max="300">
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-card="entry">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+      <span class="card-head-title">Eintrag</span>
+      <div class="card-move-btns"><button class="card-move-btn" id="entryMoveBtn" onclick="toggleEntryPosition()" title="Position wechseln">↑</button></div>
+    </div>
+    <div class="card-body">
+      <textarea class="entry-area" id="entryText" placeholder="Tagebucheintrag..." rows="4"></textarea>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="card-head-title">Personen</span>
+    </div>
+    <div class="card-body">
+      <div class="chip-row" id="peopleChips"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="inline-fields">
+        <div class="inline-field">
+          <label>Tags</label>
+          <input class="inline-input" id="tags" placeholder="tag1, tag2">
+        </div>
+        <div class="inline-field">
+          <label>Koordinaten</label>
+          <input class="inline-input" id="coords" placeholder="48.12, 8.56">
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="mic-bar">
+  <div class="status-line" id="statusLine">
+    <span class="status-label" id="statusLabel"></span>
+    <span class="status-text" id="statusText"></span>
+  </div>
+  <button class="mic-btn" id="micBtn" onclick="toggleVoice()" title="Diktat (D)">
+    <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOP = {
+  locations: ['Zurich','Berlin','Naples','London','Milano','Mumbai','Erfurt','Basel'],
+  coffee: ['Home','Bonheur','Bodara','Lab','Miro','Gruppetto','Berlin','Lalere','Sacchi','Home_Berlin'],
+  sport: ['Velo','Schwimmen','Fitness','Stangen','Pilates','Laufen','Yoga','Seil'],
+  countries: ['CH','DE','IN','IT','UK','FR'],
+  people: ['Nath','Frank','Paul','Mutter','Peter','Barbara'],
+  allLocations: ['Zurich','Berlin','Naples','London','Milano','Mumbai','Erfurt','Basel','Luzern','Nice','NewDelhi','Jodhpur','Hampi','Rishikesh','Jaipur','Oberegg','Genova','Weimar','Agra','Lausanne','Dessau','Potsdam','Capri','Biel','Oensingen','Genf','StGallen','Masone','Baden','Bern','Eichwalde','Cottbus','Aarau'],
+  allCoffee: ['Home','Bonheur','Bodara','Lab','Miro','Gruppetto','Berlin','Lalere','Sacchi','Home_Berlin','Miro_HB','Nude','Schmueck','London','Scampi','Mame','Beanbank','Heisswein','Roots','Hegifrett','Vicafe_Nord','Luzern','Mumbai','Naples','Oberegg','Basel','Lausanne','Collective','Milano_Centrale','Slurp','Flavour','Soul','Heim','Commercial','Vicafe_SBB','Egg','Zug','Genova','Milano','Nice','Potsdam','Weimar'],
+  allPeople: ['Nath','Frank','Paul','Mutter','Peter','Barbara','Bamna','PeterB'],
+};
+
+let vaultHandle=null, fileHandle=null;
+let currentDate=todayISO(), originalBodyText='';
+let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport:[], people:[] };
+
+let isDirty=false;
+
+function markDirty(){ isDirty=true; }
+
+document.addEventListener('DOMContentLoaded',()=>{
+  updateHeaderDate(); renderAll(); hideSpinner();
+  // Mark dirty on any direct input change
+  document.addEventListener('input', e=>{
+    if(e.target.closest('.page')) markDirty();
+  });
+});
+
+function todayISO(){ return new Date().toISOString().split('T')[0]; }
+function updateHeaderDate(){
+  const d=new Date(currentDate+'T12:00:00');
+  document.getElementById('headerDate').textContent=d.toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
+  const btn=document.getElementById('todayBtn');
+  if(btn) btn.classList.toggle('hidden',currentDate===todayISO());
+}
+function showSpinner(){ document.getElementById('spinner').classList.remove('hidden'); }
+function hideSpinner(){ document.getElementById('spinner').classList.add('hidden'); }
+
+async function openFolder(){
+  if(!window.showDirectoryPicker){ toast('File System Access nicht verfügbar. Chrome verwenden.','err'); return; }
+  try{
+    vaultHandle=await window.showDirectoryPicker({mode:'readwrite'});
+    toast('Ordner: '+vaultHandle.name);
+    await loadFile(currentDate);
+  }catch(e){ if(e.name!=='AbortError') toast('Fehler: '+e.message,'err'); }
+}
+async function reloadFile(){
+  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
+  await loadFile(currentDate);
+}
+let statusTimer;
+function showStatus(label, text, isActive, autohide=true){
+  document.getElementById('statusLabel').textContent=label;
+  document.getElementById('statusText').textContent=text;
+  document.getElementById('statusText').className='status-text'+(isActive?' active':'');
+  document.getElementById('statusLine').classList.add('show');
+  clearTimeout(statusTimer);
+  if(autohide) statusTimer=setTimeout(()=>document.getElementById('statusLine').classList.remove('show'),4000);
+}
+
+function showSaveNotif(dateStr){
+  const d=new Date(dateStr+'T12:00:00');
+  const label=d.toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'long'});
+  showStatus('Gespeichert', label, true);
+}
+
+async function autoSave(){
+  if(!fileHandle||!isDirty) return;
+  try{
+    const w=await fileHandle.createWritable();
+    await w.write(buildContent()); await w.close();
+    isDirty=false;
+    showSaveNotif(currentDate);
+  }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
+}
+
+async function navigateDay(delta){
+  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
+  await autoSave();
+  const d=new Date(currentDate+'T12:00:00');
+  d.setDate(d.getDate()+delta);
+  currentDate=d.toISOString().split('T')[0];
+  await loadFile(currentDate);
+}
+async function navigateToToday(){
+  await autoSave();
+  currentDate=todayISO(); await loadFile(currentDate);
+}
+async function navigateToDate(dateStr){
+  if(!dateStr) return;
+  await autoSave();
+  currentDate=dateStr;
+  if(!vaultHandle){ updateHeaderDate(); return; }
+  await loadFile(currentDate);
+}
+
+window.addEventListener('beforeunload',()=>{ if(fileHandle) autoSave(); });
+async function loadFile(date){
+  currentDate=date; updateHeaderDate();
+  const yyyy=date.split('-')[0], fname=date+'.md';
+  showSpinner();
+  try{
+    let yearDir;
+    try{ yearDir=await vaultHandle.getDirectoryHandle(yyyy); }
+    catch{ toast('Jahr '+yyyy+' nicht gefunden','err'); hideSpinner(); return; }
+    try{
+      fileHandle=await yearDir.getFileHandle(fname,{create:false});
+      const file=await fileHandle.getFile();
+      populate(await file.text());
+      showStatus('Geladen', yyyy+'/'+fname, true);
+    }catch{
+      fileHandle=null;
+      showStatus('Nicht gefunden', yyyy+'/'+fname, false);
+      resetDefaults(); toast('Datei nicht vorhanden','err');
+    }
+  }catch(e){ toast('Fehler: '+e.message,'err'); }
+  finally{ hideSpinner(); }
+}
+
+function populate(raw){
+  const fm=raw.match(/^---\n([\s\S]*?)\n---/);
+  if(!fm){ resetDefaults(); return; }
+  const yaml=fm[1], body=raw.slice(fm[0].length).trim();
+  originalBodyText=body;
+  const scalar=k=>{ const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m')); return m?m[1].trim().replace(/^['"]|['"]$/g,''):null; };
+  const list=k=>{ const s=yaml.match(new RegExp('^'+k+':\\s*\\n((?:  - .+\\n*)*)','m')); if(!s)return[]; return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim()); };
+  document.getElementById('apples').value=scalar('apples')||0;
+  document.getElementById('bananas').value=scalar('bananas')||0;
+  document.getElementById('coffee').value=scalar('coffee')||0;
+  const mood=parseFloat(scalar('mood')||0);
+  document.getElementById('moodSlider').value=mood; setMood(mood);
+  sel.locations=list('location'); if(!sel.locations.length) sel.locations=['Zurich'];
+  sel.countriesOrdered=list('country'); if(!sel.countriesOrdered.length) sel.countriesOrdered=['CH'];
+  sel.coffeeOrdered=list('coffee_locations');
+  const rawSport=list('sport');
+  sel.sport=rawSport.map(s=>s.startsWith('Velo')?'Velo':s);
+  const cyclingKm=scalar('cycling_km')||'';
+  sel.people=list('people');
+  document.getElementById('tags').value=list('tags').join(', ');
+  document.getElementById('coords').value=list('coordinates').join(', ');
+  document.getElementById('entryText').value=body;
+  renderAll();
+  if(cyclingKm) document.getElementById('veloKm').value=cyclingKm;
+  isDirty=false;
+}
+
+function resetDefaults(){
+  document.getElementById('apples').value=0; document.getElementById('bananas').value=0; document.getElementById('coffee').value=0;
+  document.getElementById('moodSlider').value=0; setMood(0);
+  sel={locations:['Zurich'],countriesOrdered:['CH'],coffeeOrdered:[],sport:[],people:[]};
+  document.getElementById('veloKm').value=''; document.getElementById('tags').value='';
+  document.getElementById('coords').value=''; document.getElementById('entryText').value='';
+  originalBodyText=''; renderAll(); isDirty=false;
+}
+
+function renderAll(){
+  renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location');
+  renderCountryChips();
+  renderCoffeeChips(); renderSportChips(); renderPeopleChips();
+}
+
+function renderCountryChips(){
+  const el=document.getElementById('countryChips'); el.innerHTML='';
+  const allItems=[...new Set([...TOP.countries,...sel.countriesOrdered])];
+  allItems.forEach(opt=>{
+    const count=sel.countriesOrdered.filter(x=>x===opt).length;
+    const removeFn=count>0?()=>{ sel.countriesOrdered=sel.countriesOrdered.filter(x=>x!==opt); renderCountryChips(); }:null;
+    el.appendChild(makeChip(opt,count>0,()=>toggleCountry(opt),count>1?count:null,removeFn));
+  });
+  el.appendChild(makeACInput('Weiteres Land...',TOP.countries,val=>{
+    sel.countriesOrdered.push(val.toUpperCase()); renderCountryChips();
+  }));
+}
+
+function makeChip(label, on, clickFn, badge, removeFn){
+  const btn=document.createElement('button');
+  btn.className='chip'+(on?' on':'');
+  btn.innerHTML=`<span class="chip-dot"></span>${label}${badge?` <span style="font-size:11px;opacity:.7">×${badge}</span>`:''}<span class="chip-x">✕</span>`;
+  btn.onclick=clickFn;
+  if(removeFn){
+    const x=btn.querySelector('.chip-x');
+    x.addEventListener('click',e=>{ e.stopPropagation(); removeFn(); });
+  }
+  return btn;
+}
+
+function renderChips(id, options, selected, toggleFn, allOptions, type){
+  const el=document.getElementById(id); el.innerHTML='';
+  options.forEach(opt=>el.appendChild(makeChip(opt,selected.includes(opt),()=>toggleFn(opt))));
+  const custom=selected.filter(s=>!options.includes(s));
+  custom.forEach(opt=>el.appendChild(makeChip(opt,true,()=>toggleFn(opt))));
+  if(allOptions) el.appendChild(makeACInput('Anderer Ort...',allOptions,val=>{
+    if(!selected.includes(val)){ selected.push(val); renderAll(); }
+  }));
+}
+
+function renderCoffeeChips(){
+  const el=document.getElementById('coffeeChips'); el.innerHTML='';
+  const allItems=[...new Set([...TOP.coffee,...sel.coffeeOrdered])];
+  allItems.forEach(opt=>{
+    const count=sel.coffeeOrdered.filter(x=>x===opt).length;
+    const removeFn=count>0?()=>{ sel.coffeeOrdered=sel.coffeeOrdered.filter(x=>x!==opt); renderCoffeeChips(); }:null;
+    el.appendChild(makeChip(opt,count>0,()=>toggleCoffee(opt),count>1?count:null,removeFn));
+  });
+  el.appendChild(makeACInput('Anderer Ort...',TOP.allCoffee,val=>{
+    sel.coffeeOrdered.push(val); renderCoffeeChips();
+  }));
+}
+
+function renderSportChips(){
+  const el=document.getElementById('sportChips'), veloKm=document.getElementById('veloKm');
+  el.innerHTML='';
+  TOP.sport.forEach(s=>el.appendChild(makeChip(s,sel.sport.includes(s),()=>toggleSport(s))));
+  const custom=sel.sport.filter(s=>!TOP.sport.includes(s));
+  custom.forEach(s=>el.appendChild(makeChip(s,true,()=>toggleSport(s),null,()=>{ sel.sport=sel.sport.filter(x=>x!==s); renderSportChips(); })));
+  veloKm.className='velo-km'+(sel.sport.includes('Velo')?' show':'');
+  el.appendChild(veloKm);
+  el.appendChild(makeACInput('Weitere Sportart...',TOP.sport,val=>{
+    if(!sel.sport.includes(val)){ sel.sport.push(val); renderSportChips(); }
+  }));
+}
+
+function renderPeopleChips(){
+  const el=document.getElementById('peopleChips'); el.innerHTML='';
+  const all=[...TOP.people,...sel.people.filter(p=>!TOP.people.includes(p))];
+  all.forEach(p=>el.appendChild(makeChip(p,sel.people.includes(p),()=>togglePerson(p))));
+  el.appendChild(makeACInput('Person...',TOP.allPeople,val=>{
+    if(!sel.people.includes(val)){ sel.people.push(val); renderPeopleChips(); }
+  }));
+}
+
+function makeACInput(placeholder,source,onSelect){
+  const wrap=document.createElement('div'); wrap.className='ac-wrap';
+  const input=document.createElement('input'); input.className='chip-input'; input.placeholder=placeholder; input.setAttribute('autocomplete','off');
+  const drop=document.createElement('div'); drop.className='ac-dropdown';
+  document.body.appendChild(drop); // attach to body so it's not clipped
+
+  function positionDrop(){
+    const r=input.getBoundingClientRect();
+    drop.style.top=(r.bottom+4)+'px';
+    drop.style.left=r.left+'px';
+    drop.style.minWidth=r.width+'px';
+  }
+
+  input.addEventListener('input',()=>{
+    const q=input.value.trim().toLowerCase();
+    if(!q){ drop.classList.remove('open'); return; }
+    const matches=source.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
+    if(!matches.length){ drop.classList.remove('open'); return; }
+    drop.innerHTML=matches.map(m=>`<div class="ac-item">${m}</div>`).join('');
+    drop.querySelectorAll('.ac-item').forEach((item,i)=>{ item.onclick=()=>{ onSelect(matches[i]); input.value=''; drop.classList.remove('open'); }; });
+    positionDrop();
+    drop.classList.add('open');
+  });
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'&&input.value.trim()){ e.preventDefault(); onSelect(input.value.trim()); input.value=''; drop.classList.remove('open'); }
+    if(e.key==='Escape'){ drop.classList.remove('open'); input.value=''; }
+  });
+  wrap.appendChild(input); return wrap;
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.ac-wrap')) document.querySelectorAll('.ac-dropdown').forEach(d=>d.classList.remove('open')); });
+
+function toggleLoc(loc){ sel.locations=sel.locations.includes(loc)?sel.locations.filter(x=>x!==loc):[...sel.locations,loc]; markDirty(); renderAll(); }
+function toggleCountry(c){
+  const count=sel.countriesOrdered.filter(x=>x===c).length;
+  if(count>=5){ sel.countriesOrdered=sel.countriesOrdered.filter(x=>x!==c); }
+  else{ sel.countriesOrdered.push(c); }
+  markDirty(); renderCountryChips();
+}
+function toggleCoffee(c){
+  const count=sel.coffeeOrdered.filter(x=>x===c).length;
+  if(count>=6){ sel.coffeeOrdered=sel.coffeeOrdered.filter(x=>x!==c); }
+  else{ sel.coffeeOrdered.push(c); }
+  markDirty(); renderCoffeeChips();
+}
+function toggleSport(s){ sel.sport=sel.sport.includes(s)?sel.sport.filter(x=>x!==s):[...sel.sport,s]; markDirty(); renderSportChips(); }
+function togglePerson(p){ sel.people=sel.people.includes(p)?sel.people.filter(x=>x!==p):[...sel.people,p]; markDirty(); renderPeopleChips(); }
+
+function adj(id,d){ const el=document.getElementById(id); el.value=Math.max(0,(parseFloat(el.value)||0)+d); markDirty(); }
+function setMood(v){
+  v=parseFloat(v);
+  const el=document.getElementById('moodVal');
+  el.textContent=v>0?'+'+v:String(v);
+  const c={'-2':'#e57373','-1.5':'#ef9a9a','-1':'#ffcc80','-0.5':'#9aa0a6','0':'#a0a0a0','0.5':'#a5d6a7','1':'#81c784','1.5':'#66bb6a','2':'#43a047'};
+  el.style.color=c[String(v)]||'var(--text)';
+}
+
+let rec=null,recOn=false;
+function getRecognition(){
+  if(rec) return rec;
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR) return null;
+  rec=new SR();
+  rec.lang='de-CH'; rec.continuous=true; rec.interimResults=true;
+  rec.onstart=()=>{ recOn=true; document.getElementById('micBtn').classList.add('on'); setTx('Hört zu… z.B. "zwei Äpfel, drei Kaffee, Stimmung minus eins"',false); };
+  rec.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) recFinal+=e.results[i][0].transcript+' ';
+      else interim=e.results[i][0].transcript;
+    }
+    setTx((recFinal+interim).trim(),true);
+    clearTimeout(recSilenceTimer);
+    recSilenceTimer=setTimeout(()=>{ if(recOn) rec.stop(); },1500);
+  };
+  rec.onend=()=>{ recOn=false; clearTimeout(recSilenceTimer); document.getElementById('micBtn').classList.remove('on'); if(recFinal.trim()) parseVoice(recFinal.trim()); };
+  rec.onerror=e=>{ recOn=false; clearTimeout(recSilenceTimer); document.getElementById('micBtn').classList.remove('on'); if(e.error!=='aborted') toast('Mikrofon: '+e.error,'err'); };
+  return rec;
+}
+let recFinal='', recSilenceTimer;
+function toggleVoice(){
+  if(!('webkitSpeechRecognition' in window||'SpeechRecognition' in window)){ toast('Spracherkennung nur in Chrome','err'); return; }
+  if(recOn){ rec.stop(); return; }
+  const r=getRecognition();
+  if(!r) return;
+  recFinal=''; r.start();
+}
+function setTx(txt,has){
+  if(txt) showStatus('Diktat', txt, has, has);
+  else document.getElementById('statusLine').classList.remove('show');
+}
+
+async function parseVoice(text){
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,
+        messages:[{role:'user',content:`Extrahiere aus diesem deutschen Satz Zahlenwerte und Stimmung für ein Tagebuch.
+
+Eingabe: "${text}"
+
+Antworte NUR mit JSON ohne Erklärungen:
+{"apples":null,"bananas":null,"coffee":null,"mood":null}
+
+Regeln:
+- Zahlen können ausgeschrieben sein: "zwei"=2
+- mood zwischen -2 und 2 in 0.5er Schritten
+- "gut/toll/super" → mood 1, "sehr gut" → 1.5, "fantastisch" → 2
+- "schlecht/müde/mies" → mood -1, "sehr schlecht" → -1.5
+- Nur erkannte Felder setzen, Rest null`}]})
+    });
+    const data=await res.json();
+    const json=JSON.parse(data.content[0].text.replace(/```json|```/g,'').trim());
+    applyVoice(json);
+  }catch{ applyVoice(fallbackParse(text)); }
+}
+
+function fallbackParse(t){
+  t=t.toLowerCase();
+  const W={'null':0,'kein':0,'keine':0,'ein':1,'eine':1,'zwei':2,'drei':3,'vier':4,'fünf':5,'sechs':6,'sieben':7,'acht':8,'neun':9,'zehn':10};
+  const num=patterns=>{
+    for(const p of patterns){ const m=t.match(p); if(m){ const r=m[1].trim(); return W[r]!==undefined?W[r]:parseFloat(r.replace(',','.'))||null; } }
+    return null;
+  };
+  let mood=null;
+  const moods=[[2,['fantastisch','wunderbar','großartig']],[1.5,['sehr gut','richtig gut']],[1,['gut','schön','toll','super','angenehm']],[0.5,['okay','ganz gut']],[0,['neutral','normal']],[-0.5,['nicht so gut','mäßig']],[-1,['schlecht','mies','müde','anstrengend']],[-1.5,['sehr schlecht','sehr mies']],[-2,['schrecklich','furchtbar','deprimiert']]];
+  for(const [v,kw] of moods){ if(kw.some(w=>t.includes(w))){ mood=v; break; } }
+  const mm=t.match(/stimmung\s*(minus|plus|−|-|\+)?\s*([012](?:[.,]5)?)/);
+  if(mm){ const s=(mm[1]==='minus'||mm[1]==='−'||mm[1]==='-')?-1:1; mood=s*parseFloat(mm[2].replace(',','.')); }
+  return{
+    apples:num([/([\w.,]+)\s*(?:äpfel?|apfel)/,/äpfel?\s*[:\-]?\s*([\w.,]+)/]),
+    bananas:num([/([\w.,]+)\s*bananen?/,/bananen?\s*[:\-]?\s*([\w.,]+)/]),
+    coffee:num([/([\w.,]+)\s*(?:kaffee|tasse)/,/kaffee\s*[:\-]?\s*([\w.,]+)/]),
+    mood
+  };
+}
+
+function applyVoice(json){
+  const fix=v=>parseFloat(String(v).replace(',','.'));
+  if(json.apples!=null) document.getElementById('apples').value=fix(json.apples);
+  if(json.bananas!=null) document.getElementById('bananas').value=fix(json.bananas);
+  if(json.coffee!=null) document.getElementById('coffee').value=fix(json.coffee);
+  if(json.mood!=null){ document.getElementById('moodSlider').value=json.mood; setMood(json.mood); }
+  toast('Werte erkannt ✓','ok');
+}
+
+function buildContent(){
+  const apples=parseFloat(document.getElementById('apples').value)||0;
+  const bananas=parseFloat(document.getElementById('bananas').value)||0;
+  const coffee=parseFloat(document.getElementById('coffee').value)||0;
+  const mood=parseFloat(document.getElementById('moodSlider').value);
+  const entryText=document.getElementById('entryText').value.trim();
+  const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
+  const coords=document.getElementById('coords').value.trim().split(',').map(c=>c.trim()).filter(Boolean);
+  const sportList=sel.sport.slice(); // no km embedded
+  const cyclingKm=sel.sport.includes('Velo')?document.getElementById('veloKm').value:'';
+  const d=new Date(currentDate+'T12:00:00'), wi=d.getDay()===0?7:d.getDay();
+  const L=items=>items.length?'\n'+items.map(i=>`  - ${i}`).join('\n'):'';
+  const now=new Date();
+  const updatedTs=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const yaml=['---',`date: ${currentDate}`,`apples: ${apples}`,`bananas: ${bananas}`,`coffee: ${coffee}`,`mood: ${mood}`,`tags:${L(tags)}`,`location:${L(sel.locations)}`,`country:${L(sel.countriesOrdered)}`,`coordinates:${L(coords)}`,`coffee_locations:${L(sel.coffeeOrdered)}`,`sport:${L(sportList)}`,cyclingKm?`cycling_km: ${cyclingKm}`:'',`people:${L(sel.people)}`,`weekday_index: ${wi}`,'visibility: public',`updated: ${updatedTs}`,'---'].filter(l=>l!=='').join('\n');
+  const body=entryText||originalBodyText;
+  return yaml+(body?'\n'+body:'');
+}
+
+// ── Custom Datepicker ──────────────────────────────────────────
+let dpViewYear, dpViewMonth, dpYearMode=false;
+
+function toggleDatePicker(){
+  const ov=document.getElementById('dpOverlay');
+  if(ov.classList.contains('open')){ closeDatePicker(); return; }
+  const d=new Date(currentDate+'T12:00:00');
+  dpViewYear=d.getFullYear(); dpViewMonth=d.getMonth();
+  dpYearMode=false;
+  renderDpCalendar();
+  ov.classList.add('open');
+}
+function closeDatePicker(){ document.getElementById('dpOverlay').classList.remove('open'); }
+
+function toggleYearView(){
+  dpYearMode=!dpYearMode;
+  renderDpCalendar();
+}
+
+function dpShiftMonth(delta){
+  if(dpYearMode){ dpViewYear+=delta*9; renderDpCalendar(); return; }
+  dpViewMonth+=delta;
+  if(dpViewMonth>11){ dpViewMonth=0; dpViewYear++; }
+  if(dpViewMonth<0){ dpViewMonth=11; dpViewYear--; }
+  renderDpCalendar();
+}
+
+function renderDpCalendar(){
+  const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+  const title=document.getElementById('dpTitle');
+  const body=document.getElementById('dpBody');
+
+  if(dpYearMode){
+    title.textContent='Jahr wählen';
+    const startYear=Math.floor(dpViewYear/9)*9;
+    let html='<div class="dp-years">';
+    for(let y=startYear;y<startYear+9;y++){
+      const sel=y===dpViewYear?' selected':'';
+      html+=`<button class="dp-year-btn${sel}" onclick="dpSelectYear(${y})">${y}</button>`;
+    }
+    html+='</div>';
+    body.innerHTML=html;
+    return;
+  }
+
+  title.textContent=months[dpViewMonth]+' '+dpViewYear;
+
+  const today=todayISO();
+  const selDate=currentDate;
+  const firstDay=new Date(dpViewYear,dpViewMonth,1).getDay();
+  const startOffset=(firstDay===0?6:firstDay-1); // Mon=0
+  const daysInMonth=new Date(dpViewYear,dpViewMonth+1,0).getDate();
+  const daysInPrev=new Date(dpViewYear,dpViewMonth,0).getDate();
+
+  let html='<div class="dp-weekdays"><div class="dp-wd">Mo</div><div class="dp-wd">Di</div><div class="dp-wd">Mi</div><div class="dp-wd">Do</div><div class="dp-wd">Fr</div><div class="dp-wd">Sa</div><div class="dp-wd">So</div></div><div class="dp-days">';
+
+  // prev month days
+  for(let i=startOffset-1;i>=0;i--){
+    html+=`<div class="dp-day other-month">${daysInPrev-i}</div>`;
+  }
+  // current month days
+  for(let d=1;d<=daysInMonth;d++){
+    const mm=String(dpViewMonth+1).padStart(2,'0');
+    const dd=String(d).padStart(2,'0');
+    const iso=`${dpViewYear}-${mm}-${dd}`;
+    let cls='dp-day';
+    if(iso===today) cls+=' today';
+    if(iso===selDate) cls+=' selected';
+    html+=`<div class="${cls}" onclick="dpSelectDate('${iso}')">${d}</div>`;
+  }
+  // next month filler
+  const total=startOffset+daysInMonth;
+  const remaining=(7-total%7)%7;
+  for(let d=1;d<=remaining;d++){
+    html+=`<div class="dp-day other-month">${d}</div>`;
+  }
+  html+='</div>';
+  body.innerHTML=html;
+}
+
+function dpSelectYear(y){
+  dpViewYear=y; dpYearMode=false;
+  renderDpCalendar();
+}
+
+function dpSelectDate(iso){
+  closeDatePicker();
+  navigateToDate(iso);
+}
+// ──────────────────────────────────────────────────────────────
+
+function toggleEntryPosition(){
+  const page=document.querySelector('.page');
+  const cards=[...page.querySelectorAll('[data-card]')];
+  const entry=page.querySelector('[data-card="entry"]');
+  const first=cards[0];
+  const btn=document.getElementById('entryMoveBtn');
+  if(entry===first){
+    // move to end: insert after last data-card
+    const last=cards[cards.length-1];
+    last.insertAdjacentElement('afterend',entry);
+    btn.textContent='↑';
+  } else {
+    // move to top
+    page.insertBefore(entry,first);
+    btn.textContent='↓';
+  }
+}
+
+async function navigateYears(delta){
+  const d=new Date(currentDate+'T12:00:00');
+  d.setFullYear(d.getFullYear()+delta);
+  await autoSave(); currentDate=d.toISOString().split('T')[0]; await loadFile(currentDate);
+}
+async function navigateMonths(delta){
+  const d=new Date(currentDate+'T12:00:00');
+  d.setMonth(d.getMonth()+delta);
+  await autoSave(); currentDate=d.toISOString().split('T')[0]; await loadFile(currentDate);
+}
+
+// ── Keyboard Shortcuts ────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  const tag=document.activeElement.tagName;
+  if(tag==='INPUT'||tag==='TEXTAREA') return; // don't fire while typing
+  switch(e.key){
+    case 'd': case 'D': e.preventDefault(); toggleVoice(); break;
+    case 's': case 'S': e.preventDefault(); autoSave(); break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      if(e.shiftKey&&e.altKey) navigateMonths(-1);
+      else if(e.shiftKey) navigateYears(-1);
+      else navigateDay(-1);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      if(e.shiftKey&&e.altKey) navigateMonths(1);
+      else if(e.shiftKey) navigateYears(1);
+      else navigateDay(1);
+      break;
+    case 'k': case 'K': e.preventDefault(); toggleDatePicker(); break;
+  }
+});
+// ──────────────────────────────────────────────────────────────
+
+let toastT;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show'+(type?' '+type:'');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+</script>
+</body>
+</html>
