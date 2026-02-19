@@ -882,7 +882,7 @@ function updateLastEditedBtn(){
   const todayShown=!document.getElementById('todayBtn').classList.contains('hidden');
   if(last && last!==currentDate && !todayShown){
     const d=new Date(last+'T12:00:00');
-    lastBtn.textContent=d.toLocaleDateString('de-CH',{day:'numeric',month:'short'});
+    lastBtn.textContent=d.toLocaleDateString('de-CH',{day:'numeric',month:'short',year:'numeric'});
     lastBtn.classList.remove('hidden');
   } else {
     lastBtn.classList.add('hidden');
@@ -890,7 +890,9 @@ function updateLastEditedBtn(){
 }
 function updateHeaderState(){
   const title=document.getElementById('headerTitle');
-  title.style.color=fileHandle?'':'var(--accent)';
+  title.style.color='';
+  const folderBtn=document.querySelector('.icon-btn[onclick="openFolder()"]');
+  if(folderBtn) folderBtn.style.color=fileHandle?'':'var(--accent)';
 }
 async function navigateToLastEdited(){
   const last=localStorage.getItem('lastEditedDate');
