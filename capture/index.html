@@ -221,6 +221,12 @@
     <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
   </div>
   <div style="display:flex;gap:8px;align-items:center">
+    <button class="icon-btn" onclick="copyDay()" title="Tag kopieren">
+      <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+    </button>
+    <button class="icon-btn" onclick="pasteDay()" title="Tag einfügen">
+      <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+    </button>
     <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
     </button>
@@ -333,12 +339,16 @@
     </div>
   </div>
 
+
   <div class="card">
     <div class="card-body">
       <div class="inline-fields">
         <div class="inline-field">
           <label>Tags</label>
-          <input class="inline-input" id="tags" placeholder="tag1, tag2">
+          <div class="ac-wrap" style="position:relative">
+            <input class="inline-input" id="tags" placeholder="tag1, tag2" autocomplete="off">
+            <div class="ac-dropdown" id="tagsDropdown"></div>
+          </div>
         </div>
         <div class="inline-field">
           <label>Koordinaten</label>
@@ -383,7 +393,7 @@ let isDirty=false;
 function markDirty(){ isDirty=true; }
 
 document.addEventListener('DOMContentLoaded',()=>{
-  updateHeaderDate(); renderAll(); hideSpinner();
+  updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC();
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
@@ -431,6 +441,8 @@ function showSaveNotif(dateStr){
 async function autoSave(){
   if(!fileHandle||!isDirty) return;
   try{
+    const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
+    saveKnownTags(tags);
     const w=await fileHandle.createWritable();
     await w.write(buildContent()); await w.close();
     isDirty=false;
@@ -876,6 +888,80 @@ async function navigateMonths(delta){
   d.setMonth(d.getMonth()+delta);
   await autoSave(); currentDate=d.toISOString().split('T')[0]; await loadFile(currentDate);
 }
+
+// ── Tag Memory ────────────────────────────────────────────────
+function getKnownTags(){
+  try{ return JSON.parse(localStorage.getItem('knownTags')||'[]'); }catch{ return []; }
+}
+function saveKnownTags(tags){
+  const known=getKnownTags();
+  tags.forEach(t=>{ if(t&&!known.includes(t)) known.push(t); });
+  localStorage.setItem('knownTags', JSON.stringify(known));
+}
+function initTagsAC(){
+  const input=document.getElementById('tags');
+  const drop=document.getElementById('tagsDropdown');
+  document.body.appendChild(drop);
+  input.addEventListener('input',()=>{
+    const parts=input.value.split(',');
+    const q=parts[parts.length-1].trim().toLowerCase();
+    if(!q){ drop.classList.remove('open'); return; }
+    const matches=getKnownTags().filter(t=>t.toLowerCase().includes(q)&&!parts.slice(0,-1).map(p=>p.trim()).includes(t)).slice(0,8);
+    if(!matches.length){ drop.classList.remove('open'); return; }
+    drop.innerHTML=matches.map(m=>`<div class="ac-item">${m}</div>`).join('');
+    drop.querySelectorAll('.ac-item').forEach((item,i)=>{
+      item.onclick=()=>{
+        const before=parts.slice(0,-1).map(p=>p.trim()).filter(Boolean);
+        input.value=[...before,matches[i]].join(', ')+', ';
+        drop.classList.remove('open'); markDirty(); input.focus();
+      };
+    });
+    const r=input.getBoundingClientRect();
+    drop.style.top=(r.bottom+4)+'px'; drop.style.left=r.left+'px'; drop.style.minWidth=r.width+'px';
+    drop.classList.add('open');
+  });
+  input.addEventListener('keydown',e=>{ if(e.key==='Escape') drop.classList.remove('open'); });
+  document.addEventListener('click',e=>{ if(!input.contains(e.target)) drop.classList.remove('open'); });
+}
+let copiedDay=null;
+function copyDay(){
+  copiedDay={
+    apples: document.getElementById('apples').value,
+    bananas: document.getElementById('bananas').value,
+    coffee: document.getElementById('coffee').value,
+    mood: document.getElementById('moodSlider').value,
+    locations: [...sel.locations],
+    countriesOrdered: [...sel.countriesOrdered],
+    coffeeOrdered: [...sel.coffeeOrdered],
+    sport: [...sel.sport],
+    veloKm: document.getElementById('veloKm').value,
+    people: [...sel.people],
+    tags: document.getElementById('tags').value,
+    coords: document.getElementById('coords').value,
+    entry: document.getElementById('entryText').value,
+  };
+  showStatus('Kopiert', currentDate, true);
+}
+function pasteDay(){
+  if(!copiedDay){ showStatus('Zwischenablage', 'Nichts kopiert', false); return; }
+  const d=copiedDay;
+  document.getElementById('apples').value=d.apples;
+  document.getElementById('bananas').value=d.bananas;
+  document.getElementById('coffee').value=d.coffee;
+  document.getElementById('moodSlider').value=d.mood; setMood(d.mood);
+  sel.locations=[...d.locations];
+  sel.countriesOrdered=[...d.countriesOrdered];
+  sel.coffeeOrdered=[...d.coffeeOrdered];
+  sel.sport=[...d.sport];
+  document.getElementById('veloKm').value=d.veloKm;
+  sel.people=[...d.people];
+  document.getElementById('tags').value=d.tags;
+  document.getElementById('coords').value=d.coords;
+  document.getElementById('entryText').value=d.entry;
+  renderAll(); markDirty();
+  showStatus('Eingefügt', 'Alle Felder übernommen', true);
+}
+// ──────────────────────────────────────────────────────────────
 
 // ── Keyboard Shortcuts ────────────────────────────────────────
 document.addEventListener('keydown',e=>{
