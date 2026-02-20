@@ -1282,7 +1282,7 @@ async function rebuildIndex(existingIndex){
           tags: tags.join(' '),
           locations: [...list('location'),...list('country')].join(' '),
           people: list('people').join(' '),
-          sport: list('sport').join(' '),
+          sport: [...list('sport'),...list('coffee_locations')].join(' '),
           _size: file.size,
           _modified: file.lastModified,
         });
