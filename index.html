@@ -472,6 +472,29 @@ const TOP = {
   allPeople: ['Nath','Frank','Paul','Mutter','Peter','Barbara','Bamna','PeterB'],
 };
 
+// Merge custom values from localStorage into TOP
+(function loadCustomValues(){
+  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  if(custom.allCoffee) TOP.allCoffee=[...new Set([...TOP.allCoffee,...custom.allCoffee])];
+  if(custom.allLocations) TOP.allLocations=[...new Set([...TOP.allLocations,...custom.allLocations])];
+  if(custom.allPeople) TOP.allPeople=[...new Set([...TOP.allPeople,...custom.allPeople])];
+  if(custom.countries) TOP.countries=[...new Set([...TOP.countries,...custom.countries])];
+  if(custom.sport) TOP.sport=[...new Set([...TOP.sport,...custom.sport])];
+})();
+
+function saveCustomValue(field, value){
+  if(!value) return;
+  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  if(!custom[field]) custom[field]=[];
+  if(!custom[field].includes(value)){
+    custom[field].push(value);
+    localStorage.setItem('customValues', JSON.stringify(custom));
+    TOP[field]=[...new Set([...TOP[field],value])];
+  }
+  // Also persist to search index if available
+  if(searchIndexBuilt && vaultHandle) saveIndexFile(searchIndex, getKnownTags());
+}
+
 let vaultHandle=null, fileHandle=null;
 let currentDate=todayISO(), originalBodyText='';
 let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport:[], people:[] };
@@ -643,6 +666,7 @@ function renderCountryChips(){
     el.appendChild(makeChip(opt,count>0,()=>toggleCountry(opt),count>1?count:null,removeFn));
   });
   el.appendChild(makeACInput('Weiteres Land...',TOP.countries,val=>{
+    saveCustomValue('countries', val.toUpperCase());
     sel.countriesOrdered.push(val.toUpperCase()); renderCountryChips();
   }));
 }
@@ -665,6 +689,7 @@ function renderChips(id, options, selected, toggleFn, allOptions, type){
   const custom=selected.filter(s=>!options.includes(s));
   custom.forEach(opt=>el.appendChild(makeChip(opt,true,()=>toggleFn(opt))));
   if(allOptions) el.appendChild(makeACInput('Anderer Ort...',allOptions,val=>{
+    saveCustomValue('allLocations', val);
     if(!selected.includes(val)){ selected.push(val); renderAll(); }
   }));
 }
@@ -678,6 +703,7 @@ function renderCoffeeChips(){
     el.appendChild(makeChip(opt,count>0,()=>toggleCoffee(opt),count>1?count:null,removeFn));
   });
   el.appendChild(makeACInput('Anderer Ort...',TOP.allCoffee,val=>{
+    saveCustomValue('allCoffee', val);
     sel.coffeeOrdered.push(val); renderCoffeeChips();
   }));
 }
@@ -691,6 +717,7 @@ function renderSportChips(){
   veloKm.className='velo-km'+(sel.sport.includes('Velo')?' show':'');
   el.appendChild(veloKm);
   el.appendChild(makeACInput('Weitere Sportart...',TOP.sport,val=>{
+    saveCustomValue('sport', val);
     if(!sel.sport.includes(val)){ sel.sport.push(val); renderSportChips(); }
   }));
 }
@@ -700,6 +727,7 @@ function renderPeopleChips(){
   const all=[...TOP.people,...sel.people.filter(p=>!TOP.people.includes(p))];
   all.forEach(p=>el.appendChild(makeChip(p,sel.people.includes(p),()=>togglePerson(p))));
   el.appendChild(makeACInput('Person...',TOP.allPeople,val=>{
+    saveCustomValue('allPeople', val);
     if(!sel.people.includes(val)){ sel.people.push(val); renderPeopleChips(); }
   }));
 }
@@ -1300,18 +1328,20 @@ const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','Augus
 
 function getAllTerms(){
   const set = new Set(getKnownTags());
-  // Add years from index
+  // Add custom values saved by user
+  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  Object.values(custom).forEach(arr=>arr.forEach(v=>set.add(v)));
+  // Add from search index
   if(searchIndexBuilt){
     searchIndex.forEach(e=>{
-      const y = e.date.slice(0,4);
-      set.add(y);
       e.tags.split(' ').forEach(t=>t&&set.add(t));
       e.locations.split(' ').forEach(t=>t&&set.add(t));
       e.people.split(' ').forEach(t=>t&&set.add(t));
       e.sport.split(' ').forEach(t=>t&&set.add(t.replace(/\(.*\)/,'').trim()));
+      const y = e.date.slice(0,4);
+      set.add(y);
     });
   }
-  // Always add month names and years
   MONTHS_DE.forEach(m=>set.add(m));
   return [...set].filter(Boolean).sort();
 }
