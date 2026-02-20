@@ -52,7 +52,25 @@
     .page {
       max-width:580px; margin:0 auto;
       padding:20px 16px 100px;
-      display:flex; flex-direction:column; gap:10px;
+      display:flex; flex-direction:column; gap:12px;
+    }
+    .col-left, .col-right-wrap {
+      display:flex; flex-direction:column; gap:12px;
+    }
+    @media (min-width:960px){
+      .page {
+        max-width:1100px;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        column-gap:20px;
+        align-items:start;
+        padding:20px 24px 100px;
+      }
+    }
+    .icon-btn-unloaded:hover {
+      background:rgba(253,147,159,.25) !important;
+      color:var(--text) !important;
+      border-color:rgba(253,147,159,.55) !important;
     }
     .btn-small {
       font-size:12px;font-weight:500;color:var(--accent);
@@ -237,129 +255,126 @@
 
 <div class="page">
 
-
-  <div class="card">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      <span class="card-head-title">Konsum & Stimmung</span>
-    </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-      <div class="counters">
-        <div class="counter">
-          <div class="counter-label">Äpfel</div>
-          <div class="counter-ctrl">
-            <button class="c-btn" onclick="adj('apples',-1)">−</button>
-            <input class="c-input" type="number" id="apples" value="0" min="0" step="1">
-            <button class="c-btn" onclick="adj('apples',1)">+</button>
+  <div class="col-left">
+    <div class="card">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="card-head-title">Konsum & Stimmung</span>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+        <div class="counters">
+          <div class="counter">
+            <div class="counter-label">Äpfel</div>
+            <div class="counter-ctrl">
+              <button class="c-btn" onclick="adj('apples',-1)">−</button>
+              <input class="c-input" type="number" id="apples" value="0" min="0" step="1">
+              <button class="c-btn" onclick="adj('apples',1)">+</button>
+            </div>
+          </div>
+          <div class="counter">
+            <div class="counter-label">Bananen</div>
+            <div class="counter-ctrl">
+              <button class="c-btn" onclick="adj('bananas',-1)">−</button>
+              <input class="c-input" type="number" id="bananas" value="0" min="0" step="1">
+              <button class="c-btn" onclick="adj('bananas',1)">+</button>
+            </div>
+          </div>
+          <div class="counter">
+            <div class="counter-label">Kaffee</div>
+            <div class="counter-ctrl">
+              <button class="c-btn" onclick="adj('coffee',-1)">−</button>
+              <input class="c-input" type="number" id="coffee" value="0" min="0" step="1">
+              <button class="c-btn" onclick="adj('coffee',1)">+</button>
+            </div>
           </div>
         </div>
-        <div class="counter">
-          <div class="counter-label">Bananen</div>
-          <div class="counter-ctrl">
-            <button class="c-btn" onclick="adj('bananas',-1)">−</button>
-            <input class="c-input" type="number" id="bananas" value="0" min="0" step="1">
-            <button class="c-btn" onclick="adj('bananas',1)">+</button>
-          </div>
-        </div>
-        <div class="counter">
-          <div class="counter-label">Kaffee</div>
-          <div class="counter-ctrl">
-            <button class="c-btn" onclick="adj('coffee',-1)">−</button>
-            <input class="c-input" type="number" id="coffee" value="0" min="0" step="1">
-            <button class="c-btn" onclick="adj('coffee',1)">+</button>
+        <div class="mood-row">
+          <div class="mood-val" id="moodVal">0</div>
+          <div class="mood-track">
+            <input type="range" id="moodSlider" min="-2" max="2" step="0.5" value="0" oninput="setMood(this.value)">
+            <div class="mood-ticks"><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span></div>
           </div>
         </div>
       </div>
-      <div class="mood-row">
-        <div class="mood-val" id="moodVal">0</div>
-        <div class="mood-track">
-          <input type="range" id="moodSlider" min="-2" max="2" step="0.5" value="0" oninput="setMood(this.value)">
-          <div class="mood-ticks"><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span></div>
-        </div>
+    </div>
+
+    <div class="card" data-card="location">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="card-head-title">Ort & Land</span>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+        <div class="chip-row" id="locationChips"></div>
+        <div class="chip-row" id="countryChips"></div>
       </div>
     </div>
-  </div>
 
-  <div class="card" data-card="location">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      <span class="card-head-title">Ort & Land</span>
-      
+    <div class="card" data-card="coffee">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+        <span class="card-head-title">Kaffee-Orte</span>
+      </div>
+      <div class="card-body">
+        <div class="chip-row" id="coffeeChips"></div>
+      </div>
     </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-      <div class="chip-row" id="locationChips"></div>
-      <div class="chip-row" id="countryChips"></div>
-    </div>
-  </div>
 
-  <div class="card" data-card="coffee">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
-      <span class="card-head-title">Kaffee-Orte</span>
-      
-    </div>
-    <div class="card-body">
-      <div class="chip-row" id="coffeeChips"></div>
-    </div>
-  </div>
-
-  <div class="card" data-card="sport">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-      <span class="card-head-title">Sport</span>
-      
-    </div>
-    <div class="card-body">
-      <div class="chip-row" id="sportChips">
-        <input class="velo-km" type="number" id="veloKm" placeholder="km" min="0" max="300">
+    <div class="card" data-card="sport">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        <span class="card-head-title">Sport</span>
+      </div>
+      <div class="card-body">
+        <div class="chip-row" id="sportChips">
+          <input class="velo-km" type="number" id="veloKm" placeholder="km" min="0" max="300">
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card" data-card="entry">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-      <span class="card-head-title">Eintrag</span>
-      <div style="margin-left:auto;display:flex;gap:2px;align-items:center">
-        <button class="card-move-btn fmt-btn" onclick="wrapSelection('quote')" title="Quote">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
-        </button>
-        <button class="card-move-btn fmt-btn" onclick="wrapSelection('name')" title="Name [[…]]">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 3 12 9 6"/><polyline points="15 6 21 12 15 18"/><line x1="9" y1="12" x2="15" y2="12" style="display:none"/></svg>
-        </button>
-        <div style="width:1px;height:12px;background:var(--border);margin:0 2px"></div>
-        <button class="card-move-btn" id="entryMoveBtn" onclick="toggleEntryPosition()" title="Position wechseln">↑</button>
+  <div class="col-right-wrap">
+    <div class="card" data-card="entry">
+      <div class="card-head" style="height:38.5px;box-sizing:border-box">
+        <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+        <span class="card-head-title">Eintrag</span>
+        <div style="margin-left:auto;display:flex;gap:2px;align-items:center">
+          <button class="card-move-btn fmt-btn" onclick="wrapSelection('quote')" title="Quote">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/></svg>
+          </button>
+          <button class="card-move-btn fmt-btn" onclick="wrapSelection('name')" title="Name [[…]]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 3 12 9 6"/><polyline points="15 6 21 12 15 18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="card-body" style="height:141.5px;box-sizing:border-box;padding:14px">
+        <textarea class="entry-area" id="entryText" placeholder="Tagebucheintrag..." style="height:100%;resize:none"></textarea>
       </div>
     </div>
-    <div class="card-body">
-      <textarea class="entry-area" id="entryText" placeholder="Tagebucheintrag..." rows="4"></textarea>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-head">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      <span class="card-head-title">Personen</span>
+    <div class="card" data-card="people">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="card-head-title">Personen</span>
+      </div>
+      <div class="card-body">
+        <div class="chip-row" id="peopleChips"></div>
+      </div>
     </div>
-    <div class="card-body">
-      <div class="chip-row" id="peopleChips"></div>
-    </div>
-  </div>
 
-
-  <div class="card">
-    <div class="card-body">
-      <div class="inline-fields">
-        <div class="inline-field">
-          <label>Tags</label>
-          <div class="ac-wrap" style="position:relative">
-            <input class="inline-input" id="tags" placeholder="tag1, tag2" autocomplete="off">
-            <div class="ac-dropdown" id="tagsDropdown"></div>
+    <div class="card" data-card="tags">
+      <div class="card-body">
+        <div class="inline-fields">
+          <div class="inline-field">
+            <label>Tags</label>
+            <div class="ac-wrap" style="position:relative">
+              <input class="inline-input" id="tags" placeholder="tag1, tag2" autocomplete="off">
+              <div class="ac-dropdown" id="tagsDropdown"></div>
+            </div>
           </div>
-        </div>
-        <div class="inline-field">
-          <label>Koordinaten</label>
-          <input class="inline-input" id="coords" placeholder="48.12, 8.56">
+          <div class="inline-field">
+            <label>Koordinaten</label>
+            <input class="inline-input" id="coords" placeholder="48.12, 8.56">
+          </div>
         </div>
       </div>
     </div>
@@ -895,10 +910,12 @@ function updateHeaderState(){
     folderBtn.style.color='';
     folderBtn.style.background='';
     folderBtn.style.borderColor='';
+    folderBtn.classList.remove('icon-btn-unloaded');
   } else {
     folderBtn.style.color='var(--accent)';
     folderBtn.style.background='var(--accent-bg)';
     folderBtn.style.borderColor='rgba(253,147,159,.4)';
+    folderBtn.classList.add('icon-btn-unloaded');
   }
 }
 async function navigateToLastEdited(){
