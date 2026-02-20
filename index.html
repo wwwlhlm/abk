@@ -118,6 +118,10 @@
     .card-head { display:flex;align-items:center;gap:8px;padding:11px 14px 10px;border-bottom:1px solid var(--border); }
     .card-move-btns { display:flex;gap:2px;margin-left:auto; }
     .card-move-btn { width:20px;height:20px;border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;border-radius:4px;padding:0;transition:color .15s;flex-shrink:0; }
+    .entry-preview { height:100%;overflow-y:auto;font-size:15px;line-height:1.7;color:var(--text);white-space:pre-wrap;hyphens:auto; }
+    .entry-preview .name { text-transform:uppercase;font-size:.85em;letter-spacing:.04em; }
+    .entry-preview.hidden { display:none; }
+    .preview-active { color:var(--accent) !important; }
     .fmt-btn:hover { color:var(--accent) !important; }
     .card-move-btn:hover { color:var(--text); }
 
@@ -383,10 +387,14 @@
           <button class="card-move-btn fmt-btn" onclick="wrapSelection('name')" title="Name [[…]]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="9 18 3 12 9 6"/><polyline points="15 6 21 12 15 18"/></svg>
           </button>
+          <button class="card-move-btn fmt-btn" id="previewToggle" onclick="togglePreview()" title="Vorschau" style="margin-left:20px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
       </div>
       <div class="card-body" style="height:141.5px;box-sizing:border-box;padding:14px">
         <textarea class="entry-area" id="entryText" placeholder="Tagebucheintrag..." style="height:100%;resize:none"></textarea>
+        <div class="entry-preview hidden" id="entryPreview"></div>
       </div>
     </div>
 
@@ -608,6 +616,7 @@ function populate(raw){
   renderAll();
   if(cyclingKm) document.getElementById('veloKm').value=cyclingKm;
   isDirty=false;
+  if(previewMode) renderPreview();
 }
 
 function resetDefaults(){
@@ -1096,6 +1105,51 @@ function wrapSelection(type){
   ta.setRangeText(wrapped, start, end, 'end');
   ta.focus(); markDirty();
 }
+
+// ── Entry Preview ─────────────────────────────────────────────
+let previewMode = localStorage.getItem('previewMode') === 'true';
+
+function renderPreview(){
+  const raw = document.getElementById('entryText').value;
+  // Process special syntax BEFORE escaping
+  let html = raw
+    .replace(/<span class="quote">([\s\S]*?)<\/span>/g, '\x00QUOTE\x00$1\x00ENDQUOTE\x00')
+    .replace(/\[\[([^\]]+)\]\]/g, '\x00NAME\x00$1\x00ENDNAME\x00')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\x00QUOTE\x00([\s\S]*?)\x00ENDQUOTE\x00/g,'<em>$1</em>')
+    .replace(/\x00NAME\x00(.*?)\x00ENDNAME\x00/g,'<span class="name">$1</span>');
+  document.getElementById('entryPreview').innerHTML = html;
+}
+
+function togglePreview(){
+  previewMode = !previewMode;
+  localStorage.setItem('previewMode', previewMode);
+  applyPreviewMode();
+}
+
+function applyPreviewMode(){
+  const ta = document.getElementById('entryText');
+  const preview = document.getElementById('entryPreview');
+  const btn = document.getElementById('previewToggle');
+  if(previewMode){
+    renderPreview();
+    ta.style.display = 'none';
+    preview.classList.remove('hidden');
+    btn.querySelector('svg').style.stroke = 'var(--accent)';
+  } else {
+    ta.style.display = '';
+    preview.classList.add('hidden');
+    btn.querySelector('svg').style.stroke = '';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  applyPreviewMode();
+  document.getElementById('entryText').addEventListener('input', ()=>{
+    if(previewMode) renderPreview();
+  });
+});
+// ──────────────────────────────────────────────────────────────
 
 // ── Search Index (persistent in vault) ───────────────────────
 const INDEX_FILE = 'search-index.json';
