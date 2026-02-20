@@ -1520,6 +1520,7 @@ document.addEventListener('keydown',e=>{
       else navigateDay(1);
       break;
     case 'f': case 'F': e.preventDefault(); openSearch(); break;
+    case ' ': e.preventDefault(); openSearch(); break;
     case 'v': case 'V': e.preventDefault(); pasteDay(); break;
     case 'k': case 'K': e.preventDefault(); toggleDatePicker(); break;
   }
