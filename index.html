@@ -1348,7 +1348,7 @@ function computeTopChips(){
 
   function merge(top, recent){
     const result = [...new Set([...recent, ...top])];
-    return result;
+    return result.slice(0, 9);
   }
 
   const allLocs     = searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).filter(v=>!v.match(/^[A-Z]{2}$/)));
