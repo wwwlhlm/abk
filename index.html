@@ -655,11 +655,11 @@ function resetDefaults(){
   document.getElementById('apples').value=0; document.getElementById('bananas').value=0; document.getElementById('coffee').value=0;
   document.getElementById('moodSlider').value=0; setMood(0);
   sel={locations:['Zurich'],countriesOrdered:['CH'],coffeeOrdered:[],sport:[],people:[]};
-  // Bring last used values to front of chip lists (unselected)
+  // Bring last used values to front of chip lists (unselected), cap at 9
   if(last){
-    if(last.coffeeOrdered?.length) TOP.coffee=[...new Set([...last.coffeeOrdered,...TOP.coffee])];
-    if(last.sport?.length) TOP.sport=[...new Set([...last.sport,...TOP.sport])];
-    if(last.people?.length) TOP.people=[...new Set([...last.people,...TOP.people])];
+    if(last.coffeeOrdered?.length) TOP.coffee=[...new Set([...last.coffeeOrdered,...TOP.coffee])].slice(0,9);
+    if(last.sport?.length) TOP.sport=[...new Set([...last.sport,...TOP.sport])].slice(0,9);
+    if(last.people?.length) TOP.people=[...new Set([...last.people,...TOP.people])].slice(0,9);
   }
   document.getElementById('veloKm').value=''; document.getElementById('tags').value='';
   document.getElementById('coords').value=''; document.getElementById('entryText').value='';
@@ -1657,6 +1657,7 @@ document.addEventListener('keydown',e=>{
   const tag=document.activeElement.tagName;
   if(tag==='INPUT'||tag==='TEXTAREA') return; // don't fire while typing
   switch(e.key){
+    case 'c': case 'C': e.preventDefault(); copyDay(); break;
     case 'd': case 'D': e.preventDefault(); toggleVoice(); break;
     case 's': case 'S': e.preventDefault(); autoSave(); break;
     case 'ArrowLeft':
