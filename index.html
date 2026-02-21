@@ -97,7 +97,10 @@
     .search-result-text { font-size:15px;color:var(--text);line-height:1.5; }
     .search-result-text mark { background:rgba(253,147,159,.2);color:var(--accent);border-radius:2px;padding:0 1px;font-style:normal; }
     .search-result-meta { font-size:13px;color:var(--text-3);margin-top:3px; }
-    .search-footer { padding:9px 14px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:8px; }
+    .search-footer { padding:9px 14px;border-top:none;font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:8px; }
+    .search-footer.hidden { display:none; }
+    .search-progress { flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden; }
+    .search-progress.hidden { display:none; }
     .search-progress { flex:1;height:2px;background:var(--border);border-radius:1px;overflow:hidden; }
     .search-progress-bar { height:100%;background:var(--accent);border-radius:1px;transition:width .2s; }
     .search-empty { padding:32px 16px;text-align:center;color:var(--text-3);font-size:13px; }
@@ -214,12 +217,12 @@
     /* Custom Datepicker */
     .dp-overlay { position:fixed;inset:0;z-index:200;display:none; }
     .dp-overlay.open { display:block; }
-    .dp-backdrop { position:absolute;inset:0; }
+    .dp-backdrop { position:fixed;inset:0; }
     .dp-panel {
       position:absolute;top:58px;left:50%;transform:translateX(-50%);
       background:var(--surface);border:1px solid var(--border-2);
       border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);
-      padding:16px;width:280px;user-select:none;
+      padding:16px;width:280px;user-select:none;z-index:1;
     }
     .dp-head { display:flex;align-items:center;justify-content:space-between;margin-bottom:14px; }
     .dp-title { font-size:14px;font-weight:600;color:var(--text);cursor:pointer;transition:color .15s; }
@@ -241,6 +244,7 @@
     .dp-day.selected:hover { background:#e07080; }
     .dp-day.other-month { color:var(--text-3);opacity:.4; }
     .dp-day.empty { cursor:default; }
+    .dp-day.dp-unedited { color:var(--accent);opacity:.45; }
     .dp-years { display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px; }
     .dp-year-btn {
       padding:8px 4px;border-radius:7px;border:1px solid var(--border);background:transparent;
@@ -501,6 +505,10 @@ let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport
 
 let isDirty=false;
 let inactivityTimer;
+function refreshCalendar(){
+  if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
+}
+
 function markDirty(){
   isDirty=true;
   clearTimeout(inactivityTimer);
@@ -512,6 +520,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
+    if(e.target.id==='coffee') refreshCalendar();
   });
 });
 
@@ -565,6 +574,10 @@ async function autoSave(){
     await w.write(buildContent()); await w.close();
     isDirty=false;
     localStorage.setItem('lastEditedDate', currentDate);
+    const rs = new Set(JSON.parse(localStorage.getItem('recentlySaved')||'[]'));
+    rs.add(currentDate);
+    localStorage.setItem('recentlySaved', JSON.stringify([...rs]));
+    if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
     // Remember last used values for next new entry
     localStorage.setItem('lastUsed', JSON.stringify({
       locations: sel.locations,
@@ -645,9 +658,23 @@ function populate(raw){
   document.getElementById('coords').value=list('coordinates').join(', ');
   document.getElementById('entryText').value=body;
   renderAll();
+  appendExtraChips();
   if(cyclingKm) document.getElementById('veloKm').value=cyclingKm;
   isDirty=false;
   if(previewMode) renderPreview();
+}
+
+function appendExtraChips(){
+  const last = JSON.parse(localStorage.getItem('lastUsed')||'null');
+  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  const extraCoffee = [...new Set([...(last?.coffeeOrdered||[]), ...(custom.allCoffee||[])])].filter(v=>!TOP.coffee.includes(v));
+  const extraSport  = [...new Set([...(last?.sport||[]),         ...(custom.sport||[])])].filter(v=>!TOP.sport.includes(v));
+  const extraPeople = [...new Set([...(last?.people||[]),        ...(custom.allPeople||[])])].filter(v=>!TOP.people.includes(v));
+  const extraLocs   = [...new Set([...(last?.locations||[]),     ...(custom.allLocations||[])])].filter(v=>!TOP.locations.includes(v));
+  if(extraCoffee.length) { TOP.coffee=[...TOP.coffee,...extraCoffee]; renderCoffeeChips(); }
+  if(extraSport.length)  { TOP.sport=[...TOP.sport,...extraSport];   renderSportChips(); }
+  if(extraPeople.length) { TOP.people=[...TOP.people,...extraPeople]; renderPeopleChips(); }
+  if(extraLocs.length)   { TOP.locations=[...TOP.locations,...extraLocs]; renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location'); }
 }
 
 function resetDefaults(){
@@ -655,15 +682,9 @@ function resetDefaults(){
   document.getElementById('apples').value=0; document.getElementById('bananas').value=0; document.getElementById('coffee').value=0;
   document.getElementById('moodSlider').value=0; setMood(0);
   sel={locations:['Zurich'],countriesOrdered:['CH'],coffeeOrdered:[],sport:[],people:[]};
-  // Bring last used values to front of chip lists (unselected), cap at 9
-  if(last){
-    if(last.coffeeOrdered?.length) TOP.coffee=[...new Set([...last.coffeeOrdered,...TOP.coffee])].slice(0,9);
-    if(last.sport?.length) TOP.sport=[...new Set([...last.sport,...TOP.sport])].slice(0,9);
-    if(last.people?.length) TOP.people=[...new Set([...last.people,...TOP.people])].slice(0,9);
-  }
   document.getElementById('veloKm').value=''; document.getElementById('tags').value='';
   document.getElementById('coords').value=''; document.getElementById('entryText').value='';
-  originalBodyText=''; renderAll(); isDirty=false;
+  originalBodyText=''; renderAll(); appendExtraChips(); isDirty=false;
 }
 
 function renderAll(){
@@ -789,12 +810,12 @@ function toggleCoffee(c){
   const count=sel.coffeeOrdered.filter(x=>x===c).length;
   if(count>=6){ sel.coffeeOrdered=sel.coffeeOrdered.filter(x=>x!==c); }
   else{ sel.coffeeOrdered.push(c); }
-  markDirty(); renderCoffeeChips();
+  markDirty(); renderCoffeeChips(); refreshCalendar();
 }
+
+function adj(id,d){ const el=document.getElementById(id); el.value=Math.max(0,(parseFloat(el.value)||0)+d); markDirty(); if(id==='coffee') refreshCalendar(); }
 function toggleSport(s){ sel.sport=sel.sport.includes(s)?sel.sport.filter(x=>x!==s):[...sel.sport,s]; markDirty(); renderSportChips(); }
 function togglePerson(p){ sel.people=sel.people.includes(p)?sel.people.filter(x=>x!==p):[...sel.people,p]; markDirty(); renderPeopleChips(); }
-
-function adj(id,d){ const el=document.getElementById(id); el.value=Math.max(0,(parseFloat(el.value)||0)+d); markDirty(); }
 function setMood(v){
   v=parseFloat(v);
   const el=document.getElementById('moodVal');
@@ -852,6 +873,7 @@ Antworte NUR mit JSON ohne Erklärungen:
 
 Regeln:
 - Zahlen können ausgeschrieben sein: "zwei"=2
+- coffee = Anzahl Kaffees/Tassen Kaffee (z.B. "zwei Kaffees" → 2, "einen Kaffee" → 1)
 - mood zwischen -2 und 2 in 0.5er Schritten
 - "gut/toll/super" → mood 1, "sehr gut" → 1.5, "fantastisch" → 2
 - "schlecht/müde/mies" → mood -1, "sehr schlecht" → -1.5
@@ -865,7 +887,7 @@ Regeln:
 
 function fallbackParse(t){
   t=t.toLowerCase();
-  const W={'null':0,'kein':0,'keine':0,'ein':1,'eine':1,'zwei':2,'drei':3,'vier':4,'fünf':5,'sechs':6,'sieben':7,'acht':8,'neun':9,'zehn':10};
+  const W={'null':0,'kein':0,'keine':0,'keinen':0,'ein':1,'eine':1,'einen':1,'zwei':2,'drei':3,'vier':4,'fünf':5,'sechs':6,'sieben':7,'acht':8,'neun':9,'zehn':10};
   const num=patterns=>{
     for(const p of patterns){ const m=t.match(p); if(m){ const r=m[1].trim(); return W[r]!==undefined?W[r]:parseFloat(r.replace(',','.'))||null; } }
     return null;
@@ -878,7 +900,7 @@ function fallbackParse(t){
   return{
     apples:num([/([\w.,]+)\s*(?:äpfel?|apfel)/,/äpfel?\s*[:\-]?\s*([\w.,]+)/]),
     bananas:num([/([\w.,]+)\s*bananen?/,/bananen?\s*[:\-]?\s*([\w.,]+)/]),
-    coffee:num([/([\w.,]+)\s*(?:kaffee|tasse)/,/kaffee\s*[:\-]?\s*([\w.,]+)/]),
+    coffee:num([/([\w.,]+)\s*(?:kaffees?|tassen?(?:\s+kaffee)?)/,/kaffees?\s*[:\-]?\s*([\w.,]+)/]),
     mood
   };
 }
@@ -889,6 +911,7 @@ function applyVoice(json){
   if(json.bananas!=null) document.getElementById('bananas').value=fix(json.bananas);
   if(json.coffee!=null) document.getElementById('coffee').value=fix(json.coffee);
   if(json.mood!=null){ document.getElementById('moodSlider').value=json.mood; setMood(json.mood); }
+  markDirty();
   toast('Werte erkannt ✓','ok');
 }
 
@@ -960,6 +983,8 @@ function renderDpCalendar(){
 
   const today=todayISO();
   const selDate=currentDate;
+  const editedDates = new Set(searchIndexBuilt ? searchIndex.filter(e=>e.hasContent ?? !!e.text?.trim()).map(e=>e.date) : []);
+  JSON.parse(localStorage.getItem('recentlySaved')||'[]').forEach(d=>editedDates.add(d));
   const firstDay=new Date(dpViewYear,dpViewMonth,1).getDay();
   const startOffset=(firstDay===0?6:firstDay-1); // Mon=0
   const daysInMonth=new Date(dpViewYear,dpViewMonth+1,0).getDate();
@@ -976,10 +1001,14 @@ function renderDpCalendar(){
     const mm=String(dpViewMonth+1).padStart(2,'0');
     const dd=String(d).padStart(2,'0');
     const iso=`${dpViewYear}-${mm}-${dd}`;
-    let cls='dp-day';
-    if(iso===today) cls+=' today';
-    if(iso===selDate) cls+=' selected';
-    html+=`<div class="${cls}" onclick="dpSelectDate('${iso}')">${d}</div>`;
+    const isSelected = iso===selDate;
+    const isToday = iso===today;
+    const unedited = !editedDates.has(iso) && iso<=today;
+    let cls = 'dp-day';
+    if(isToday) cls += ' today';
+    if(isSelected) cls += ' selected';
+    const style = (unedited && !isSelected) ? 'style="color:var(--accent);opacity:.4"' : '';
+    html+=`<div class="${cls}" ${style} onclick="dpSelectDate('${iso}')">${d}</div>`;
   }
   // next month filler
   const total=startOffset+daysInMonth;
@@ -1205,7 +1234,7 @@ async function saveIndexFile(index, tags){
   try{
     const fh = await vaultHandle.getFileHandle(INDEX_FILE, {create:true});
     const w = await fh.createWritable();
-    await w.write(JSON.stringify({v:3, built: new Date().toISOString(), index, tags}));
+    await w.write(JSON.stringify({v:7, built: new Date().toISOString(), index, tags}));
     await w.close();
   }catch(e){ console.warn('Index speichern fehlgeschlagen:', e); }
 }
@@ -1226,7 +1255,7 @@ async function buildSearchIndex(){
 
   // Try loading existing index
   const saved = await loadIndexFile();
-  if(saved?.v===3 && Array.isArray(saved.index)){
+  if(saved?.v===7 && Array.isArray(saved.index)){
     searchIndex = saved.index;
     // Restore known tags immediately so autocomplete and search pills work
     if(Array.isArray(saved.tags) && saved.tags.length){
@@ -1277,7 +1306,7 @@ async function rebuildIndex(existingIndex){
       const file = await fh2.getFile();
       // Skip if same size & date as cached (quick heuristic)
       const cached = existing[date];
-      if(cached && cached._size===file.size && cached._modified===file.lastModified){
+      if(cached && cached._size===file.size && cached._modified===file.lastModified && cached.hasContent!==undefined){
         newIndex.push(cached);
         done++;
         if(done % 30 === 0) updateSearchFooter(`Aktualisiert ${done} / ${total}…`, done/total);
@@ -1291,6 +1320,10 @@ async function rebuildIndex(existingIndex){
         const list = k => { const s=yaml.match(new RegExp('^'+k+':\\s*\\n((?:  - .+\\n*)*)','m')); if(!s)return[]; return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim()); };
         const tags = list('tags');
         tags.forEach(t=>allTags.add(t));
+        const scalar = k => { const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m')); return m?m[1].trim():null; };
+        const coffeeCount = parseFloat(scalar('coffee')||0);
+        const coffeeLocations = list('coffee_locations');
+        const hasContent = !(coffeeCount === 0 && coffeeLocations.includes('Home'));
         newIndex.push({
           date,
           text: body,
@@ -1299,6 +1332,7 @@ async function rebuildIndex(existingIndex){
           people: list('people').join(' '),
           sport: list('sport').join(' '),
           coffeeLocations: list('coffee_locations').join(' '),
+          hasContent,
           _size: file.size,
           _modified: file.lastModified,
         });
@@ -1317,7 +1351,10 @@ async function rebuildIndex(existingIndex){
   localStorage.setItem('knownTags', JSON.stringify(tagsArr));
   await saveIndexFile(newIndex, tagsArr);
   computeTopChips();
+  localStorage.removeItem('recentlySaved');
   updateSearchFooter(`${newIndex.length} Einträge indexiert`, 1);
+  // Re-render calendar if open so unedited days update
+  if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
   if(!document.getElementById('searchOverlay').classList.contains('hidden')){
     renderSearchTags();
     runSearch(document.getElementById('searchInput').value);
@@ -1357,16 +1394,19 @@ function computeTopChips(){
   const allSport    = searchIndex.flatMap(e=>(e.sport||'').split(' ').filter(Boolean));
   const allPeople   = searchIndex.flatMap(e=>(e.people||'').split(' ').filter(Boolean));
 
+  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+
   TOP.locations  = merge(topN(allLocs,8),      recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/)));
   TOP.countries  = merge(topN(allCountries,6),  recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/)));
-  TOP.coffee     = merge(topN(allCoffee,9),    recentN('coffeeLocations',2));
+  TOP.coffee     = merge(topN(allCoffee,9),     recentN('coffeeLocations',2));
   TOP.sport      = merge(topN(allSport,8),      recentN('sport',2));
   TOP.people     = merge(topN(allPeople,6),     recentN('people',2));
 
-  // Also update allCoffee/allLocations/allPeople for autocomplete
-  TOP.allCoffee    = [...new Set([...TOP.allCoffee,    ...topN(allCoffee,100)])];
-  TOP.allLocations = [...new Set([...TOP.allLocations, ...topN(allLocs,100)])];
-  TOP.allPeople    = [...new Set([...TOP.allPeople,    ...topN(allPeople,100)])];
+  // Merge custom values into autocomplete lists
+  TOP.allCoffee    = [...new Set([...TOP.allCoffee,    ...topN(allCoffee,100), ...(custom.allCoffee||[])])];
+  TOP.allLocations = [...new Set([...TOP.allLocations, ...topN(allLocs,100),   ...(custom.allLocations||[])])];
+  TOP.allPeople    = [...new Set([...TOP.allPeople,    ...topN(allPeople,100), ...(custom.allPeople||[])])];
+  TOP.sport        = [...new Set([...TOP.sport,                                ...(custom.sport||[]).filter(v=>!TOP.sport.includes(v))])];
 
   renderAll();
 }
@@ -1375,7 +1415,8 @@ function computeTopChips(){
 function updateSearchFooter(msg, progress){
   const footer = document.getElementById('searchFooter');
   if(!footer) return;
-  footer.innerHTML = `<span>${msg}</span><div class="search-progress"><div class="search-progress-bar" style="width:${Math.round((progress||0)*100)}%"></div></div>`;
+  const showBar = searchIndexing;
+  footer.innerHTML = `<span>${msg}</span><div class="search-progress${showBar?'':' hidden'}"><div class="search-progress-bar" style="width:${Math.round((progress||0)*100)}%"></div></div>`;
   footer.classList.remove('hidden');
 }
 
@@ -1653,9 +1694,17 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ──────────────────────────────────────────────────────────────
 
 // ── Keyboard Shortcuts ────────────────────────────────────────
+document.addEventListener('click', e=>{
+  const ov = document.getElementById('dpOverlay');
+  if(ov.classList.contains('open') && !e.target.closest('#dpPanel') && !e.target.closest('#headerDate')) closeDatePicker();
+});
 document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(!document.getElementById('searchOverlay').classList.contains('hidden')){ closeSearch(); return; }
+    if(document.getElementById('dpOverlay').classList.contains('open')){ closeDatePicker(); return; }
+  }
   const tag=document.activeElement.tagName;
-  if(tag==='INPUT'||tag==='TEXTAREA') return; // don't fire while typing
+  if(tag==='INPUT'||tag==='TEXTAREA') return;
   switch(e.key){
     case 'c': case 'C': e.preventDefault(); copyDay(); break;
     case 'd': case 'D': e.preventDefault(); toggleVoice(); break;
