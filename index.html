@@ -565,6 +565,14 @@ async function autoSave(){
     await w.write(buildContent()); await w.close();
     isDirty=false;
     localStorage.setItem('lastEditedDate', currentDate);
+    // Remember last used values for next new entry
+    localStorage.setItem('lastUsed', JSON.stringify({
+      locations: sel.locations,
+      countriesOrdered: sel.countriesOrdered,
+      coffeeOrdered: [...new Set(sel.coffeeOrdered)],
+      sport: sel.sport,
+      people: sel.people,
+    }));
     showSaveNotif(currentDate);
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
 }
@@ -643,9 +651,16 @@ function populate(raw){
 }
 
 function resetDefaults(){
+  const last = JSON.parse(localStorage.getItem('lastUsed')||'null');
   document.getElementById('apples').value=0; document.getElementById('bananas').value=0; document.getElementById('coffee').value=0;
   document.getElementById('moodSlider').value=0; setMood(0);
   sel={locations:['Zurich'],countriesOrdered:['CH'],coffeeOrdered:[],sport:[],people:[]};
+  // Bring last used values to front of chip lists (unselected)
+  if(last){
+    if(last.coffeeOrdered?.length) TOP.coffee=[...new Set([...last.coffeeOrdered,...TOP.coffee])];
+    if(last.sport?.length) TOP.sport=[...new Set([...last.sport,...TOP.sport])];
+    if(last.people?.length) TOP.people=[...new Set([...last.people,...TOP.people])];
+  }
   document.getElementById('veloKm').value=''; document.getElementById('tags').value='';
   document.getElementById('coords').value=''; document.getElementById('entryText').value='';
   originalBodyText=''; renderAll(); isDirty=false;
@@ -1301,11 +1316,59 @@ async function rebuildIndex(existingIndex){
   const tagsArr = [...allTags];
   localStorage.setItem('knownTags', JSON.stringify(tagsArr));
   await saveIndexFile(newIndex, tagsArr);
+  computeTopChips();
   updateSearchFooter(`${newIndex.length} Einträge indexiert`, 1);
   if(!document.getElementById('searchOverlay').classList.contains('hidden')){
     renderSearchTags();
     runSearch(document.getElementById('searchInput').value);
   }
+}
+
+function computeTopChips(){
+  if(!searchIndex.length) return;
+
+  function topN(values, n){
+    const freq = {};
+    values.forEach(v=>{ if(v) freq[v]=(freq[v]||0)+1; });
+    return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>e[0]);
+  }
+
+  function recentN(field, n){
+    const seen = new Set();
+    const result = [];
+    for(const e of searchIndex){
+      const vals = (e[field]||'').split(' ').filter(Boolean);
+      for(const v of vals){
+        if(!seen.has(v)){ seen.add(v); result.push(v); }
+        if(result.length>=n) return result;
+      }
+    }
+    return result;
+  }
+
+  function merge(top, recent){
+    const result = [...new Set([...recent, ...top])];
+    return result;
+  }
+
+  const allLocs     = searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).filter(v=>!v.match(/^[A-Z]{2}$/)));
+  const allCountries= searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(v=>v.match(/^[A-Z]{2}$/)));
+  const allCoffee   = searchIndex.flatMap(e=>(e.coffeeLocations||'').split(' ').filter(Boolean));
+  const allSport    = searchIndex.flatMap(e=>(e.sport||'').split(' ').filter(Boolean));
+  const allPeople   = searchIndex.flatMap(e=>(e.people||'').split(' ').filter(Boolean));
+
+  TOP.locations  = merge(topN(allLocs,8),      recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/)));
+  TOP.countries  = merge(topN(allCountries,6),  recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/)));
+  TOP.coffee     = merge(topN(allCoffee,10),    recentN('coffeeLocations',2));
+  TOP.sport      = merge(topN(allSport,8),      recentN('sport',2));
+  TOP.people     = merge(topN(allPeople,6),     recentN('people',2));
+
+  // Also update allCoffee/allLocations/allPeople for autocomplete
+  TOP.allCoffee    = [...new Set([...TOP.allCoffee,    ...topN(allCoffee,100)])];
+  TOP.allLocations = [...new Set([...TOP.allLocations, ...topN(allLocs,100)])];
+  TOP.allPeople    = [...new Set([...TOP.allPeople,    ...topN(allPeople,100)])];
+
+  renderAll();
 }
 // ──────────────────────────────────────────────────────────────
 
