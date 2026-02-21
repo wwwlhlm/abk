@@ -1359,7 +1359,7 @@ function computeTopChips(){
 
   TOP.locations  = merge(topN(allLocs,8),      recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/)));
   TOP.countries  = merge(topN(allCountries,6),  recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/)));
-  TOP.coffee     = merge(topN(allCoffee,10),    recentN('coffeeLocations',2));
+  TOP.coffee     = merge(topN(allCoffee,9),    recentN('coffeeLocations',2));
   TOP.sport      = merge(topN(allSport,8),      recentN('sport',2));
   TOP.people     = merge(topN(allPeople,6),     recentN('people',2));
 
