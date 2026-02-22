@@ -28,17 +28,28 @@
       background: var(--bg); color: var(--text);
       height: 100vh; overflow: hidden;
       -webkit-font-smoothing: antialiased;
+      zoom: 1.1;
     }
-    .header-wrap {
-      position: sticky; top: 0; z-index: 50;
-      background: var(--bg); border-bottom: 1px solid var(--border);
+
+    /* ── Header ── */
+    .header-wrap { position: sticky; top: 0; z-index: 50; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 62px; gap: 16px; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
+    .tab {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 500; color: var(--text-3);
+      padding: 5px 12px; border-radius: 6px; border: none;
+      background: transparent; cursor: pointer; font-family: inherit;
+      transition: all .15s; white-space: nowrap;
     }
-    .header-inner {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 0 20px; height: 62px;
-    }
-    .header-title { font-size: 15px; font-weight: 500; }
-    .steps { display: flex; align-items: center; gap: 0; }
+    .tab:hover { color: var(--text-2); }
+    .tab.active { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .tab svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+    /* Steps */
+    .steps { display: flex; align-items: center; flex: 1; justify-content: center; }
     .step {
       display: flex; align-items: center; gap: 7px;
       font-size: 11px; font-weight: 600; text-transform: uppercase;
@@ -52,102 +63,89 @@
       width: 20px; height: 20px; border-radius: 50%;
       border: 1.5px solid currentColor;
       display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; flex-shrink: 0;
-      line-height: 1;
+      font-size: 10px; font-weight: 700; flex-shrink: 0; line-height: 1;
     }
     .step.done .step-num { background: var(--good); border-color: var(--good); color: #1a1a1a; }
     .step-arrow { color: var(--border-2); font-size: 12px; padding: 0 2px; }
+
     .icon-btn {
       width: 34px; height: 34px; border-radius: 8px;
       border: 1px solid var(--border); background: transparent;
       color: var(--text-2); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all .15s;
+      cursor: pointer; transition: all .15s; flex-shrink: 0;
     }
     .icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
     .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+    /* ── Layout ── */
     .main { display: flex; height: calc(100vh - 63px); }
-    .left-side {
-      width: 50%; display: flex; flex-direction: column;
-      padding: 16px; gap: 10px; overflow-y: auto;
-    }
-    .right-side {
-      width: 50%; overflow-y: auto;
-      padding: 16px 16px 40px 16px;
-      border-left: 1px solid var(--border);
-    }
-    .card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--radius); overflow: hidden;
-    }
-    .card-head {
-      display: flex; align-items: center; gap: 8px;
-      padding: 11px 14px 10px; border-bottom: 1px solid var(--border);
-    }
+    .left-side { width: 50%; display: flex; flex-direction: column; padding: 16px; gap: 10px; overflow-y: auto; }
+    .right-side { width: 50%; overflow-y: auto; padding: 16px; border-left: 1px solid var(--border); }
+
+    /* ── Cards ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .card-head { display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 42px; border-bottom: 1px solid var(--border); }
     .card-head svg { width: 13px; height: 13px; stroke: var(--text-3); fill: none; stroke-width: 2; flex-shrink: 0; }
     .card-head-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-3); }
     .card-head-meta { margin-left: auto; font-size: 11px; color: var(--text-3); }
     .card-body { padding: 14px; }
-    .input-card { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .input-card .card-body { flex: 1; display: flex; flex-direction: column; padding: 12px 14px; }
+
+    /* ── Input card ── */
+    .input-card { display: flex; flex-direction: column; }
+    .input-card .card-body { display: flex; flex-direction: column; padding: 12px 14px; }
     .input-area {
-      width: 100%; flex: 1;
-      background: transparent; border: none; outline: none;
-      font-size: 13px; line-height: 1.7; color: var(--text);
-      resize: none;
-      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-      min-height: 240px;
+      width: 100%; background: transparent; border: none; outline: none;
+      font-size: 13px; line-height: 1.7; color: var(--text); resize: none;
+      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace; min-height: 320px;
     }
     .input-area::placeholder { color: var(--text-3); font-family: ui-sans-serif, system-ui, sans-serif; }
     .parse-hints { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
-    .parse-hint  { font-size: 11px; color: var(--warn); display: flex; align-items: baseline; gap: 5px; }
-    .parse-hint::before { content: 'u26a0'; flex-shrink: 0; }
-    .folder-row { display: flex; align-items: center; gap: 8px; }
-    .folder-name {
-      flex: 1; font-size: 12px; color: var(--text-2);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    .parse-hint { font-size: 11px; color: var(--warn); display: flex; align-items: baseline; gap: 5px; }
+    .parse-hint::before { content: '⚠'; flex-shrink: 0; }
+
+    /* Format buttons */
+    .fmt-btns { display: flex; gap: 4px; margin-left: auto; }
+    .fmt-btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 5px;
+      border: 1px solid var(--border); background: transparent;
+      color: var(--text-3); cursor: pointer; transition: all .15s; flex-shrink: 0;
     }
+    .fmt-btn:hover { background: var(--surface-2); color: var(--accent); border-color: var(--border-2); }
+    .fmt-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+
+    /* ── Folder card ── */
+    .folder-row { display: flex; align-items: center; gap: 8px; }
+    .folder-name { flex: 1; font-size: 12px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .folder-name.none { color: var(--text-3); font-style: italic; }
     .btn {
-      display: flex; align-items: center; gap: 6px;
-      border: none; border-radius: 8px; cursor: pointer;
-      font-size: 13px; font-weight: 500; transition: all .15s;
-      padding: 8px 14px; font-family: inherit;
+      display: flex; align-items: center; gap: 6px; border: none; border-radius: 8px; cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s; padding: 8px 14px; font-family: inherit;
     }
     .btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
-    .btn-ghost {
-      background: var(--surface-2); color: var(--text-2);
-      border: 1px solid var(--border);
-    }
+    .btn-ghost { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border); }
     .btn-ghost:hover { color: var(--text); border-color: var(--border-2); }
-    .btn-accent {
-      background: var(--accent-bg); color: var(--accent);
-      border: 1px solid rgba(253,147,159,.3);
-    }
+    .btn-accent { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(253,147,159,.3); }
     .btn-accent:hover { background: rgba(253,147,159,.2); }
     .btn-accent:disabled { opacity: .35; cursor: not-allowed; }
     .btn-full { width: 100%; justify-content: center; }
+
+    /* ── Preview shared ── */
     .preview-empty {
       display: flex; align-items: center; justify-content: center;
-      height: 60px; padding: 20px;
-      font-size: 13px; color: var(--text-3); font-style: italic;
+      height: 60px; padding: 20px; font-size: 13px; color: var(--text-3); font-style: italic;
     }
     .month-group { margin-bottom: 10px; }
     .month-header {
-      display: flex; align-items: center;
-      padding: 10px 14px 8px;
+      display: flex; align-items: center; padding: 10px 14px 8px;
       font-size: 11px; font-weight: 600; text-transform: uppercase;
       letter-spacing: .6px; color: var(--text-3);
       border-bottom: 1px solid var(--border);
       position: sticky; top: 0; background: var(--surface); z-index: 2;
     }
-    .month-header-count {
-      margin-left: auto; font-weight: 400;
-      text-transform: none; letter-spacing: 0; font-size: 11px;
-    }
+    .month-header-count { margin-left: auto; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
     .entry-row {
-      display: flex; align-items: flex-start;
-      border-bottom: 1px solid var(--border);
-      transition: background .15s;
+      display: flex; align-items: flex-start; border-bottom: 1px solid var(--border); transition: background .15s;
     }
     .entry-row:last-child { border-bottom: none; }
     .entry-row:hover { background: var(--surface-2); }
@@ -155,83 +153,73 @@
     .entry-row.has-conflict:hover { background: rgba(255,183,77,.08); }
     .entry-row.is-written { background: rgba(129,199,132,.05); }
     .entry-day {
-      width: 44px; flex-shrink: 0;
-      padding: 12px 0 12px 14px;
-      font-size: 13px; font-weight: 600; color: var(--text-3);
-      font-variant-numeric: tabular-nums;
+      width: 44px; flex-shrink: 0; padding: 12px 0 12px 14px;
+      font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums;
     }
     .entry-main { flex: 1; padding: 11px 14px 11px 0; min-width: 0; }
     .entry-text { font-size: 13px; color: var(--text); line-height: 1.5; word-break: break-word; }
     .entry-text em { font-style: italic; color: var(--text-2); }
     .entry-text .wl { color: var(--accent); font-style: normal; }
-    .fmt-btns { display: flex; gap: 4px; margin-left: auto; }
-    .fmt-btn {
-      display: flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: 5px;
-      border: 1px solid var(--border); background: transparent;
-      color: var(--text-3); cursor: pointer; transition: all .15s;
-      flex-shrink: 0;
+
+    /* Velo-specific entry display */
+    .entry-km { font-size: 15px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+    .entry-km-unit { font-size: 12px; color: var(--text-3); margin-left: 3px; }
+    .entry-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .badge {
+      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
+      padding: 2px 7px; border-radius: 4px; border: 1px solid;
     }
-    .fmt-btn:hover { background: var(--surface-2); color: var(--accent); border-color: var(--border-2); }
-    .fmt-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.2; }
-    .entry-status {
-      display: flex; align-items: center; gap: 5px;
-      margin-top: 5px; font-size: 11px;
-    }
+    .badge-velo    { color: var(--accent); border-color: rgba(253,147,159,.35); background: var(--accent-bg); }
+    .badge-km      { color: var(--text-3); border-color: var(--border); background: transparent; }
+    .badge-warn    { color: var(--warn);   border-color: rgba(255,183,77,.35); background: rgba(255,183,77,.08); }
+
+    .entry-status { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 11px; }
     .entry-status svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; flex-shrink: 0; }
     .status-ok    { color: var(--good); }
     .status-warn  { color: var(--warn); }
     .status-error { color: var(--error); }
     .status-skip  { color: var(--text-3); }
-    .conflict-box {
-      margin-top: 8px; border-radius: 7px; overflow: hidden;
-      border: 1px solid rgba(255,183,77,.25);
-    }
+
+    /* Conflict box (diary) */
+    .conflict-box { margin-top: 8px; border-radius: 7px; overflow: hidden; border: 1px solid rgba(255,183,77,.25); }
     .conflict-cols { display: grid; grid-template-columns: 1fr 1fr; }
-    .conflict-col  { padding: 8px 10px; font-size: 12px; line-height: 1.5; }
+    .conflict-col { padding: 8px 10px; font-size: 12px; line-height: 1.5; }
     .conflict-col:first-child { border-right: 1px solid rgba(255,183,77,.2); }
-    .conflict-col-label {
-      font-size: 10px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .4px; margin-bottom: 4px; color: var(--text-3);
-    }
+    .conflict-col-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; color: var(--text-3); }
     .conflict-col-text { color: var(--text-2); word-break: break-word; }
     .conflict-col.new-col .conflict-col-label { color: var(--warn); }
     .conflict-col.new-col .conflict-col-text  { color: var(--text); }
-    .conflict-actions {
-      display: flex; gap: 6px; padding: 8px 10px;
-      border-top: 1px solid rgba(255,183,77,.15);
-    }
-    .btn-tiny {
-      font-size: 11px; font-weight: 500; padding: 4px 10px;
-      border-radius: 6px; border: none; cursor: pointer; font-family: inherit;
-      transition: all .15s;
-    }
-    .btn-overwrite {
-      background: rgba(255,183,77,.15); color: var(--warn);
-      border: 1px solid rgba(255,183,77,.3);
-    }
+    .conflict-actions { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid rgba(255,183,77,.15); }
+    .btn-tiny { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-family: inherit; transition: all .15s; }
+    .btn-overwrite { background: rgba(255,183,77,.15); color: var(--warn); border: 1px solid rgba(255,183,77,.3); }
     .btn-overwrite:hover { background: rgba(255,183,77,.25); }
-    .btn-keep {
-      background: var(--surface-2); color: var(--text-3);
-      border: 1px solid var(--border);
-    }
+    .btn-keep { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
     .btn-keep:hover { color: var(--text); border-color: var(--border-2); }
-    .result-card {
-      border: 1px solid var(--border); border-radius: var(--radius);
-      overflow: hidden; margin-bottom: 12px; display: none;
-    }
+
+    /* Result card */
+    .result-card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; display: none; }
     .result-card.visible { display: block; }
     .result-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-    .result-stat  { padding: 16px; text-align: center; border-right: 1px solid var(--border); }
+    .result-stat { padding: 16px; text-align: center; border-right: 1px solid var(--border); }
     .result-stat:last-child { border-right: none; }
     .result-stat-val { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
     .result-stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; margin-top: 4px; }
     .val-good  { color: var(--good); }
     .val-skip  { color: var(--text-3); }
     .val-error { color: var(--error); }
+
+    /* Panel switching */
+    .panel { display: none; flex-direction: column; gap: 10px; }
+    .panel.active { display: flex; }
+    .preview-panel { display: none; }
+    .preview-panel.active { display: block; }
+
+    /* Scrollbars */
     .left-side::-webkit-scrollbar, .right-side::-webkit-scrollbar { width: 4px; }
     .left-side::-webkit-scrollbar-track, .right-side::-webkit-scrollbar-track { background: transparent; }
     .left-side::-webkit-scrollbar-thumb, .right-side::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
+
+    /* Toast */
     .toast {
       position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%) translateY(8px);
@@ -248,9 +236,20 @@
 </head>
 <body>
 
+<!-- Header -->
 <div class="header-wrap">
   <div class="header-inner">
-    <div class="header-title">Import</div>
+    <div class="tabs">
+      <button class="tab active" id="tabDiary" onclick="switchTab('diary')">
+        <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+        Einträge
+      </button>
+      <button class="tab" id="tabVelo" onclick="switchTab('velo')">
+        <svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0 0-2h-3l-3 9 2.5 2.5"/><path d="M15 6h-3l-3 9"/></svg>
+        Velo
+      </button>
+    </div>
+
     <div class="steps">
       <div class="step active" id="step1"><div class="step-num">1</div>Dateneingabe</div>
       <span class="step-arrow">›</span>
@@ -258,37 +257,62 @@
       <span class="step-arrow">›</span>
       <div class="step" id="step3"><div class="step-num">3</div>Ergebnis</div>
     </div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="icon-btn" onclick="clearAll()" title="Zurücksetzen">
-        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-      </button>
-    </div>
+
+    <button class="icon-btn" onclick="clearAll()" title="Zurücksetzen">
+      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+    </button>
   </div>
 </div>
 
+<!-- Main -->
 <div class="main">
+
+  <!-- LEFT -->
   <div class="left-side">
-    <div class="card input-card">
-      <div class="card-head">
-        <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-        <span class="card-head-title">Einträge</span>
-        <span class="card-head-meta" id="countMeta"></span>
-        <div class="fmt-btns">
-          <button class="fmt-btn" onclick="wrapSelection('quote')" title="Als Zitat markieren (kursiv)">
-            <svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-          </button>
-          <button class="fmt-btn" onclick="wrapSelection('wikilink')" title="Als Wikilink markieren (Akzentfarbe)">
-            <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
+
+    <!-- Diary panel -->
+    <div class="panel active" id="panelDiaryLeft">
+      <div class="card input-card">
+        <div class="card-head">
+          <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+          <span class="card-head-title">Einträge</span>
+          <span class="card-head-meta" id="diaryCountMeta"></span>
+          <div class="fmt-btns">
+            <button class="fmt-btn" onclick="wrapSelection('quote')" title="Als Zitat markieren">
+              <svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+            </button>
+            <button class="fmt-btn" onclick="wrapSelection('wikilink')" title="Als Wikilink markieren">
+              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea class="input-area" id="diaryInput"
+            placeholder="### 2022-01&#10;1. Erster Eintrag Januar&#10;2. Zweiter Januar&#10;&#10;### 2022-02&#10;1. Erster Februar..."
+            oninput="onDiaryChange()" spellcheck="false" rows="18"></textarea>
+          <div class="parse-hints" id="diaryHints"></div>
         </div>
       </div>
-      <div class="card-body">
-        <textarea class="input-area" id="inputText"
-          placeholder="### 2022-01&#10;1. Erster Eintrag Januar&#10;2. Zweiter Januar&#10;&#10;### 2022-02&#10;1. Erster Februar..."
-          oninput="onTextChange()" spellcheck="false" rows="18"></textarea>
-        <div class="parse-hints" id="parseHints"></div>
+    </div>
+
+    <!-- Velo panel -->
+    <div class="panel" id="panelVeloLeft">
+      <div class="card input-card">
+        <div class="card-head">
+          <svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0 0-2h-3l-3 9 2.5 2.5"/><path d="M15 6h-3l-3 9"/></svg>
+          <span class="card-head-title">Fahrten</span>
+          <span class="card-head-meta" id="veloCountMeta"></span>
+        </div>
+        <div class="card-body">
+          <textarea class="input-area" id="veloInput"
+            placeholder="Jan 14, 2024, 11:07:59 AM&#10;42.19&#10;Jan 27, 2024, 10:52:08 AM&#10;101.86&#10;Feb 3, 2024, 10:17:57 AM&#10;108.76"
+            oninput="onVeloChange()" spellcheck="false" rows="18"></textarea>
+          <div class="parse-hints" id="veloHints"></div>
+        </div>
       </div>
     </div>
+
+    <!-- Shared: Folder + Action -->
     <div class="card">
       <div class="card-head">
         <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -308,9 +332,13 @@
         </button>
       </div>
     </div>
+
   </div>
 
-  <div class="right-side" id="rightSide">
+  <!-- RIGHT -->
+  <div class="right-side">
+
+    <!-- Shared result card -->
     <div class="result-card" id="resultCard">
       <div class="card-head">
         <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -322,9 +350,21 @@
         <div class="result-stat"><div class="result-stat-val val-error" id="resErr">0</div><div class="result-stat-label">Fehler</div></div>
       </div>
     </div>
-    <div id="previewContainer">
-      <div class="preview-empty" id="previewEmpty">Text eingeben um Vorschau zu sehen.</div>
+
+    <!-- Diary preview -->
+    <div class="preview-panel active" id="panelDiaryRight">
+      <div id="diaryPreviewContainer">
+        <div class="preview-empty" id="diaryPreviewEmpty">Text eingeben um Vorschau zu sehen.</div>
+      </div>
     </div>
+
+    <!-- Velo preview -->
+    <div class="preview-panel" id="panelVeloRight">
+      <div id="veloPreviewContainer">
+        <div class="preview-empty" id="veloPreviewEmpty">Fahrtdaten eingeben um Vorschau zu sehen.</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -333,172 +373,156 @@
 <script>
   const MONTHS = ['Januar','Februar','März','April','Mai','Juni',
                   'Juli','August','September','Oktober','November','Dezember'];
-  let rootDirHandle = null;
-  let parsedEntries = [];
-  let entryStates   = {};
+  const MONTH_MAP = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
 
-  function dk(e) {
-    return e.year+'-'+String(e.month).padStart(2,'0')+'-'+String(e.day).padStart(2,'0');
+  let activeTab = 'diary';
+  let rootDirHandle = null;
+
+  // Diary state
+  let diaryEntries = [];
+  let diaryStates  = {};
+
+  // Velo state
+  let veloEntries = [];
+  let veloStates  = {};
+
+  // ── Tab switching ────────────────────────────────────────────────
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tabDiary').className = 'tab' + (tab==='diary'?' active':'');
+    document.getElementById('tabVelo').className  = 'tab' + (tab==='velo' ?' active':'');
+    document.getElementById('panelDiaryLeft').className  = 'panel' + (tab==='diary'?' active':'');
+    document.getElementById('panelVeloLeft').className   = 'panel' + (tab==='velo' ?' active':'');
+    document.getElementById('panelDiaryRight').className = 'preview-panel' + (tab==='diary'?' active':'');
+    document.getElementById('panelVeloRight').className  = 'preview-panel' + (tab==='velo' ?' active':'');
+    document.getElementById('resultCard').className = 'result-card'; // hide result on switch
+    updateWriteBtn();
+    setStep(tab==='diary' ? (diaryEntries.length?2:1) : (veloEntries.length?2:1));
   }
 
-  function parseInput(raw) {
+  // ── Helpers ──────────────────────────────────────────────────────
+  function dk(e) { return e.year+'-'+String(e.month).padStart(2,'0')+'-'+String(e.day).padStart(2,'0'); }
+
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function renderText(text) {
+    const wls=[], quotes=[];
+    let t = text;
+    t = t.replace(/\[\[([^\]]+)\]\]/g,(m,i)=>{wls.push(i);return '\x00W'+(wls.length-1)+'\x00';});
+    t = t.replace(/<span class="quote">(.*?)<\/span>/g,(m,i)=>{quotes.push(i);return '\x00Q'+(quotes.length-1)+'\x00';});
+    t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    t = t.replace(/\x00W(\d+)\x00/g,(m,i)=>'<span class="wl">'+esc(wls[+i])+'</span>');
+    t = t.replace(/\x00Q(\d+)\x00/g,(m,i)=>'<em>'+esc(quotes[+i])+'</em>');
+    return t;
+  }
+
+  function wrapSelection(type) {
+    const ta = document.getElementById('diaryInput');
+    const s = ta.selectionStart, e = ta.selectionEnd;
+    const sel = ta.value.substring(s,e);
+    if(!sel) return;
+    const wrapped = type==='quote'?'<span class="quote">'+sel+'</span>':'[['+sel+']]';
+    ta.setRangeText(wrapped,s,e,'end');
+    ta.focus(); onDiaryChange();
+  }
+
+  const SVGCHECK = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVGCROSS = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+  const SVGDASH  = '<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  // ── DIARY: Parse ─────────────────────────────────────────────────
+  function parseDiary(raw) {
     const entries=[], hints=[];
     let year=null, month=null;
     raw.split('\n').forEach((line,i)=>{
-      const t=line.trim();
-      if(!t) return;
+      const t=line.trim(); if(!t) return;
       const h=t.match(/^###\s+(\d{4})-(\d{2})$/);
       if(h){year=+h[1];month=+h[2];return;}
       const e=t.match(/^(\d{1,2})\.\s+(.+)$/);
       if(e){
         if(!year||!month){hints.push('Zeile '+(i+1)+': Kein Monat-Header.');return;}
-        const day=+e[1];
-        const maxDay=new Date(year,month,0).getDate();
+        const day=+e[1], maxDay=new Date(year,month,0).getDate();
         if(day<1||day>maxDay){hints.push('Zeile '+(i+1)+': Tag '+day+' ungültig.');return;}
-        entries.push({year,month,day,text:e[2].trim()});
-        return;
+        entries.push({year,month,day,text:e[2].trim()}); return;
       }
       if(t.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt — "'+t.substring(0,28)+'"');
     });
     return {entries,hints};
   }
 
-  function onTextChange(){
-    const raw=document.getElementById('inputText').value;
+  function onDiaryChange() {
+    const raw = document.getElementById('diaryInput').value;
     document.getElementById('resultCard').className='result-card';
-    entryStates={};
+    diaryStates={};
     if(!raw.trim()){
-      parsedEntries=[];
-      document.getElementById('parseHints').innerHTML='';
-      document.getElementById('countMeta').textContent='';
-      renderPreview(); setStep(1); updateWriteBtn(); return;
+      diaryEntries=[];
+      document.getElementById('diaryHints').innerHTML='';
+      document.getElementById('diaryCountMeta').textContent='';
+      renderDiaryPreview(); setStep(1); updateWriteBtn(); return;
     }
-    const {entries,hints}=parseInput(raw);
-    parsedEntries=entries;
-    entries.forEach(e=>{entryStates[dk(e)]={state:'pending'};});
-    document.getElementById('parseHints').innerHTML=
-      hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
-    document.getElementById('countMeta').textContent=entries.length?entries.length+' Eintr.':'';
-    setStep(entries.length?2:1);
-    renderPreview(); updateWriteBtn();
+    const {entries,hints}=parseDiary(raw);
+    diaryEntries=entries;
+    entries.forEach(e=>{diaryStates[dk(e)]={state:'pending'};});
+    document.getElementById('diaryHints').innerHTML=hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
+    document.getElementById('diaryCountMeta').textContent=entries.length?entries.length+' Eintr.':'';
+    setStep(entries.length?2:1); renderDiaryPreview(); updateWriteBtn();
   }
 
-  function esc(s){
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // Renders entry text with [[wikilinks]] and <span class="quote"> for preview
-  function renderText(text) {
-    // Pull out wikilinks and quotes before escaping
-    const wikilinks=[], quotes=[];
-    let t = text;
-    t = t.replace(/\[\[([^\]]+)\]\]/g, (m, inner) => { wikilinks.push(inner); return '\x00W'+(wikilinks.length-1)+'\x00'; });
-    t = t.replace(/<span class="quote">(.*?)<\/span>/g, (m, inner) => { quotes.push(inner); return '\x00Q'+(quotes.length-1)+'\x00'; });
-    // Escape remaining HTML
-    t = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    // Restore wikilinks as accent-colored spans
-    t = t.replace(/\x00W(\d+)\x00/g, (m,i) => '<span class="wl">'+esc(wikilinks[+i])+'</span>');
-    // Restore quotes as italic
-    t = t.replace(/\x00Q(\d+)\x00/g, (m,i) => '<em>'+esc(quotes[+i])+'</em>');
-    return t;
-  }
-
-  // Wraps the current textarea selection in the chosen format
-  function wrapSelection(type) {
-    const ta = document.getElementById('inputText');
-    const start = ta.selectionStart, end = ta.selectionEnd;
-    const sel = ta.value.substring(start, end);
-    if (!sel) return;
-    let wrapped;
-    if (type === 'quote')    wrapped = '<span class="quote">'+sel+'</span>';
-    if (type === 'wikilink') wrapped = '[['+sel+']]';
-    ta.setRangeText(wrapped, start, end, 'end');
-    ta.focus();
-    onTextChange();
-  }
-
-  function rowHtml(e,k,st){
+  // ── DIARY: Preview ───────────────────────────────────────────────
+  function diaryRowHtml(e,k,st) {
     let cls='entry-row';
     if(st.state==='exists') cls+=' has-conflict';
     if(st.state==='ok'||st.state==='overwritten') cls+=' is-written';
-    const check='<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
-    const cross='<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-    const dash='<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     let statusHtml='';
-    if(st.state==='ok')          statusHtml='<div class="entry-status status-ok">'+check+'Geschrieben</div>';
-    else if(st.state==='overwritten') statusHtml='<div class="entry-status status-ok">'+check+'Überschrieben</div>';
-    else if(st.state==='skipped')     statusHtml='<div class="entry-status status-skip">'+dash+'Behalten</div>';
-    else if(st.state==='nofile')      statusHtml='<div class="entry-status status-error">'+cross+'Datei nicht gefunden</div>';
-    else if(st.state==='error')       statusHtml='<div class="entry-status status-error">'+cross+esc(st.msg||'Fehler')+'</div>';
+    if(st.state==='ok')               statusHtml='<div class="entry-status status-ok">'+SVGCHECK+'Geschrieben</div>';
+    else if(st.state==='overwritten')  statusHtml='<div class="entry-status status-ok">'+SVGCHECK+'Überschrieben</div>';
+    else if(st.state==='skipped')      statusHtml='<div class="entry-status status-skip">'+SVGDASH+'Behalten</div>';
+    else if(st.state==='nofile')       statusHtml='<div class="entry-status status-error">'+SVGCROSS+'Datei nicht gefunden</div>';
+    else if(st.state==='error')        statusHtml='<div class="entry-status status-error">'+SVGCROSS+esc(st.msg||'Fehler')+'</div>';
     let conflictHtml='';
     if(st.state==='exists'){
       conflictHtml='<div class="conflict-box"><div class="conflict-cols">'+
         '<div class="conflict-col"><div class="conflict-col-label">Vorhanden</div><div class="conflict-col-text">'+esc(st.oldText||'')+'</div></div>'+
         '<div class="conflict-col new-col"><div class="conflict-col-label">Neu</div><div class="conflict-col-text">'+renderText(e.text)+'</div></div>'+
         '</div><div class="conflict-actions">'+
-        '<button class="btn-tiny btn-overwrite" onclick="resolveConflict(\''+k+'\',true)">Überschreiben</button>'+
-        '<button class="btn-tiny btn-keep" onclick="resolveConflict(\''+k+'\',false)">Behalten</button>'+
+        '<button class="btn-tiny btn-overwrite" onclick="resolveDiary(\''+k+'\',true)">Überschreiben</button>'+
+        '<button class="btn-tiny btn-keep" onclick="resolveDiary(\''+k+'\',false)">Behalten</button>'+
         '</div></div>';
     }
     return '<div class="'+cls+'" id="row-'+k+'"><div class="entry-day">'+e.day+'.</div>'+
       '<div class="entry-main"><div class="entry-text">'+renderText(e.text)+'</div>'+statusHtml+conflictHtml+'</div></div>';
   }
 
-  function renderPreview(){
-    const wrap=document.getElementById('previewContainer');
-    const empty=document.getElementById('previewEmpty');
-    if(!parsedEntries.length){
-      wrap.innerHTML=''; wrap.appendChild(empty); empty.style.display=''; return;
-    }
+  function renderDiaryPreview() {
+    const wrap=document.getElementById('diaryPreviewContainer');
+    const empty=document.getElementById('diaryPreviewEmpty');
+    if(!diaryEntries.length){wrap.innerHTML='';wrap.appendChild(empty);empty.style.display='';return;}
     empty.style.display='none';
     const groups=new Map();
-    parsedEntries.forEach(e=>{
-      const k=e.year+'-'+String(e.month).padStart(2,'0');
-      if(!groups.has(k)) groups.set(k,[]);
-      groups.get(k).push(e);
-    });
+    diaryEntries.forEach(e=>{const k=e.year+'-'+String(e.month).padStart(2,'0');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(e);});
     let html='';
     groups.forEach((entries,key)=>{
-      const parts=key.split('-');
-      html+='<div class="month-group card">';
-      html+='<div class="month-header">'+MONTHS[+parts[1]-1]+' '+parts[0]+
+      const [y,m]=key.split('-');
+      html+='<div class="month-group card"><div class="month-header">'+MONTHS[+m-1]+' '+y+
         '<span class="month-header-count">'+entries.length+' Tag'+(entries.length!==1?'e':'')+'</span></div>';
-      entries.forEach(e=>{html+=rowHtml(e,dk(e),entryStates[dk(e)]||{state:'pending'});});
+      entries.forEach(e=>{html+=diaryRowHtml(e,dk(e),diaryStates[dk(e)]||{state:'pending'});});
       html+='</div>';
     });
-    wrap.innerHTML=html;
-    wrap.appendChild(empty);
+    wrap.innerHTML=html; wrap.appendChild(empty);
   }
 
-  function updateRow(e,k){
-    const row=document.getElementById('row-'+k);
-    if(row) row.outerHTML=rowHtml(e,k,entryStates[k]||{state:'pending'});
-  }
+  function updateDiaryRow(e,k){const row=document.getElementById('row-'+k);if(row)row.outerHTML=diaryRowHtml(e,k,diaryStates[k]||{state:'pending'});}
 
-  async function pickFolder(){
-    try{
-      rootDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
-      const el=document.getElementById('folderName');
-      el.textContent=rootDirHandle.name; el.className='folder-name';
-      updateWriteBtn();
-    }catch(e){ if(e.name!=='AbortError') toast('Fehler beim Öffnen','err'); }
-  }
-
-  function updateWriteBtn(){
-    document.getElementById('btnWrite').disabled=!(rootDirHandle&&parsedEntries.length);
-  }
-
-  async function startWrite(){
-    if(!rootDirHandle||!parsedEntries.length) return;
-    const btn=document.getElementById('btnWrite');
-    btn.disabled=true;
+  // ── DIARY: Write ─────────────────────────────────────────────────
+  async function startDiaryWrite() {
+    const btn=document.getElementById('btnWrite'); btn.disabled=true;
     let conflicts=0;
-    for(const entry of parsedEntries){
+    for(const entry of diaryEntries){
       const k=dk(entry);
-      if(entryStates[k].state!=='pending') continue;
-      entryStates[k]=await processEntry(entry);
-      if(entryStates[k].state==='exists') conflicts++;
-      updateRow(entry,k);
+      if(diaryStates[k].state!=='pending') continue;
+      diaryStates[k]=await processDiaryEntry(entry);
+      if(diaryStates[k].state==='exists') conflicts++;
+      updateDiaryRow(entry,k);
     }
     btn.disabled=false;
     if(conflicts>0){
@@ -506,12 +530,10 @@
       setStep(2);
       const first=document.querySelector('.has-conflict');
       if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
-    } else {
-      showResult();
-    }
+    } else { showResult(diaryEntries, diaryStates); }
   }
 
-  async function processEntry(entry){
+  async function processDiaryEntry(entry) {
     const k=dk(entry);
     try{
       const yearDir=await rootDirHandle.getDirectoryHandle(String(entry.year),{create:false}).catch(()=>null);
@@ -522,44 +544,237 @@
       const {fm,body}=splitFM(content);
       const trimBody=body.trim();
       const isEmpty=!trimBody||trimBody==='\u2014'||trimBody==='---'||trimBody==='-';
-      if(isEmpty){ await doWrite(fh,fm,entry.text); return {state:'ok'}; }
+      if(isEmpty){await doWriteBody(fh,fm,entry.text);return {state:'ok'};}
       if(trimBody===entry.text) return {state:'skipped'};
       return {state:'exists',oldText:trimBody,fh,fm};
-    }catch(e){
-      return {state:'error',msg:e.message};
-    }
+    }catch(e){return {state:'error',msg:e.message};}
   }
 
-  async function resolveConflict(k,overwrite){
-    const entry=parsedEntries.find(e=>dk(e)===k);
-    const st=entryStates[k];
+  async function resolveDiary(k,overwrite) {
+    const entry=diaryEntries.find(e=>dk(e)===k);
+    const st=diaryStates[k];
     if(!entry||!st) return;
     if(overwrite){
-      try{ await doWrite(st.fh,st.fm,entry.text); entryStates[k]={state:'overwritten'}; }
-      catch(e){ entryStates[k]={state:'error',msg:e.message}; }
-    } else {
-      entryStates[k]={state:'skipped'};
+      try{await doWriteBody(st.fh,st.fm,entry.text);diaryStates[k]={state:'overwritten'};}
+      catch(e){diaryStates[k]={state:'error',msg:e.message};}
+    } else { diaryStates[k]={state:'skipped'}; }
+    updateDiaryRow(entry,k);
+    const remaining=diaryEntries.filter(e=>diaryStates[dk(e)].state==='exists').length;
+    if(remaining===0) showResult(diaryEntries,diaryStates);
+  }
+
+  async function doWriteBody(fh,fm,text){
+    const w=await fh.createWritable(); await w.write(fm+text+'\n'); await w.close();
+  }
+
+  // ── VELO: Parse ──────────────────────────────────────────────────
+  function parseVelo(raw) {
+    const entries=[], hints=[];
+    const DATE_RE=/^(\w{3})\s+(\d{1,2}),\s+(\d{4}),/;
+    const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l);
+    let i=0;
+    while(i<lines.length){
+      const line=lines[i];
+      // Format: "Jan 14, 2024, 11:07:59 AM\t42.19" (tab-separated on one line)
+      const tabIdx=line.indexOf('\t');
+      if(tabIdx>-1){
+        const datePart=line.substring(0,tabIdx).trim();
+        const kmPart=line.substring(tabIdx+1).trim();
+        const dm=datePart.match(DATE_RE);
+        const km=parseFloat(kmPart);
+        if(dm && !isNaN(km) && isFinite(km)){
+          entries.push({year:+dm[3],month:MONTH_MAP[dm[1]],day:+dm[2],km});
+          i++; continue;
+        }
+      }
+      // Format: date on one line, km on next line
+      const dm=line.match(DATE_RE);
+      if(dm && i+1<lines.length){
+        const km=parseFloat(lines[i+1]);
+        if(MONTH_MAP[dm[1]] && !isNaN(km) && isFinite(km)){
+          entries.push({year:+dm[3],month:MONTH_MAP[dm[1]],day:+dm[2],km});
+          i+=2; continue;
+        }
+      }
+      if(line.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt — "'+line.substring(0,32)+'"');
+      i++;
     }
-    updateRow(entry,k);
-    const remaining=parsedEntries.filter(e=>entryStates[dk(e)].state==='exists').length;
-    if(remaining===0) showResult();
+    return {entries,hints};
   }
 
-  async function doWrite(fh,fm,text){
-    const w=await fh.createWritable();
-    await w.write(fm+text+'\n');
-    await w.close();
+  function onVeloChange() {
+    const raw=document.getElementById('veloInput').value;
+    document.getElementById('resultCard').className='result-card';
+    veloStates={};
+    if(!raw.trim()){
+      veloEntries=[];
+      document.getElementById('veloHints').innerHTML='';
+      document.getElementById('veloCountMeta').textContent='';
+      renderVeloPreview(); setStep(1); updateWriteBtn(); return;
+    }
+    const {entries,hints}=parseVelo(raw);
+    veloEntries=entries;
+    entries.forEach(e=>{veloStates[dk(e)]={state:'pending'};});
+    document.getElementById('veloHints').innerHTML=hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
+    document.getElementById('veloCountMeta').textContent=entries.length?entries.length+' Fahrten':'';
+    setStep(entries.length?2:1); renderVeloPreview(); updateWriteBtn();
   }
 
+  // ── VELO: Preview ────────────────────────────────────────────────
+  function veloRowHtml(e,k,st) {
+    let cls='entry-row';
+    if(st.state==='ok'||st.state==='ok_overwritten') cls+=' is-written';
+
+    // Badges shown in preview (before write)
+    let badgesHtml='<div class="entry-badges"><span class="badge badge-velo">Velo</span>';
+    if(st.state==='pending'&&st.kmExisted){
+      badgesHtml+='<span class="badge badge-warn">km überschreiben ('+esc(String(st.kmOld))+')</span>';
+    }
+    badgesHtml+='</div>';
+
+    let statusHtml='';
+    if(st.state==='ok'){
+      let detail = st.veloAdded ? ' · Velo hinzugefügt' : ' · Velo war bereits gesetzt';
+      statusHtml='<div class="entry-status status-ok">'+SVGCHECK+'Geschrieben'+detail+'</div>';
+    } else if(st.state==='ok_overwritten'){
+      let detail = st.veloAdded ? ' · Velo hinzugefügt' : ' · Velo war bereits gesetzt';
+      statusHtml='<div class="entry-status status-ok">'+SVGCHECK+'km überschrieben (war: '+esc(String(st.kmOld))+')'+detail+'</div>';
+    } else if(st.state==='nofile'){
+      statusHtml='<div class="entry-status status-error">'+SVGCROSS+'Datei nicht gefunden</div>';
+    } else if(st.state==='error'){
+      statusHtml='<div class="entry-status status-error">'+SVGCROSS+esc(st.msg||'Fehler')+'</div>';
+    }
+
+    return '<div class="'+cls+'" id="row-'+k+'">'+
+      '<div class="entry-day">'+e.day+'.</div>'+
+      '<div class="entry-main">'+
+        '<div class="entry-km">'+e.km.toFixed(2)+'<span class="entry-km-unit">km</span></div>'+
+        (st.state==='pending'?badgesHtml:statusHtml)+
+      '</div></div>';
+  }
+
+  function renderVeloPreview() {
+    const wrap=document.getElementById('veloPreviewContainer');
+    const empty=document.getElementById('veloPreviewEmpty');
+    if(!veloEntries.length){wrap.innerHTML='';wrap.appendChild(empty);empty.style.display='';return;}
+    empty.style.display='none';
+    const groups=new Map();
+    veloEntries.forEach(e=>{const k=e.year+'-'+String(e.month).padStart(2,'0');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(e);});
+    let html='';
+    groups.forEach((entries,key)=>{
+      const [y,m]=key.split('-');
+      const totalKm=entries.reduce((s,e)=>s+e.km,0);
+      html+='<div class="month-group card"><div class="month-header">'+MONTHS[+m-1]+' '+y+
+        '<span class="month-header-count">'+entries.length+' Fahrt'+(entries.length!==1?'en':'')+' · '+totalKm.toFixed(1)+' km</span></div>';
+      entries.forEach(e=>{html+=veloRowHtml(e,dk(e),veloStates[dk(e)]||{state:'pending'});});
+      html+='</div>';
+    });
+    wrap.innerHTML=html; wrap.appendChild(empty);
+  }
+
+  function updateVeloRow(e,k){const row=document.getElementById('row-'+k);if(row)row.outerHTML=veloRowHtml(e,k,veloStates[k]||{state:'pending'});}
+
+  // ── VELO: Write ──────────────────────────────────────────────────
+  async function startVeloWrite() {
+    const btn=document.getElementById('btnWrite'); btn.disabled=true;
+    for(const entry of veloEntries){
+      const k=dk(entry);
+      if(veloStates[k].state!=='pending') continue;
+      veloStates[k]=await processVeloEntry(entry);
+      updateVeloRow(entry,k);
+    }
+    btn.disabled=false;
+    showResult(veloEntries,veloStates);
+  }
+
+  async function processVeloEntry(entry) {
+    const k=dk(entry);
+    try{
+      const yearDir=await rootDirHandle.getDirectoryHandle(String(entry.year),{create:false}).catch(()=>null);
+      if(!yearDir) return {state:'nofile'};
+      const fh=await yearDir.getFileHandle(k+'.md',{create:false}).catch(()=>null);
+      if(!fh) return {state:'nofile'};
+      const content=await (await fh.getFile()).text();
+      const {fm,body}=splitFM(content);
+
+      // Check existing cycling_km
+      const kmMatch=fm.match(/^cycling_km:[\t ]*([\d.]+)/m);
+      const kmExisted=!!kmMatch;
+      const kmOld=kmExisted?parseFloat(kmMatch[1]):null;
+
+      // Update cycling_km
+      let newFm=fm;
+      if(kmExisted){
+        newFm=newFm.replace(/^cycling_km:[\t ]*.*$/m,'cycling_km:\t'+entry.km.toFixed(2));
+      } else {
+        // Insert before 'people:' or before closing ---
+        if(/^people:/m.test(newFm)){
+          newFm=newFm.replace(/^(people:)/m,'cycling_km:\t'+entry.km.toFixed(2)+'\n$1');
+        } else {
+          newFm=newFm.replace(/(\n---\s*)$/,'\ncycling_km:\t'+entry.km.toFixed(2)+'$1');
+        }
+      }
+
+      // Ensure Velo in sport list
+      const {fm:newFm2,veloAdded}=ensureVeloInSport(newFm);
+
+      // Write
+      const w=await fh.createWritable();
+      await w.write(newFm2+body);
+      await w.close();
+
+      return kmExisted
+        ? {state:'ok_overwritten', kmOld, veloAdded}
+        : {state:'ok', veloAdded};
+
+    }catch(e){return {state:'error',msg:e.message};}
+  }
+
+  function ensureVeloInSport(fm) {
+    const lines=fm.split('\n');
+    let sportIdx=-1;
+    for(let i=0;i<lines.length;i++){if(/^sport:/.test(lines[i])){sportIdx=i;break;}}
+    if(sportIdx===-1) return {fm,veloAdded:false};
+    let insertIdx=sportIdx+1, hasVelo=false;
+    while(insertIdx<lines.length && /^  - /.test(lines[insertIdx])){
+      if(lines[insertIdx].trim()==='- Velo') hasVelo=true;
+      insertIdx++;
+    }
+    if(hasVelo) return {fm,veloAdded:false};
+    lines.splice(insertIdx,0,'  - Velo');
+    return {fm:lines.join('\n'),veloAdded:true};
+  }
+
+  // ── Shared ───────────────────────────────────────────────────────
   function splitFM(content){
     const m=content.match(/^(---\s*\n[\s\S]*?\n---\s*\n?)([\s\S]*)$/);
     return m?{fm:m[1],body:m[2]}:{fm:'',body:content};
   }
 
-  function showResult(){
-    const ok=parsedEntries.filter(e=>['ok','overwritten'].includes(entryStates[dk(e)].state)).length;
-    const skip=parsedEntries.filter(e=>entryStates[dk(e)].state==='skipped').length;
-    const err=parsedEntries.filter(e=>['nofile','error'].includes(entryStates[dk(e)].state)).length;
+  async function pickFolder(){
+    try{
+      rootDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
+      const el=document.getElementById('folderName');
+      el.textContent=rootDirHandle.name; el.className='folder-name';
+      updateWriteBtn();
+    }catch(e){if(e.name!=='AbortError') toast('Fehler beim Öffnen','err');}
+  }
+
+  function updateWriteBtn(){
+    const entries = activeTab==='diary' ? diaryEntries : veloEntries;
+    document.getElementById('btnWrite').disabled=!(rootDirHandle&&entries.length);
+  }
+
+  function startWrite(){
+    if(!rootDirHandle) return;
+    if(activeTab==='diary') startDiaryWrite();
+    else startVeloWrite();
+  }
+
+  function showResult(entries,states){
+    const ok   = entries.filter(e=>['ok','ok_overwritten','overwritten'].includes(states[dk(e)].state)).length;
+    const skip = entries.filter(e=>states[dk(e)].state==='skipped').length;
+    const err  = entries.filter(e=>['nofile','error'].includes(states[dk(e)].state)).length;
     document.getElementById('resOk').textContent=ok;
     document.getElementById('resSkip').textContent=skip;
     document.getElementById('resErr').textContent=err;
@@ -578,19 +793,59 @@
   }
 
   function clearAll(){
-    document.getElementById('inputText').value='';
-    onTextChange();
+    if(activeTab==='diary'){
+      document.getElementById('diaryInput').value='';
+      onDiaryChange();
+    } else {
+      document.getElementById('veloInput').value='';
+      onVeloChange();
+    }
     document.getElementById('resultCard').className='result-card';
   }
 
   let toastT;
   function toast(msg,type=''){
     const el=document.getElementById('toast');
-    el.textContent=msg;
-    el.className='toast show'+(type?' '+type:'');
-    clearTimeout(toastT);
-    toastT=setTimeout(()=>el.classList.remove('show'),3500);
+    el.textContent=msg; el.className='toast show'+(type?' '+type:'');
+    clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),3500);
   }
+
+  // Pre-scan velo for existing km (to show warn badges in preview)
+  // Called when folder is picked and velo entries exist
+  async function preScanVelo(){
+    if(!rootDirHandle||!veloEntries.length) return;
+    for(const entry of veloEntries){
+      const k=dk(entry);
+      if(veloStates[k].state!=='pending') continue;
+      try{
+        const yearDir=await rootDirHandle.getDirectoryHandle(String(entry.year),{create:false}).catch(()=>null);
+        if(!yearDir) continue;
+        const fh=await yearDir.getFileHandle(k+'.md',{create:false}).catch(()=>null);
+        if(!fh) continue;
+        const content=await (await fh.getFile()).text();
+        const {fm}=splitFM(content);
+        const kmMatch=fm.match(/^cycling_km:[\t ]*([\d.]+)/m);
+        if(kmMatch){
+          veloStates[k]={state:'pending',kmExisted:true,kmOld:parseFloat(kmMatch[1])};
+        }
+      }catch(e){}
+    }
+    renderVeloPreview();
+  }
+
+  // Override pickFolder to also trigger velo pre-scan
+  const _origPickFolder = pickFolder;
+  pickFolder = async function(){
+    await _origPickFolder();
+    if(activeTab==='velo') preScanVelo();
+  };
+
+  // Also scan when switching to velo tab if folder already chosen
+  const _origSwitchTab = switchTab;
+  switchTab = function(tab){
+    _origSwitchTab(tab);
+    if(tab==='velo'&&rootDirHandle&&veloEntries.length) preScanVelo();
+  };
 </script>
 </body>
 </html>
