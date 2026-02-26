@@ -182,7 +182,7 @@
     .ac-dropdown { position:fixed;background:var(--surface-2);border:1px solid var(--border-2);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:100;min-width:160px;max-height:180px;overflow-y:auto;display:none; }
     .ac-dropdown.open { display:block; }
     .ac-item { padding:8px 12px;font-size:13px;color:var(--text-2);cursor:pointer;transition:background .1s; }
-    .ac-item:hover { background:var(--border);color:var(--text); }
+    .ac-item:hover, .ac-item.highlighted { background:var(--border);color:var(--text); }
     .velo-km { height:28px;width:72px;padding:0 10px;border-radius:14px;border:1px solid rgba(253,147,159,.4);background:var(--accent-bg);color:var(--accent);font-size:13px;font-weight:500;outline:none;text-align:center;display:none; }
     .velo-km.show { display:inline-block; }
     .velo-km::placeholder { color:rgba(253,147,159,.4);font-weight:400; }
@@ -481,11 +481,16 @@ const TOP = {
 // Merge custom values from localStorage into TOP
 (function loadCustomValues(){
   const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  // Clean up invalid country codes (must be 2 uppercase letters)
+  if(custom.countries){
+    custom.countries = custom.countries.filter(v=>/^[A-Z]{2}$/.test(v));
+    localStorage.setItem('customValues', JSON.stringify(custom));
+  }
   if(custom.allCoffee) TOP.allCoffee=[...new Set([...TOP.allCoffee,...custom.allCoffee])];
   if(custom.allLocations) TOP.allLocations=[...new Set([...TOP.allLocations,...custom.allLocations])];
   if(custom.allPeople) TOP.allPeople=[...new Set([...TOP.allPeople,...custom.allPeople])];
-  if(custom.countries) TOP.countries=[...new Set([...TOP.countries,...custom.countries])];
-  if(custom.sport) TOP.sport=[...new Set([...TOP.sport,...custom.sport])];
+  if(custom.countries) TOP.allCountries=[...new Set([...(TOP.allCountries||[]),...custom.countries])];
+  if(custom.sport) TOP.allSport=[...new Set([...(TOP.allSport||[]),...custom.sport])];
 })();
 
 function saveCustomValue(field, value){
@@ -572,15 +577,15 @@ async function autoSave(){
   try{
     const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
     saveKnownTags(tags);
+    const content=buildContent();
     const w=await fileHandle.createWritable();
-    await w.write(buildContent()); await w.close();
+    await w.write(content); await w.close();
     isDirty=false;
     localStorage.setItem('lastEditedDate', currentDate);
     const rs = new Set(JSON.parse(localStorage.getItem('recentlySaved')||'[]'));
     rs.add(currentDate);
     localStorage.setItem('recentlySaved', JSON.stringify([...rs]));
     if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
-    // Remember last used values for next new entry
     localStorage.setItem('lastUsed', JSON.stringify({
       locations: sel.locations,
       countriesOrdered: sel.countriesOrdered,
@@ -588,8 +593,41 @@ async function autoSave(){
       sport: sel.sport,
       people: sel.people,
     }));
+    updateIndexEntry(currentDate, content);
     showSaveNotif(currentDate);
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
+}
+
+function updateIndexEntry(date, content){
+  if(!searchIndexBuilt) return;
+  const fm = content.match(/^---\n([\s\S]*?)\n---/);
+  if(!fm) return;
+  const yaml = fm[1];
+  const body = content.slice(fm[0].length).trim();
+  const list = k => { const s=yaml.match(new RegExp('^'+k+':\\s*\\n((?:  - .+\\n*)*)','m')); if(!s)return[]; return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim()); };
+  const scalar = k => { const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m')); return m?m[1].trim():null; };
+  const tags = list('tags');
+  tags.forEach(t=>{ const known=JSON.parse(localStorage.getItem('knownTags')||'[]'); if(!known.includes(t)){ known.push(t); localStorage.setItem('knownTags',JSON.stringify(known)); }});
+  const coffeeCount = parseFloat(scalar('coffee')||0);
+  const coffeeLocations = list('coffee_locations');
+  const hasContent = !(coffeeCount===0 && coffeeLocations.includes('Home'));
+  const entry = {
+    date,
+    text: body,
+    tags: tags.join(' '),
+    locations: [...list('location'),...list('country')].join(' '),
+    people: list('people').join(' '),
+    sport: list('sport').join(' '),
+    coffeeLocations: coffeeLocations.join(' '),
+    hasContent,
+    _size: new Blob([content]).size,
+    _modified: Date.now(),
+  };
+  const idx = searchIndex.findIndex(e=>e.date===date);
+  if(idx>=0) searchIndex[idx]=entry;
+  else{ searchIndex.push(entry); searchIndex.sort((a,b)=>b.date.localeCompare(a.date)); }
+  computeTopChips();
+  if(vaultHandle) saveIndexFile(searchIndex, JSON.parse(localStorage.getItem('knownTags')||'[]'));
 }
 
 async function navigateDay(delta){
@@ -624,7 +662,9 @@ async function loadFile(date){
     try{
       fileHandle=await yearDir.getFileHandle(fname,{create:false});
       const file=await fileHandle.getFile();
-      populate(await file.text());
+      const content=await file.text();
+      populate(content);
+      updateIndexEntry(date, content);
       updateHeaderState();
       showStatus('Geladen', yyyy+'/'+fname, true);
     }catch{
@@ -660,23 +700,10 @@ function populate(raw){
   document.getElementById('coords').value=list('coordinates').join(', ');
   document.getElementById('entryText').value=body;
   renderAll();
-  appendExtraChips();
+  if(searchIndexBuilt) computeTopChips();
   if(cyclingKm) document.getElementById('veloKm').value=cyclingKm;
   isDirty=false;
   if(previewMode) renderPreview();
-}
-
-function appendExtraChips(){
-  const last = JSON.parse(localStorage.getItem('lastUsed')||'null');
-  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
-  const extraCoffee = [...new Set([...(last?.coffeeOrdered||[]), ...(custom.allCoffee||[])])].filter(v=>!TOP.coffee.includes(v));
-  const extraSport  = [...new Set([...(last?.sport||[]),         ...(custom.sport||[])])].filter(v=>!TOP.sport.includes(v));
-  const extraPeople = [...new Set([...(last?.people||[]),        ...(custom.allPeople||[])])].filter(v=>!TOP.people.includes(v));
-  const extraLocs   = [...new Set([...(last?.locations||[]),     ...(custom.allLocations||[])])].filter(v=>!TOP.locations.includes(v));
-  if(extraCoffee.length) { TOP.coffee=[...TOP.coffee,...extraCoffee]; renderCoffeeChips(); }
-  if(extraSport.length)  { TOP.sport=[...TOP.sport,...extraSport];   renderSportChips(); }
-  if(extraPeople.length) { TOP.people=[...TOP.people,...extraPeople]; renderPeopleChips(); }
-  if(extraLocs.length)   { TOP.locations=[...TOP.locations,...extraLocs]; renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location'); }
 }
 
 function resetDefaults(){
@@ -686,7 +713,7 @@ function resetDefaults(){
   sel={locations:['Zurich'],countriesOrdered:['CH'],coffeeOrdered:[],sport:[],people:[]};
   document.getElementById('veloKm').value=''; document.getElementById('tags').value='';
   document.getElementById('coords').value=''; document.getElementById('entryText').value='';
-  originalBodyText=''; renderAll(); appendExtraChips(); isDirty=false;
+  originalBodyText=''; renderAll(); isDirty=false;
 }
 
 function renderAll(){
@@ -697,13 +724,22 @@ function renderAll(){
 
 function renderCountryChips(){
   const el=document.getElementById('countryChips'); el.innerHTML='';
-  const allItems=[...new Set([...TOP.countries,...sel.countriesOrdered])];
+  const active=[...new Set(sel.countriesOrdered)];
+  const inactive=TOP.countries.filter(v=>!active.includes(v));
+  const allItems=[...active,...inactive];
   allItems.forEach(opt=>{
     const count=sel.countriesOrdered.filter(x=>x===opt).length;
-    const removeFn=count>0?()=>{ sel.countriesOrdered=sel.countriesOrdered.filter(x=>x!==opt); renderCountryChips(); }:null;
+    const removeFn=count>0?()=>{
+      sel.countriesOrdered=sel.countriesOrdered.filter(x=>x!==opt);
+      const cv=JSON.parse(localStorage.getItem('customValues')||'{}');
+      if(cv.countries){ cv.countries=cv.countries.filter(v=>v!==opt); localStorage.setItem('customValues',JSON.stringify(cv)); }
+      // also remove from TOP so it doesn't reappear
+      TOP.countries=TOP.countries.filter(v=>v!==opt);
+      renderCountryChips();
+    }:null;
     el.appendChild(makeChip(opt,count>0,()=>toggleCountry(opt),count>1?count:null,removeFn));
   });
-  el.appendChild(makeACInput('Weiteres Land...',TOP.countries,val=>{
+  el.appendChild(makeACInput('Weiteres Land...',[...new Set([...(TOP.allCountries||[]),...TOP.countries])],val=>{
     saveCustomValue('countries', val.toUpperCase());
     sel.countriesOrdered.push(val.toUpperCase()); renderCountryChips();
   }));
@@ -754,7 +790,7 @@ function renderSportChips(){
   custom.forEach(s=>el.appendChild(makeChip(s,true,()=>toggleSport(s),null,()=>{ sel.sport=sel.sport.filter(x=>x!==s); renderSportChips(); })));
   veloKm.className='velo-km'+(sel.sport.includes('Velo')?' show':'');
   el.appendChild(veloKm);
-  el.appendChild(makeACInput('Weitere Sportart...',TOP.sport,val=>{
+  el.appendChild(makeACInput('Weitere Sportart...',TOP.allSport||TOP.sport,val=>{
     saveCustomValue('sport', val);
     if(!sel.sport.includes(val)){ sel.sport.push(val); renderSportChips(); }
   }));
@@ -778,24 +814,41 @@ function makeACInput(placeholder,source,onSelect){
 
   function positionDrop(){
     const r=input.getBoundingClientRect();
-    drop.style.top=(r.bottom+4)+'px';
-    drop.style.left=r.left+'px';
-    drop.style.minWidth=r.width+'px';
+    const zoom=parseFloat(getComputedStyle(document.body).zoom)||1;
+    drop.style.top=(r.bottom+4)/zoom+'px';
+    drop.style.left=r.left/zoom+'px';
+    drop.style.minWidth=r.width/zoom+'px';
+  }
+
+  let acHighlight = -1;
+  function updateHighlight(items){
+    items.forEach((el,i)=>el.classList.toggle('highlighted', i===acHighlight));
+    if(acHighlight>=0) items[acHighlight].scrollIntoView({block:'nearest'});
   }
 
   input.addEventListener('input',()=>{
+    acHighlight=-1;
     const q=input.value.trim().toLowerCase();
     if(!q){ drop.classList.remove('open'); return; }
     const matches=source.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
     if(!matches.length){ drop.classList.remove('open'); return; }
     drop.innerHTML=matches.map(m=>`<div class="ac-item">${m}</div>`).join('');
-    drop.querySelectorAll('.ac-item').forEach((item,i)=>{ item.onclick=()=>{ onSelect(matches[i]); input.value=''; drop.classList.remove('open'); }; });
+    drop.querySelectorAll('.ac-item').forEach((item,i)=>{ item.onclick=()=>{ onSelect(matches[i]); input.value=''; drop.classList.remove('open'); acHighlight=-1; }; });
     positionDrop();
     drop.classList.add('open');
   });
   input.addEventListener('keydown',e=>{
-    if(e.key==='Enter'&&input.value.trim()){ e.preventDefault(); onSelect(input.value.trim()); input.value=''; drop.classList.remove('open'); }
-    if(e.key==='Escape'){ drop.classList.remove('open'); input.value=''; }
+    const items=[...drop.querySelectorAll('.ac-item')];
+    if(e.key==='ArrowDown'&&drop.classList.contains('open')){
+      e.preventDefault(); acHighlight=Math.min(acHighlight+1,items.length-1); updateHighlight(items);
+    } else if(e.key==='ArrowUp'&&drop.classList.contains('open')){
+      e.preventDefault(); acHighlight=Math.max(acHighlight-1,-1); updateHighlight(items);
+      if(acHighlight===-1) input.focus();
+    } else if(e.key==='Enter'){
+      e.preventDefault();
+      if(acHighlight>=0 && items[acHighlight]){ items[acHighlight].click(); acHighlight=-1; }
+      else if(input.value.trim()){ onSelect(input.value.trim()); input.value=''; drop.classList.remove('open'); acHighlight=-1; }
+    } else if(e.key==='Escape'){ drop.classList.remove('open'); input.value=''; acHighlight=-1; }
   });
   wrap.appendChild(input); return wrap;
 }
@@ -1238,7 +1291,7 @@ async function saveIndexFile(index, tags){
   try{
     const fh = await vaultHandle.getFileHandle(INDEX_FILE, {create:true});
     const w = await fh.createWritable();
-    await w.write(JSON.stringify({v:7, built: new Date().toISOString(), index, tags}));
+    await w.write(JSON.stringify({v:8, built: new Date().toISOString(), index, tags}));
     await w.close();
   }catch(e){ console.warn('Index speichern fehlgeschlagen:', e); }
 }
@@ -1259,12 +1312,12 @@ async function buildSearchIndex(){
 
   // Try loading existing index
   const saved = await loadIndexFile();
-  if(saved?.v===7 && Array.isArray(saved.index)){
+  if(saved?.v===8 && Array.isArray(saved.index)){
     searchIndex = saved.index;
     // Restore known tags immediately so autocomplete and search pills work
     if(Array.isArray(saved.tags) && saved.tags.length){
       localStorage.setItem('knownTags', JSON.stringify(saved.tags));
-      renderSearchTags();
+      renderFilterChips(); renderSuggestions();;
     }
     searchIndexBuilt = true;
     searchIndexing = false;
@@ -1281,6 +1334,7 @@ async function buildSearchIndex(){
 }
 
 async function rebuildIndex(existingIndex){
+  searchIndexing = true;
   // Build map of existing entries by date for quick lookup
   const existing = Object.fromEntries((existingIndex||[]).map(e=>[e.date,e]));
 
@@ -1354,13 +1408,13 @@ async function rebuildIndex(existingIndex){
   const tagsArr = [...allTags];
   localStorage.setItem('knownTags', JSON.stringify(tagsArr));
   await saveIndexFile(newIndex, tagsArr);
-  computeTopChips();
+  try { computeTopChips(); } catch(e){ console.error('computeTopChips error:', e); }
   localStorage.removeItem('recentlySaved');
   updateSearchFooter(`${newIndex.length} Einträge indexiert`, 1);
   // Re-render calendar if open so unedited days update
   if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
   if(!document.getElementById('searchOverlay').classList.contains('hidden')){
-    renderSearchTags();
+    renderFilterChips(); renderSuggestions();;
     runSearch(document.getElementById('searchInput').value);
   }
 }
@@ -1378,7 +1432,8 @@ function computeTopChips(){
     const seen = new Set();
     const result = [];
     for(const e of searchIndex){
-      const vals = (e[field]||'').split(' ').filter(Boolean);
+      if(e.date > currentDate) continue;
+      const vals = Array.isArray(e[field]) ? e[field] : (e[field]||'').split(' ').filter(Boolean);
       for(const v of vals){
         if(!seen.has(v)){ seen.add(v); result.push(v); }
         if(result.length>=n) return result;
@@ -1387,9 +1442,28 @@ function computeTopChips(){
     return result;
   }
 
-  function merge(top, recent){
-    const result = [...new Set([...recent, ...top])];
-    return result.slice(0, 9);
+  // Active first, then recent/14d, then top-by-frequency, hard cap
+  function build(active, recent, top, max){
+    const result = [], seen = new Set();
+    for(const v of [...active, ...recent, ...top]){
+      if(v && !seen.has(v)){ seen.add(v); result.push(v); }
+      if(result.length>=max) break;
+    }
+    return result;
+  }
+
+  function last14N(field, n){
+    const ref = new Date(currentDate+'T12:00:00');
+    ref.setDate(ref.getDate()-14);
+    const cutoffISO = ref.toISOString().split('T')[0];
+    const seen = new Set(), result = [];
+    for(const e of searchIndex){
+      if(e.date > currentDate) continue; // exclude entries newer than current day
+      if(e.date < cutoffISO) break;      // index is sorted desc, so we can break early
+      const vals = (e[field]||'').split(' ').filter(Boolean);
+      for(const v of vals){ if(!seen.has(v)){ seen.add(v); result.push(v); } if(result.length>=n) return result; }
+    }
+    return result;
   }
 
   const allLocs     = searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).filter(v=>!v.match(/^[A-Z]{2}$/)));
@@ -1398,21 +1472,30 @@ function computeTopChips(){
   const allSport    = searchIndex.flatMap(e=>(e.sport||'').split(' ').filter(Boolean));
   const allPeople   = searchIndex.flatMap(e=>(e.people||'').split(' ').filter(Boolean));
 
-  const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
+  const curCoffee   = sel.coffeeOrdered||[];
+  const curSport    = sel.sport||[];
+  const curPeople   = sel.people||[];
+  const curLocs     = sel.locations||[];
+  const curCountries= [...new Set(sel.countriesOrdered||[])];
 
-  TOP.locations  = merge(topN(allLocs,8),      recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/)));
-  TOP.countries  = merge(topN(allCountries,6),  recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/)));
-  TOP.coffee     = merge(topN(allCoffee,9),     recentN('coffeeLocations',2));
-  TOP.sport      = merge(topN(allSport,8),      recentN('sport',2));
-  TOP.people     = merge(topN(allPeople,6),     recentN('people',2));
+  TOP.locations = build(curLocs,       [...last14N('locations',6).filter(v=>!v.match(/^[A-Z]{2}$/)), ...recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/))], topN(allLocs,8),       8);
+  TOP.countries = build(curCountries,  [...last14N('locations',4).filter(v=>v.match(/^[A-Z]{2}$/)),  ...recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/))],  topN(allCountries,6),  6);
+  TOP.coffee    = build(curCoffee,     [...last14N('coffeeLocations',6), ...recentN('coffeeLocations',2)], topN(allCoffee,9),  9);
+  TOP.sport     = build(curSport,      [...last14N('sport',6),           ...recentN('sport',2)],           topN(allSport,8),   8);
+  TOP.people    = build(curPeople,     recentN('people',2),                                                topN(allPeople,6),  6);
 
-  // Merge custom values into autocomplete lists
-  TOP.allCoffee    = [...new Set([...TOP.allCoffee,    ...topN(allCoffee,100), ...(custom.allCoffee||[])])];
-  TOP.allLocations = [...new Set([...TOP.allLocations, ...topN(allLocs,100),   ...(custom.allLocations||[])])];
-  TOP.allPeople    = [...new Set([...TOP.allPeople,    ...topN(allPeople,100), ...(custom.allPeople||[])])];
-  TOP.sport        = [...new Set([...TOP.sport,                                ...(custom.sport||[]).filter(v=>!TOP.sport.includes(v))])];
+  // Autocomplete lists (larger, for input suggestions)
+  TOP.allCoffee    = [...new Set([...topN(allCoffee,100)])];
+  TOP.allLocations = [...new Set([...topN(allLocs,100)])];
+  TOP.allPeople    = [...new Set([...topN(allPeople,100)])];
+  TOP.allSport     = [...new Set([...topN(allSport,100)])];
 
-  renderAll();
+  // Only re-render chip rows, not the whole page
+  if(document.getElementById('coffeeChips')) renderCoffeeChips();
+  if(document.getElementById('sportChips'))  renderSportChips();
+  if(document.getElementById('peopleChips')) renderPeopleChips();
+  if(document.getElementById('locationChips')) renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location');
+  if(document.getElementById('countryChips')) renderCountryChips();
 }
 // ──────────────────────────────────────────────────────────────
 
@@ -1437,9 +1520,9 @@ const MONTHS_DE = ['Januar','Februar','März','April','Mai','Juni','Juli','Augus
 
 function getAllTerms(){
   const set = new Set(getKnownTags());
-  // Add custom values saved by user
+  // Add custom values saved by user (except countries - those come from index only)
   const custom = JSON.parse(localStorage.getItem('customValues')||'{}');
-  Object.values(custom).forEach(arr=>arr.forEach(v=>set.add(v)));
+  Object.entries(custom).forEach(([key,arr])=>{ if(key!=='countries') arr.forEach(v=>set.add(v)); });
   // Add from search index
   if(searchIndexBuilt){
     searchIndex.forEach(e=>{
