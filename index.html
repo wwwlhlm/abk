@@ -258,43 +258,22 @@
     }
     .dp-year-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
     .dp-year-btn.selected { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
-    /* Coffee mismatch dot */
     .coffee-mismatch-dot {
       width:6px;height:6px;border-radius:50%;background:var(--accent);
       display:none;margin-left:auto;flex-shrink:0;
     }
-    /* Field rename action card inside search results */
-    .tag-rename-action {
-      padding:16px 16px 14px;border-bottom:1px solid var(--border);
-    }
-    .tag-rename-title {
-      font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;
-      color:var(--accent);margin-bottom:6px;
-    }
-    .tag-rename-desc {
-      font-size:13px;color:var(--text-2);margin-bottom:10px;line-height:1.5;
-    }
+    .search-filter-chip.prefixed { border-color:rgba(253,147,159,.55);background:rgba(253,147,159,.08); }
+    .search-filter-chip .chip-prefix { opacity:.55;font-size:11px;margin-right:1px; }
+    .tag-rename-action { padding:16px 16px 14px;border-bottom:1px solid var(--border); }
+    .tag-rename-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--accent);margin-bottom:6px; }
+    .tag-rename-desc { font-size:13px;color:var(--text-2);margin-bottom:10px;line-height:1.5; }
     .tag-rename-desc strong { color:var(--text); }
     .tag-rename-btns { display:flex;gap:8px;align-items:center; }
-    .tag-rename-confirm {
-      height:30px;padding:0 14px;border-radius:7px;border:1px solid rgba(253,147,159,.4);
-      background:var(--accent-bg);font-size:13px;font-weight:500;color:var(--accent);
-      cursor:pointer;transition:all .15s;font-family:inherit;
-    }
+    .tag-rename-confirm { height:30px;padding:0 14px;border-radius:7px;border:1px solid rgba(253,147,159,.4);background:var(--accent-bg);font-size:13px;font-weight:500;color:var(--accent);cursor:pointer;transition:all .15s;font-family:inherit; }
     .tag-rename-confirm:hover { background:rgba(253,147,159,.2); }
-    .tag-rename-cancel {
-      font-size:13px;color:var(--text-3);cursor:pointer;padding:0 4px;
-    }
+    .tag-rename-cancel { font-size:13px;color:var(--text-3);cursor:pointer;padding:0 4px; }
     .tag-rename-cancel:hover { color:var(--text); }
     .tag-rename-progress { font-size:12px;color:var(--text-3);margin-left:auto; }
-    /* Prefix hint in search footer */
-    .search-prefix-hint {
-      padding:8px 14px;border-bottom:1px solid var(--border);
-      font-size:11px;color:var(--text-3);display:flex;flex-wrap:wrap;gap:6px 12px;
-    }
-    .search-prefix-hint code {
-      font-family:ui-monospace,monospace;color:var(--text-2);
-    }
   </style>
 </head>
 <body>
@@ -827,9 +806,9 @@ function renderCoffeeChips(){
 }
 
 function updateCoffeeMismatch(){
-  const coffeeVal = Math.round(parseFloat(document.getElementById('coffee')?.value)||0);
-  const dot = document.getElementById('coffeeMismatchDot');
-  if(dot) dot.style.display = (coffeeVal !== sel.coffeeOrdered.length) ? 'block' : 'none';
+  const coffeeVal=Math.round(parseFloat(document.getElementById('coffee')?.value)||0);
+  const dot=document.getElementById('coffeeMismatchDot');
+  if(dot) dot.style.display=(coffeeVal!==sel.coffeeOrdered.length)?'block':'none';
 }
 
 function renderSportChips(){
@@ -1030,7 +1009,7 @@ function buildContent(){
   const coords=document.getElementById('coords').value.trim().split(',').map(c=>c.trim()).filter(Boolean);
   const sportList=sel.sport.slice(); // no km embedded
   const cyclingKm=sel.sport.includes('Velo')?document.getElementById('veloKm').value:'';
-  const d=new Date(currentDate+'T12:00:00'), wi=d.getDay()===0?7:d.getDay();
+  const d=new Date(currentDate+'T12:00:00'), wi=d.getDay();
   const L=items=>items.length?'\n'+items.map(i=>`  - ${i}`).join('\n'):'';
   const now=new Date();
   const updatedTs=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
@@ -1587,41 +1566,41 @@ function getAllTerms(){
 }
 
 // ── Field Prefix System ───────────────────────────────────────
-// Supports:  prefix:Wert       → Suche nur in diesem Feld
-//            prefix:Alt>Neu   → Alle Vorkommen umbenennen
 const FIELD_PREFIXES = {
-  'tag':    { label:'Tag',         indexField:'tags',            yamlKey:'tags',             acFn:()=>getKnownTags(),                                    valFilter:null },
-  'ort':    { label:'Ort',         indexField:'locations',       yamlKey:'location',         acFn:()=>TOP.allLocations,                                  valFilter:v=>!v.match(/^[A-Z]{2}$/) },
-  'land':   { label:'Land',        indexField:'locations',       yamlKey:'country',          acFn:()=>[...new Set([...TOP.countries,...(TOP.allCountries||[])])], valFilter:v=>!!v.match(/^[A-Z]{2}$/) },
-  'kaffee': { label:'Kaffee-Ort',  indexField:'coffeeLocations', yamlKey:'coffee_locations', acFn:()=>TOP.allCoffee,                                     valFilter:null },
-  'sport':  { label:'Sport',       indexField:'sport',           yamlKey:'sport',            acFn:()=>TOP.allSport||TOP.sport,                           valFilter:null },
-  'person': { label:'Person',      indexField:'people',          yamlKey:'people',           acFn:()=>TOP.allPeople,                                     valFilter:null },
+  'tag':      { label:'Tag',     indexField:'tags',            yamlKey:'tags',             acFn:()=>getKnownTags(),                                          valFilter:null },
+  'ort':      { label:'Ort',     indexField:'locations',       yamlKey:'location',         acFn:()=>TOP.allLocations,                                        valFilter:v=>!v.match(/^[A-Z]{2}$/) },
+  'land':     { label:'Land',    indexField:'locations',       yamlKey:'country',          acFn:()=>[...new Set([...TOP.countries,...(TOP.allCountries||[])])], valFilter:v=>!!v.match(/^[A-Z]{2}$/) },
+  'kaffee':   { label:'Kaffee',  indexField:'coffeeLocations', yamlKey:'coffee_locations', acFn:()=>TOP.allCoffee,                                           valFilter:null },
+  'sport':    { label:'Sport',   indexField:'sport',           yamlKey:'sport',            acFn:()=>TOP.allSport||TOP.sport,                                 valFilter:null },
+  'person':   { label:'Person',  indexField:'people',          yamlKey:'people',           acFn:()=>TOP.allPeople,                                           valFilter:null },
 };
-// Aliases
-FIELD_PREFIXES['people']  = FIELD_PREFIXES['person'];
+FIELD_PREFIXES['people']    = FIELD_PREFIXES['person'];
 FIELD_PREFIXES['kaffeeort'] = FIELD_PREFIXES['kaffee'];
 FIELD_PREFIXES['location']  = FIELD_PREFIXES['ort'];
 FIELD_PREFIXES['country']   = FIELD_PREFIXES['land'];
 
 function parsePrefixQuery(q){
-  // Returns { prefix, cfg, value, isRename, oldVal, newVal } or null
-  const m = q.match(/^([a-zA-ZäöüÄÖÜ]+)[=:]\s*(.*)$/);
+  const m = q.match(/^([a-zA-Z]+)[=:]\s*(.*)$/);
   if(!m) return null;
-  const prefix = m[1].toLowerCase();
-  const cfg = FIELD_PREFIXES[prefix];
+  const cfg = FIELD_PREFIXES[m[1].toLowerCase()];
   if(!cfg) return null;
   const rest = m[2].trim();
-  const renameM = rest.match(/^(.+?)\s*>\s*(.+)$/);
-  if(renameM) return { prefix, cfg, isRename:true, oldVal:renameM[1].trim(), newVal:renameM[2].trim() };
-  return { prefix, cfg, isRename:false, value:rest };
+  const rm = rest.match(/^(.+?)\s*>\s*(.+)$/);
+  if(rm) return { prefix:m[1].toLowerCase(), cfg, isRename:true, oldVal:rm[1].trim(), newVal:rm[2].trim() };
+  return { prefix:m[1].toLowerCase(), cfg, isRename:false, value:rest };
 }
 // ─────────────────────────────────────────────────────────────
 
 function renderFilterChips(){
   const el = document.getElementById('searchFilters');
-  el.innerHTML = activeFilters.map(f =>
-    `<span class="search-filter-chip" data-filter="${f.replace(/"/g,'&quot;')}">${f}<span class="search-filter-chip-x" data-filter="${f.replace(/"/g,'&quot;')}">✕</span></span>`
-  ).join('');
+  el.innerHTML = activeFilters.map(f => {
+    const p = parsePrefixQuery(f);
+    const label = p
+      ? `<span class="chip-prefix">${p.cfg.label} </span>${escapeHtml(p.value)}`
+      : escapeHtml(f);
+    const cls = p ? 'search-filter-chip prefixed' : 'search-filter-chip';
+    return `<span class="${cls}" data-filter="${f.replace(/"/g,'&quot;')}">${label}<span class="search-filter-chip-x" data-filter="${f.replace(/"/g,'&quot;')}">✕</span></span>`;
+  }).join('');
 }
 
 function renderSuggestions(){
@@ -1629,29 +1608,34 @@ function renderSuggestions(){
   const q = document.getElementById('searchInput').value.trim();
   const ql = q.toLowerCase();
 
-  // ── Prefix mode: show field-specific autocomplete ──────────
+  // ── Prefix mode: field-specific autocomplete ──────────────
   const parsed = parsePrefixQuery(q);
   if(parsed && !parsed.isRename){
-    const { cfg, value } = parsed;
+    const { prefix, cfg, value } = parsed;
     const vq = value.toLowerCase();
     const source = cfg.acFn() || [];
+    const already = activeFilters
+      .map(f=>parsePrefixQuery(f))
+      .filter(p=>p && p.prefix===prefix)
+      .map(p=>p.value.toLowerCase());
     const matches = source
       .filter(v => cfg.valFilter ? cfg.valFilter(v) : true)
+      .filter(v => !already.includes(v.toLowerCase()))
       .filter(v => !vq || v.toLowerCase().includes(vq))
       .slice(0, 12);
     if(matches.length){
       el.classList.remove('hidden');
       el.innerHTML = matches.map(v =>
-        `<button class="search-suggestion" data-term="${q.replace(/[=:]\s*.*$/, ':'+v).replace(/"/g,'&quot;')}">${highlight(escapeHtml(v), value)}</button>`
+        `<button class="search-suggestion" data-prefixchip="${escapeHtml(prefix+':'+v)}">${highlight(escapeHtml(v), value)}</button>`
       ).join('');
     } else { el.classList.add('hidden'); el.innerHTML=''; }
     return;
   }
+  // ─────────────────────────────────────────────────────────
 
   const activeMonths = activeFilters.filter(f=>MONTHS_DE.some(m=>m.toLowerCase()===f.toLowerCase()));
   const activeYears  = activeFilters.filter(f=>/^\d{4}$/.test(f));
 
-  // Contextual suggestions when a month or year chip is active and input is empty
   if(!ql && searchIndexBuilt){
     let contextual = [];
     if(activeMonths.length && !activeYears.length){
@@ -1731,37 +1715,13 @@ function runSearch(){
   const q = document.getElementById('searchInput').value.trim();
   const hasFilters = activeFilters.length > 0;
   const hasText = q.length > 0;
-
   const footer = document.getElementById('searchFooter');
 
-  // ── Prefix command handling ───────────────────────────────
+  // ── Prefix command in text input ─────────────────────────
   const parsed = hasText ? parsePrefixQuery(q) : null;
-  if(parsed){
-    if(parsed.isRename){
-      renderFieldRenameUI(parsed, results, count);
-      if(footer) footer.classList.add('hidden');
-      return;
-    }
-    // Field-scoped search
+  if(parsed && parsed.isRename){
+    renderFieldRenameUI(parsed, results, count);
     if(footer) footer.classList.add('hidden');
-    if(!searchIndexBuilt){ results.innerHTML='<div class="search-empty">Index wird noch aufgebaut…</div>'; return; }
-    const { cfg, value } = parsed;
-    const vl = value.toLowerCase();
-    let hits = searchIndex.filter(e=>{
-      const raw = (e[cfg.indexField]||'').toLowerCase();
-      const vals = raw.split(' ').filter(Boolean);
-      return vl ? vals.some(v => {
-        if(cfg.valFilter && !cfg.valFilter(v)) return false;
-        return v.includes(vl);
-      }) : vals.some(v => cfg.valFilter ? cfg.valFilter(v) : true);
-    });
-    // Also apply any active year/month chips
-    hits = applyDateFilters(hits);
-    count.textContent = hits.length ? `${hits.length} Treffer` : '';
-    if(!hits.length){ results.innerHTML='<div class="search-empty">Keine Treffer</div>'; return; }
-    searchPage = 1;
-    hits.sort((a,b)=>a.date.localeCompare(b.date));
-    renderResults(hits, value, !!value);
     return;
   }
   // ─────────────────────────────────────────────────────────
@@ -1777,21 +1737,48 @@ function runSearch(){
   }
 
   const ql = q.toLowerCase();
+
+  // Split active filters into date filters and field filters (plain + prefixed)
+  const yearFilters   = activeFilters.filter(f=>/^\d{4}$/.test(f));
+  const monthFilters  = activeFilters.filter(f=>MONTHS_DE.some(m=>m.toLowerCase()===f.toLowerCase()));
+  const fieldFilters  = activeFilters.filter(f=>!yearFilters.includes(f)&&!monthFilters.includes(f));
+
   let hits = searchIndex.filter(e=>{
-    if(!passDateFilters(e)) return false;
-    const yearFilters  = activeFilters.filter(f=>/^\d{4}$/.test(f));
-    const monthFilters = activeFilters.filter(f=>MONTHS_DE.some(m=>m.toLowerCase()===f.toLowerCase()));
-    const otherFilters = activeFilters.filter(f=>!yearFilters.includes(f)&&!monthFilters.includes(f));
-    const otherOk = otherFilters.every(f=>{
-      const fl = f.toLowerCase();
-      return e.tags.toLowerCase().split(' ').includes(fl) ||
+    // Date filters
+    if(yearFilters.length && !yearFilters.includes(e.date.slice(0,4))) return false;
+    if(monthFilters.length){
+      const mIdxs = monthFilters.map(f=>MONTHS_DE.findIndex(m=>m.toLowerCase()===f.toLowerCase())+1);
+      if(!mIdxs.includes(parseInt(e.date.slice(5,7)))) return false;
+    }
+
+    // Field filters — each must match (AND)
+    for(const f of fieldFilters){
+      const p = parsePrefixQuery(f);
+      if(p){
+        // Prefixed chip: match only the specific field
+        const raw = (e[p.cfg.indexField]||'').toLowerCase().split(' ').filter(Boolean);
+        const vals = p.cfg.valFilter ? raw.filter(v=>p.cfg.valFilter(v)) : raw;
+        if(!vals.includes(p.value.toLowerCase())) return false;
+      } else {
+        // Plain chip: match any field
+        const fl = f.toLowerCase();
+        if(!(e.tags.toLowerCase().split(' ').includes(fl) ||
              e.locations.toLowerCase().split(' ').includes(fl) ||
              e.people.toLowerCase().split(' ').includes(fl) ||
              e.sport.toLowerCase().includes(fl) ||
-             (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl);
-    });
-    if(!otherOk) return false;
+             (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl))) return false;
+      }
+    }
+
+    // Free text in input (field-scoped if prefix, else global)
     if(hasText){
+      if(parsed && !parsed.isRename){
+        const { cfg, value } = parsed;
+        if(!value) return true; // prefix typed but no value yet → show all passing filters
+        const raw = (e[cfg.indexField]||'').toLowerCase().split(' ').filter(Boolean);
+        const vals = cfg.valFilter ? raw.filter(v=>cfg.valFilter(v)) : raw;
+        return vals.some(v=>v.includes(value.toLowerCase()));
+      }
       return e.text.toLowerCase().includes(ql) ||
              e.tags.toLowerCase().includes(ql) ||
              e.locations.toLowerCase().includes(ql) ||
@@ -1806,22 +1793,8 @@ function runSearch(){
   if(!hits.length){ results.innerHTML='<div class="search-empty">Keine Treffer</div>'; return; }
   searchPage = 1;
   hits.sort((a,b)=>a.date.localeCompare(b.date));
-  renderResults(hits, q, hasText);
+  renderResults(hits, parsed ? parsed.value||'' : q, hasText);
 }
-
-function passDateFilters(e){
-  const entryMonth = parseInt(e.date.slice(5,7));
-  const entryYear  = e.date.slice(0,4);
-  const yearFilters  = activeFilters.filter(f=>/^\d{4}$/.test(f));
-  const monthFilters = activeFilters.filter(f=>MONTHS_DE.some(m=>m.toLowerCase()===f.toLowerCase()));
-  if(yearFilters.length && !yearFilters.includes(entryYear)) return false;
-  if(monthFilters.length){
-    const mIdxs = monthFilters.map(f=>MONTHS_DE.findIndex(m=>m.toLowerCase()===f.toLowerCase())+1);
-    if(!mIdxs.includes(entryMonth)) return false;
-  }
-  return true;
-}
-function applyDateFilters(hits){ return hits.filter(e=>passDateFilters(e)); }
 
 function escapeHtml(s){
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -1890,18 +1863,26 @@ function renderResults(hits, q, hasText){
 
 document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('searchInput').addEventListener('input', ()=>{ renderSuggestions(); runSearch(); });
+  document.getElementById('searchInput').addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      const q = document.getElementById('searchInput').value.trim();
+      const p = parsePrefixQuery(q);
+      // Enter on a prefix query with a value → add as chip
+      if(p && !p.isRename && p.value){
+        e.preventDefault();
+        addFilter(`${p.prefix}:${p.value}`);
+      }
+    }
+  });
   document.getElementById('searchSuggestions').addEventListener('mousedown', e=>{
     const btn = e.target.closest('.search-suggestion');
     if(!btn) return;
     e.preventDefault();
-    const term = btn.dataset.term;
-    // Prefix suggestions (e.g. "tag:Reise", "ort:Zurich") → set as search text
-    if(term && parsePrefixQuery(term)){
-      document.getElementById('searchInput').value = term;
-      renderSuggestions();
-      runSearch();
+    // data-prefixchip → add as prefix filter chip
+    if(btn.dataset.prefixchip){
+      addFilter(btn.dataset.prefixchip);
     } else {
-      addFilter(term);
+      addFilter(btn.dataset.term);
     }
   });
   document.getElementById('searchFilters').addEventListener('mousedown', e=>{
@@ -1922,25 +1903,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ── Field Rename ──────────────────────────────────────────────
 function renderFieldRenameUI(parsed, results, count){
   const { cfg, oldVal, newVal } = parsed;
-  if(!searchIndexBuilt){
-    results.innerHTML='<div class="search-empty">Index wird noch aufgebaut…</div>';
-    count.textContent=''; return;
-  }
+  if(!searchIndexBuilt){ results.innerHTML='<div class="search-empty">Index wird noch aufgebaut…</div>'; count.textContent=''; return; }
   const oldLower = oldVal.toLowerCase();
   const affected = searchIndex.filter(e=>{
     const vals = (e[cfg.indexField]||'').toLowerCase().split(' ').filter(Boolean);
-    return vals.some(v => {
-      if(cfg.valFilter && !cfg.valFilter(v)) return false;
-      return v === oldLower;
-    });
+    return vals.some(v=>(cfg.valFilter?cfg.valFilter(v):true) && v===oldLower);
   });
-  count.textContent = '';
-
+  count.textContent='';
   if(!affected.length){
     results.innerHTML=`<div class="search-empty"><strong>${escapeHtml(cfg.label)}</strong> «${escapeHtml(oldVal)}» nicht gefunden</div>`;
     return;
   }
-  results.innerHTML = `
+  results.innerHTML=`
     <div class="tag-rename-action">
       <div class="tag-rename-title">${escapeHtml(cfg.label)} umbenennen</div>
       <div class="tag-rename-desc">
@@ -1956,28 +1930,24 @@ function renderFieldRenameUI(parsed, results, count){
     ${affected.map(e=>{
       const d=new Date(e.date+'T12:00:00');
       const ds=d.toLocaleDateString('de-CH',{weekday:'short',day:'numeric',month:'long',year:'numeric'});
-      const fieldSnippet = e[cfg.indexField]||'';
       return `<div class="search-result" onclick="navigateToDate('${e.date}');closeSearch()">
         <div class="search-result-date">${ds}</div>
         ${e.text?`<div class="search-result-text">${escapeHtml(e.text.slice(0,80)+(e.text.length>80?'…':''))}</div>`:''}
-        <div class="search-result-meta">${highlight(escapeHtml(fieldSnippet), oldVal)}</div>
+        <div class="search-result-meta">${highlight(escapeHtml(e[cfg.indexField]||''), oldVal)}</div>
       </div>`;
-    }).join('')}
-  `;
-  document.getElementById('fieldRenameConfirmBtn').onclick = ()=>executeFieldRename(parsed, affected);
+    }).join('')}`;
+  document.getElementById('fieldRenameConfirmBtn').onclick=()=>executeFieldRename(parsed,affected);
 }
 
 async function executeFieldRename(parsed, affected){
   const { cfg, oldVal, newVal } = parsed;
   if(!vaultHandle){ toast('Kein Ordner geöffnet','err'); return; }
-  const btn = document.getElementById('fieldRenameConfirmBtn');
-  const prog = document.getElementById('fieldRenameProgress');
-  if(btn) btn.disabled = true;
-
-  const oldEscaped = oldVal.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
-  // Match YAML list lines:  "  - OldValue"  (case-insensitive, exact token)
-  const lineRegex = new RegExp(`^(  - )(${oldEscaped})\\s*$`, 'gim');
-
+  const btn=document.getElementById('fieldRenameConfirmBtn');
+  const prog=document.getElementById('fieldRenameProgress');
+  if(btn) btn.disabled=true;
+  const oldEsc=oldVal.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const lineRe=new RegExp(`^(  - )(${oldEsc})\\s*$`,'gim');
+  const keyRe=new RegExp(`(^${cfg.yamlKey.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}:\\s*\\n)((?:  - .+\\n?)*)`, 'im');
   let done=0, errors=0;
   for(const entry of affected){
     if(prog) prog.textContent=`${done}/${affected.length}…`;
@@ -1987,64 +1957,37 @@ async function executeFieldRename(parsed, affected){
       const fh=await yearDir.getFileHandle(entry.date+'.md');
       const file=await fh.getFile();
       const content=await file.text();
-
-      // Only replace within the correct YAML block (between --- delimiters)
-      const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+      const fmMatch=content.match(/^---\n([\s\S]*?)\n---/);
       if(!fmMatch){ errors++; continue; }
-      const fmBlock = fmMatch[0];
-      const body = content.slice(fmBlock.length);
-
-      // Replace only within the relevant YAML key block
-      // Find the key block: "yamlKey:\n  - item\n  - item\n"
-      const keyBlockRe = new RegExp(
-        `(^${cfg.yamlKey.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}:\\s*\\n)((?:  - .+\\n?)*)`,
-        'im'
-      );
-      const newFmBlock = fmBlock.replace(keyBlockRe, (match, header, listPart)=>{
-        return header + listPart.replace(lineRegex, `$1${newVal}`);
-      });
-
-      if(newFmBlock === fmBlock){ errors++; continue; }
-
-      const updated = newFmBlock + body;
+      const newFm=fmMatch[0].replace(keyRe,(match,header,listPart)=>header+listPart.replace(lineRe,`$1${newVal}`));
+      if(newFm===fmMatch[0]){ errors++; continue; }
+      const updated=newFm+content.slice(fmMatch[0].length);
       const w=await fh.createWritable(); await w.write(updated); await w.close();
       updateIndexEntry(entry.date, updated);
       done++;
-    }catch(e){ errors++; console.warn('Rename error for '+entry.date, e); }
+    }catch(e){ errors++; console.warn('Rename error',entry.date,e); }
   }
-
-  // Update autocomplete sources (for tag field, update knownTags)
+  // Update autocomplete sources
   if(cfg.yamlKey==='tags'){
     const known=getKnownTags();
     const ki=known.findIndex(t=>t.toLowerCase()===oldVal.toLowerCase());
     if(ki>=0){ known.splice(ki,1); if(!known.includes(newVal)) known.push(newVal); }
     else if(!known.includes(newVal)) known.push(newVal);
-    localStorage.setItem('knownTags', JSON.stringify(known));
-    if(vaultHandle && searchIndexBuilt) saveIndexFile(searchIndex, known);
+    localStorage.setItem('knownTags',JSON.stringify(known));
+    if(vaultHandle&&searchIndexBuilt) saveIndexFile(searchIndex,known);
   } else {
-    // For other fields, update TOP lists and localStorage customValues
-    const fieldMap = {
-      'location':'allLocations', 'country':'countries',
-      'coffee_locations':'allCoffee', 'sport':'allSport', 'people':'allPeople'
-    };
-    const topKey = fieldMap[cfg.yamlKey];
-    if(topKey && TOP[topKey]){
-      const idx = TOP[topKey].findIndex(v=>v.toLowerCase()===oldVal.toLowerCase());
-      if(idx>=0) TOP[topKey][idx]=newVal;
-      else TOP[topKey].push(newVal);
-    }
+    const fm={'location':'allLocations','country':'countries','coffee_locations':'allCoffee','sport':'allSport','people':'allPeople'};
+    const tk=fm[cfg.yamlKey];
+    if(tk&&TOP[tk]){ const i=TOP[tk].findIndex(v=>v.toLowerCase()===oldVal.toLowerCase()); if(i>=0) TOP[tk][i]=newVal; else TOP[tk].push(newVal); }
     const cv=JSON.parse(localStorage.getItem('customValues')||'{}');
-    if(cv[topKey]){
-      const ci=cv[topKey].findIndex(v=>v.toLowerCase()===oldVal.toLowerCase());
-      if(ci>=0) cv[topKey][ci]=newVal;
-      localStorage.setItem('customValues', JSON.stringify(cv));
-    }
-    if(vaultHandle && searchIndexBuilt) saveIndexFile(searchIndex, getKnownTags());
+    if(cv[tk]){ const i=cv[tk].findIndex(v=>v.toLowerCase()===oldVal.toLowerCase()); if(i>=0){ cv[tk][i]=newVal; localStorage.setItem('customValues',JSON.stringify(cv)); }}
+    if(vaultHandle&&searchIndexBuilt) saveIndexFile(searchIndex,getKnownTags());
   }
-
-  const msg = errors ? `${done} umbenannt, ${errors} Fehler` : `${done} Einträge umbenannt`;
-  toast(msg, errors?'err':'ok');
+  // Also update any active prefix chips that reference the old value
+  activeFilters=activeFilters.map(f=>{ const p=parsePrefixQuery(f); return (p&&p.cfg===cfg&&p.value.toLowerCase()===oldVal.toLowerCase())?`${p.prefix}:${newVal}`:f; });
+  toast(errors?`${done} umbenannt, ${errors} Fehler`:`${done} Einträge umbenannt`, errors?'err':'ok');
   document.getElementById('searchInput').value='';
+  renderFilterChips();
   runSearch();
 }
 // ──────────────────────────────────────────────────────────────
