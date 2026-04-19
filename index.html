@@ -871,7 +871,7 @@ async function openFolder(){
     vaultHandle=await window.showDirectoryPicker({mode:'readwrite'});
     toast('Ordner: '+vaultHandle.name);
     await loadFile(currentDate);
-    buildSearchIndex(); // async, non-blocking
+    buildSearchIndex(); // async, non-blocking // async, non-blocking
   }catch(e){ if(e.name!=='AbortError') toast('Fehler: '+e.message,'err'); }
 }
 async function reloadFile(){
@@ -1662,37 +1662,56 @@ let searchIndexBuilt = false;
 let searchIndexing = false;
 
 async function saveIndexFile(index, tags){
+  const payload = JSON.stringify({v:8, built: new Date().toISOString(), index, tags});
+  if(connectionMode==='github'){
+    try{ await ghPut(INDEX_FILE, payload, 'Update search index', await ghGetSha(INDEX_FILE)); }
+    catch(e){ console.warn('Index speichern (GitHub) fehlgeschlagen:', e); }
+    return;
+  }
   if(!vaultHandle) return;
   try{
     const fh = await vaultHandle.getFileHandle(INDEX_FILE, {create:true});
     const w = await fh.createWritable();
-    await w.write(JSON.stringify({v:8, built: new Date().toISOString(), index, tags}));
-    await w.close();
+    await w.write(payload); await w.close();
   }catch(e){ console.warn('Index speichern fehlgeschlagen:', e); }
 }
 
+async function ghGetSha(path){
+  try{
+    const { token, privateRepo, branch } = ghConfig;
+    const res = await fetch(`https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`,
+      {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+    if(!res.ok) return undefined;
+    return (await res.json()).sha;
+  }catch{ return undefined; }
+}
+
 async function loadIndexFile(){
+  if(connectionMode==='github'){
+    try{
+      const data = await ghGet(INDEX_FILE);
+      if(!data) return null;
+      return JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))));
+    }catch{ return null; }
+  }
   if(!vaultHandle) return null;
   try{
     const fh = await vaultHandle.getFileHandle(INDEX_FILE);
-    const text = await (await fh.getFile()).text();
-    return JSON.parse(text);
+    return JSON.parse(await (await fh.getFile()).text());
   }catch{ return null; }
 }
 
 async function buildSearchIndex(){
-  if(searchIndexing || !vaultHandle) return;
+  if(searchIndexing || !isConnected()) return;
   searchIndexing = true;
   searchIndexBuilt = false;
 
-  // Try loading existing index
   const saved = await loadIndexFile();
   if(saved?.v===8 && Array.isArray(saved.index)){
     searchIndex = saved.index;
-    // Restore known tags immediately so autocomplete and search pills work
     if(Array.isArray(saved.tags) && saved.tags.length){
       localStorage.setItem('knownTags', JSON.stringify(saved.tags));
-      renderFilterChips(); renderSuggestions();;
+      renderFilterChips(); renderSuggestions();
     }
     searchIndexBuilt = true;
     searchIndexing = false;
@@ -1700,7 +1719,6 @@ async function buildSearchIndex(){
     updateSearchFooter(`${searchIndex.length} Einträge (${age} Min. alt) — aktualisiere…`, 1);
     if(!document.getElementById('searchOverlay').classList.contains('hidden'))
       runSearch(document.getElementById('searchInput').value);
-    // Rebuild in background to pick up changes
     await rebuildIndex(saved.index);
   } else {
     updateSearchFooter('Erstelle Index…', 0);
@@ -1710,86 +1728,122 @@ async function buildSearchIndex(){
 
 async function rebuildIndex(existingIndex){
   searchIndexing = true;
-  // Build map of existing entries by date for quick lookup
   const existing = Object.fromEntries((existingIndex||[]).map(e=>[e.date,e]));
-
-  const years = [];
-  for await(const [name, h] of vaultHandle.entries()){
-    if(h.kind==='directory' && /^\d{4}$/.test(name)) years.push(name);
-  }
-  years.sort();
-
-  const allFiles = [];
-  for(const year of years){
-    let yearDir; try{ yearDir=await vaultHandle.getDirectoryHandle(year); }catch{ continue; }
-    for await(const [fname, fh] of yearDir.entries()){
-      if(fname.endsWith('.md')) allFiles.push({year, yearDir, fname, fh});
-    }
-  }
-
-  const total = allFiles.length;
   const newIndex = [];
   const allTags = new Set(JSON.parse(localStorage.getItem('knownTags')||'[]'));
-  let done = 0;
 
-  for(const {yearDir, fname} of allFiles){
-    const date = fname.replace('.md','');
-    try{
-      const fh2 = await yearDir.getFileHandle(fname);
-      const file = await fh2.getFile();
-      // Skip if same size & date as cached (quick heuristic)
-      const cached = existing[date];
-      if(cached && cached._size===file.size && cached._modified===file.lastModified && cached.hasContent!==undefined){
-        newIndex.push(cached);
+  if(connectionMode==='github'){
+    // List years via GitHub API
+    const years = await ghListYears();
+    const { token, privateRepo, branch, diaryPath } = ghConfig;
+    let total=0, done=0;
+    // Count files first
+    for(const year of years){
+      const base=(diaryPath?`${diaryPath}/`:'')+year;
+      try{
+        const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
+          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+        if(res.ok){ const items=await res.json(); total+=items.filter(i=>i.name.endsWith('.md')).length; }
+      }catch{}
+    }
+    for(const year of years){
+      const base=(diaryPath?`${diaryPath}/`:'')+year;
+      let items=[];
+      try{
+        const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
+          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+        if(res.ok) items=await res.json();
+      }catch{ continue; }
+      for(const item of items.filter(i=>i.name.endsWith('.md'))){
+        const date=item.name.replace('.md','');
+        const cached=existing[date];
+        // Use size as heuristic (no lastModified from GitHub tree)
+        if(cached && cached._size===item.size && cached.hasContent!==undefined){
+          newIndex.push(cached); done++;
+          if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
+          continue;
+        }
+        try{
+          const fres=await fetch(item.download_url);
+          const text=await fres.text();
+          const fm=text.match(/^---\n([\s\S]*?)\n---/);
+          if(fm){
+            const yaml=fm[1], body=text.slice(fm[0].length).trim();
+            const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
+            const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+            const tags=list('tags'); tags.forEach(t=>allTags.add(t));
+            const coffeeLocations=list('coffee_locations');
+            const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
+            newIndex.push({date,text:body,tags:tags.join(' '),
+              locations:[...list('location'),...list('country')].join(' '),
+              people:list('people').join(' '),sport:list('sport').join(' '),
+              coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size});
+          }
+        }catch{}
         done++;
-        if(done % 30 === 0) updateSearchFooter(`Aktualisiert ${done} / ${total}…`, done/total);
-        continue;
+        if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
       }
-      const text = await file.text();
-      const fm = text.match(/^---\n([\s\S]*?)\n---/);
-      if(fm){
-        const yaml = fm[1];
-        const body = text.slice(fm[0].length).trim();
-        const list = k => { const s=yaml.match(new RegExp('^'+k+':\\s*\\n((?:  - .+\\n*)*)','m')); if(!s)return[]; return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim()); };
-        const tags = list('tags');
-        tags.forEach(t=>allTags.add(t));
-        const scalar = k => { const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m')); return m?m[1].trim():null; };
-        const coffeeCount = parseFloat(scalar('coffee')||0);
-        const coffeeLocations = list('coffee_locations');
-        const hasContent = !(coffeeCount === 0 && coffeeLocations.includes('Home'));
-        newIndex.push({
-          date,
-          text: body,
-          tags: tags.join(' '),
-          locations: [...list('location'),...list('country')].join(' '),
-          people: list('people').join(' '),
-          sport: list('sport').join(' '),
-          coffeeLocations: list('coffee_locations').join(' '),
-          hasContent,
-          _size: file.size,
-          _modified: file.lastModified,
-        });
+    }
+  } else {
+    // Local file system
+    const years = [];
+    for await(const [name, h] of vaultHandle.entries()){
+      if(h.kind==='directory' && /^\d{4}$/.test(name)) years.push(name);
+    }
+    years.sort();
+    const allFiles = [];
+    for(const year of years){
+      let yearDir; try{ yearDir=await vaultHandle.getDirectoryHandle(year); }catch{ continue; }
+      for await(const [fname, fh] of yearDir.entries()){
+        if(fname.endsWith('.md')) allFiles.push({year, yearDir, fname, fh});
       }
-    }catch{ /* skip */ }
-    done++;
-    if(done % 30 === 0) updateSearchFooter(`Aktualisiert ${done} / ${total}…`, done/total);
+    }
+    const total=allFiles.length; let done=0;
+    for(const {yearDir, fname} of allFiles){
+      const date=fname.replace('.md','');
+      try{
+        const fh2=await yearDir.getFileHandle(fname);
+        const file=await fh2.getFile();
+        const cached=existing[date];
+        if(cached&&cached._size===file.size&&cached._modified===file.lastModified&&cached.hasContent!==undefined){
+          newIndex.push(cached); done++;
+          if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
+          continue;
+        }
+        const text=await file.text();
+        const fm=text.match(/^---\n([\s\S]*?)\n---/);
+        if(fm){
+          const yaml=fm[1], body=text.slice(fm[0].length).trim();
+          const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
+          const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+          const tags=list('tags'); tags.forEach(t=>allTags.add(t));
+          const coffeeLocations=list('coffee_locations');
+          const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
+          newIndex.push({date,text:body,tags:tags.join(' '),
+            locations:[...list('location'),...list('country')].join(' '),
+            people:list('people').join(' '),sport:list('sport').join(' '),
+            coffeeLocations:coffeeLocations.join(' '),hasContent,
+            _size:file.size,_modified:file.lastModified});
+        }
+      }catch{}
+      done++;
+      if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
+    }
   }
 
   newIndex.sort((a,b)=>b.date.localeCompare(a.date));
   searchIndex = newIndex;
   searchIndexBuilt = true;
   searchIndexing = false;
-
-  const tagsArr = [...allTags];
+  const tagsArr=[...allTags];
   localStorage.setItem('knownTags', JSON.stringify(tagsArr));
   await saveIndexFile(newIndex, tagsArr);
-  try { computeTopChips(); } catch(e){ console.error('computeTopChips error:', e); }
+  try{ computeTopChips(); }catch(e){ console.error('computeTopChips error:', e); }
   localStorage.removeItem('recentlySaved');
   updateSearchFooter(`${newIndex.length} Einträge indexiert`, 1);
-  // Re-render calendar if open so unedited days update
   if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
   if(!document.getElementById('searchOverlay').classList.contains('hidden')){
-    renderFilterChips(); renderSuggestions();;
+    renderFilterChips(); renderSuggestions();
     runSearch(document.getElementById('searchInput').value);
   }
 }
@@ -2043,7 +2097,7 @@ function openSearch(){
   // Restore previous state - don't reset anything
   if(searchIndexBuilt) updateSearchFooter(`${searchIndex.length} Einträge indexiert`, 1);
   else if(searchIndexing) updateSearchFooter('Wird indexiert…', 0);
-  else updateSearchFooter('Kein Ordner geöffnet', 0);
+  else updateSearchFooter(isConnected() ? 'Wird indexiert…' : 'Keine Verbindung', 0);
   // Re-render current state
   renderFilterChips();
   renderSuggestions();
@@ -2347,7 +2401,9 @@ let exportAvailableYears = [];
 
 async function openExport(){
   exportAvailableYears = [];
-  if(vaultHandle){
+  if(connectionMode==='github'){
+    exportAvailableYears = await ghListYears();
+  } else if(vaultHandle){
     for await(const [name, h] of vaultHandle.entries()){
       if(h.kind==='directory' && /^\d{4}$/.test(name)) exportAvailableYears.push(name);
     }
@@ -2497,14 +2553,17 @@ function setExportProgress(done,total){
 }
 
 async function runExport(){
-  if(!vaultHandle){ toast('Zuerst Vault-Ordner wählen','err'); return; }
+  if(!isConnected()){ toast('Zuerst Verbindung herstellen','err'); return; }
   if(!exportAvailableYears.length){ toast('Keine Jahre gefunden','err'); return; }
 
-  // Resolve output directory: explicit choice or default _Export in vault
-  let outputDir=exportOutputHandle;
-  if(!outputDir){
-    try{ outputDir=await vaultHandle.getDirectoryHandle('_Export',{create:true}); }
-    catch(e){ toast('Konnte _Export nicht erstellen: '+e.message,'err'); return; }
+  // In local mode: resolve output directory
+  let outputDir = null;
+  if(connectionMode !== 'github'){
+    outputDir = exportOutputHandle;
+    if(!outputDir){
+      try{ outputDir = await vaultHandle.getDirectoryHandle('_Export',{create:true}); }
+      catch(e){ toast('Konnte _Export nicht erstellen: '+e.message,'err'); return; }
+    }
   }
 
   const {fromYear,toYear}=getExportRange();
@@ -2517,57 +2576,70 @@ async function runExport(){
   const parseNum=v=>{ const n=parseFloat(v); return isNaN(n)?0:n; };
   let totalApples=0,totalBananas=0,totalCoffee=0,totalDays=0;
   let totalFiles=0,doneFiles=0;
+  const yearJsonMap = {}; // year → JSON string, for GitHub push
 
-  for(const year of yearsToExport){
-    try{
-      const yearDir=await vaultHandle.getDirectoryHandle(year);
-      for await(const [fname] of yearDir.entries()){ if(fname.endsWith('.md')) totalFiles++; }
-    }catch{}
+  // Helper: parse frontmatter text → entry object
+  function parseEntry(text){
+    const fmMatch=text.match(/^---\n([\s\S]*?)\n---/);
+    if(!fmMatch) return null;
+    const fm={};
+    for(const line of fmMatch[1].split('\n')){ const ci=line.indexOf(':'); if(ci===-1) continue; fm[line.slice(0,ci).trim()]=line.slice(ci+1).trim(); }
+    if(!fm.date) return null;
+    const body=text.slice(fmMatch[0].length).trim();
+    if(!body) return null;
+    const entry={date:fm.date,apples:parseNum(fm.apples),bananas:parseNum(fm.bananas),coffee:parseNum(fm.coffee),mood:parseNum(fm.mood),cycling_km:parseNum(fm.cycling_km),weekday_index:fm.weekday_index!==undefined?parseNum(fm.weekday_index):undefined,text:body};
+    if(entry.weekday_index===undefined) delete entry.weekday_index;
+    return entry;
   }
-  setExportProgress(0,Math.max(totalFiles,1));
 
-  for(const year of yearsToExport){
-    let yearDir;
-    try{ yearDir=await vaultHandle.getDirectoryHandle(year); }
-    catch{ exportLog(`Ordner ${year} nicht gefunden – übersprungen`,'err'); continue; }
-
-    const entries=[];
-    for await(const [fname,fh] of yearDir.entries()){
-      if(!fname.endsWith('.md')) continue;
-      try{
-        const text=await (await fh.getFile()).text();
-        const fmMatch=text.match(/^---\n([\s\S]*?)\n---/);
-        if(!fmMatch){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
-        const fm={};
-        for(const line of fmMatch[1].split('\n')){
-          const ci=line.indexOf(':'); if(ci===-1) continue;
-          fm[line.slice(0,ci).trim()]=line.slice(ci+1).trim();
-        }
-        if(!fm.date){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
-        const body=text.slice(fmMatch[0].length).trim();
-        if(!body){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
-        const entry={
-          date:fm.date, apples:parseNum(fm.apples), bananas:parseNum(fm.bananas),
-          coffee:parseNum(fm.coffee), mood:parseNum(fm.mood),
-          cycling_km:parseNum(fm.cycling_km),
-          weekday_index:fm.weekday_index!==undefined?parseNum(fm.weekday_index):undefined,
-          text:body
-        };
-        if(entry.weekday_index===undefined) delete entry.weekday_index;
-        entries.push(entry);
-        totalApples+=entry.apples; totalBananas+=entry.bananas;
-        totalCoffee+=entry.coffee; totalDays++;
-      }catch(e){ exportLog(`Fehler ${fname}: ${e.message}`,'err'); }
-      doneFiles++; setExportProgress(doneFiles,totalFiles);
+  if(connectionMode==='github'){
+    const { token, privateRepo, branch, diaryPath } = ghConfig;
+    // Count files
+    for(const year of yearsToExport){
+      const base=(diaryPath?`${diaryPath}/`:'')+year;
+      try{ const r=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}); if(r.ok){ const its=await r.json(); totalFiles+=its.filter(i=>i.name.endsWith('.md')).length; } }catch{}
     }
-
-    entries.sort((a,b)=>a.date.localeCompare(b.date));
-    try{
-      const fh=await outputDir.getFileHandle(`${year}.json`,{create:true});
-      const w=await fh.createWritable();
-      await w.write(JSON.stringify({entries},null,2)); await w.close();
+    setExportProgress(0,Math.max(totalFiles,1));
+    for(const year of yearsToExport){
+      const base=(diaryPath?`${diaryPath}/`:'')+year;
+      let items=[];
+      try{ const r=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}); if(r.ok) items=await r.json(); }
+      catch{ exportLog(`${year} nicht gefunden`,'err'); continue; }
+      const entries=[];
+      for(const item of items.filter(i=>i.name.endsWith('.md'))){
+        try{ const text=await(await fetch(item.download_url)).text(); const e=parseEntry(text); if(e){ entries.push(e); totalApples+=e.apples; totalBananas+=e.bananas; totalCoffee+=e.coffee; totalDays++; } }
+        catch(e){ exportLog(`Fehler ${item.name}: ${e.message}`,'err'); }
+        doneFiles++; setExportProgress(doneFiles,totalFiles);
+      }
+      entries.sort((a,b)=>a.date.localeCompare(b.date));
+      const json=JSON.stringify({entries},null,2);
+      yearJsonMap[year]=json;
+      if(outputDir){
+        try{ const fh=await outputDir.getFileHandle(`${year}.json`,{create:true}); const w=await fh.createWritable(); await w.write(json); await w.close(); }catch(e){ exportLog(`${year}.json lokal Fehler: ${e.message}`,'err'); }
+      }
       exportLog(`${year}.json — ${entries.length} Einträge`,'ok');
-    }catch(e){ exportLog(`${year}.json Fehler: ${e.message}`,'err'); }
+    }
+  } else {
+    // Local mode
+    for(const year of yearsToExport){
+      try{ const yearDir=await vaultHandle.getDirectoryHandle(year); for await(const [fname] of yearDir.entries()){ if(fname.endsWith('.md')) totalFiles++; } }catch{}
+    }
+    setExportProgress(0,Math.max(totalFiles,1));
+    for(const year of yearsToExport){
+      let yearDir;
+      try{ yearDir=await vaultHandle.getDirectoryHandle(year); }
+      catch{ exportLog(`Ordner ${year} nicht gefunden`,'err'); continue; }
+      const entries=[];
+      for await(const [fname,fh] of yearDir.entries()){
+        if(!fname.endsWith('.md')) continue;
+        try{ const text=await(await fh.getFile()).text(); const e=parseEntry(text); if(e){ entries.push(e); totalApples+=e.apples; totalBananas+=e.bananas; totalCoffee+=e.coffee; totalDays++; } }
+        catch(e){ exportLog(`Fehler ${fname}: ${e.message}`,'err'); }
+        doneFiles++; setExportProgress(doneFiles,totalFiles);
+      }
+      entries.sort((a,b)=>a.date.localeCompare(b.date));
+      try{ const fh=await outputDir.getFileHandle(`${year}.json`,{create:true}); const w=await fh.createWritable(); const json=JSON.stringify({entries},null,2); yearJsonMap[year]=json; await w.write(json); await w.close(); exportLog(`${year}.json — ${entries.length} Einträge`,'ok'); }
+      catch(e){ exportLog(`${year}.json Fehler: ${e.message}`,'err'); }
+    }
   }
 
   // stats.md
@@ -2580,33 +2652,29 @@ async function runExport(){
     `total_coffee: ${Math.round(totalCoffee)}`,
     '---',''
   ].join('\n');
-  try{
-    const fh=await outputDir.getFileHandle('stats.md',{create:true});
-    const w=await fh.createWritable(); await w.write(statsContent); await w.close();
-    exportLog('stats.md geschrieben','ok');
-  }catch(e){ exportLog(`stats.md Fehler: ${e.message}`,'err'); }
 
-  setExportProgress(1,1);
-  exportLog(`Fertig — ${totalDays} Tage · ${Math.round(totalApples)} Äpfel · ${Math.round(totalBananas)} Bananen · ${Math.round(totalCoffee)} Kaffees`);
+  // Write stats.md locally if we have an outputDir
+  if(outputDir){
+    try{ const fh=await outputDir.getFileHandle('stats.md',{create:true}); const w=await fh.createWritable(); await w.write(statsContent); await w.close(); exportLog('stats.md lokal geschrieben','ok'); }
+    catch(e){ exportLog(`stats.md Fehler: ${e.message}`,'err'); }
+  }
 
-  // Also push to public GitHub repo if configured
-  if(connectionMode==='github' && ghConfig.publicRepo){
+  // Push to public GitHub repo if configured
+  if(ghConfig.publicRepo){
     exportLog('Pushe zu GitHub Pages…');
     try{
       for(const year of yearsToExport){
-        // Re-fetch the just-written JSON from outputDir to push
-        try{
-          const fh=await outputDir.getFileHandle(`${year}.json`);
-          const txt=await(await fh.getFile()).text();
-          await ghPublishFile(`${year}.json`, txt);
-          exportLog(`${year}.json → GitHub ✓`,'ok');
-        }catch(e){ exportLog(`${year}.json → GitHub Fehler: ${e.message}`,'err'); }
+        const json = yearJsonMap[year];
+        if(json){ await ghPublishFile(`${year}.json`, json); exportLog(`${year}.json → GitHub ✓`,'ok'); }
+        else { exportLog(`${year}.json fehlt für Push`,'err'); }
       }
       await ghPublishFile('stats.md', statsContent);
       exportLog('stats.md → GitHub ✓','ok');
     }catch(e){ exportLog('GitHub Push Fehler: '+e.message,'err'); }
   }
 
+  setExportProgress(1,1);
+  exportLog(`Fertig — ${totalDays} Tage · ${Math.round(totalApples)} Äpfel · ${Math.round(totalBananas)} Bananen · ${Math.round(totalCoffee)} Kaffees`);
   btn.disabled=false;
 }
 // ──────────────────────────────────────────────────────────────
@@ -2689,6 +2757,7 @@ async function saveSettings(){
     setTimeout(()=>closeSettings(), 800);
     updateHeaderState();
     await loadFile(currentDate);
+    buildSearchIndex(); // async, non-blocking
   } else {
     closeSettings();
   }
