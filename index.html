@@ -875,7 +875,7 @@ async function openFolder(){
   }catch(e){ if(e.name!=='AbortError') toast('Fehler: '+e.message,'err'); }
 }
 async function reloadFile(){
-  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
+  if(!isConnected()){ toast('Zuerst Ordner/Verbindung wählen','err'); return; }
   await loadFile(currentDate);
 }
 let statusTimer;
@@ -896,7 +896,7 @@ function showSaveNotif(dateStr){
 
 async function autoSave(){
   if(!isDirty) return;
-  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
+  if(!isConnected()){ toast('Zuerst Ordner/Verbindung wählen','err'); return; }
   try{
     const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
     saveKnownTags(tags);
@@ -962,7 +962,7 @@ function updateIndexEntry(date, content){
 }
 
 async function navigateDay(delta){
-  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
+  if(!isConnected()){ toast('Zuerst Ordner/Verbindung wählen','err'); return; }
   await autoSave();
   const d=new Date(currentDate+'T12:00:00');
   d.setDate(d.getDate()+delta);
@@ -977,7 +977,7 @@ async function navigateToDate(dateStr){
   if(!dateStr) return;
   await autoSave();
   currentDate=dateStr;
-  if(!vaultHandle){ updateHeaderDate(); return; }
+  if(!isConnected()){ updateHeaderDate(); return; }
   await loadFile(currentDate);
 }
 
@@ -2614,6 +2614,11 @@ async function runExport(){
 
 // ── Connection Mode & GitHub API ─────────────────────────────
 let connectionMode = 'local'; // 'local' | 'github'
+
+function isConnected(){
+  if(connectionMode==='github') return !!(ghConfig.token && ghConfig.privateRepo);
+  return !!vaultHandle;
+}
 let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'' };
 
 function loadGhConfig(){
