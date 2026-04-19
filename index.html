@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Erfassen</title>
   <style>
     :root {
@@ -209,7 +209,7 @@
     .header-inner { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:relative; }
     .header-center { position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px; }
     .header-right { display:flex;gap:4px;align-items:center; }
-    /* Action buttons in header — same size as nav-btn */
+    /* Unified small header button — same as nav-btn */
     .hdr-btn {
       width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
       background:transparent;color:var(--text-3);
@@ -218,13 +218,47 @@
     }
     .hdr-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
     .hdr-btn svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8; }
-    /* Mobile: single row, hide folder btn */
+    /* On desktop: show full header-right, hide hamburger */
+    .hdr-hamburger { display:none; }
     @media (max-width:600px){
-      .header-row1, .header-row2 { display:contents; }
+      /* Hide desktop-only header items */
+      .hdr-desktop { display:none !important; }
+      /* Show hamburger */
+      .hdr-hamburger { display:flex; }
+      /* Folder btn always hidden on mobile (File System API not available) */
       .folder-btn { display:none !important; }
     }
-    @media (min-width:601px){
-      .header-row1, .header-row2 { display:contents; }
+    /* Bottom Sheet */
+    .bottom-sheet-backdrop {
+      position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:150;
+      opacity:0;pointer-events:none;transition:opacity .25s ease;
+    }
+    .bottom-sheet-backdrop.open { opacity:1;pointer-events:all; }
+    .bottom-sheet {
+      position:fixed;bottom:0;left:0;right:0;z-index:151;
+      background:var(--surface);border-radius:16px 16px 0 0;
+      border-top:1px solid var(--border);
+      transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);
+      padding-bottom:env(safe-area-inset-bottom);
+    }
+    .bottom-sheet.open { transform:translateY(0); }
+    .bottom-sheet-handle {
+      width:36px;height:4px;border-radius:2px;background:var(--border-2);
+      margin:10px auto 0;
+    }
+    .bottom-sheet-item {
+      display:flex;align-items:center;gap:12px;
+      padding:14px 20px;cursor:pointer;transition:background .1s;
+      font-size:15px;color:var(--text-2);border:none;background:transparent;
+      width:100%;text-align:left;font-family:inherit;
+    }
+    .bottom-sheet-item:hover, .bottom-sheet-item:active { background:var(--surface-2); }
+    .bottom-sheet-item svg { width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0;color:var(--text-3); }
+    .bottom-sheet-item .bs-label { flex:1; }
+    .bottom-sheet-item .bs-status { font-size:11px;color:var(--text-3); }
+    .bottom-sheet-divider { height:1px;background:var(--border);margin:0 20px; }
+    .bottom-sheet-conn-dot {
+      width:7px;height:7px;border-radius:50%;flex-shrink:0;
     }
     .nav-btn { width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0; }
     .nav-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
@@ -483,13 +517,15 @@
   </div>
 
   <div class="header-right">
+    <!-- Always visible -->
     <button class="hdr-btn" onclick="openSearch()" title="Suchen (F)">
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     </button>
-    <button class="hdr-btn" onclick="openExport()" title="Exportieren">
+    <!-- Desktop only -->
+    <button class="hdr-btn hdr-desktop" onclick="openExport()" title="Exportieren">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </button>
-    <button class="hdr-btn gh-icon-btn" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
+    <button class="hdr-btn gh-icon-btn hdr-desktop" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
       <span class="gh-dot"></span>
     </button>
@@ -497,10 +533,32 @@
       <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
       <span id="folderBtnLabel">Wählen</span>
     </button>
+    <!-- Mobile only: hamburger with connection dot -->
+    <button class="hdr-btn gh-icon-btn hdr-hamburger" id="hamburgerBtn" onclick="openBottomSheet()" title="Mehr">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span class="gh-dot" id="hamburgerDot"></span>
+    </button>
   </div>
 
 </div>
 </div>
+
+<!-- Mobile Bottom Sheet -->
+<div class="bottom-sheet-backdrop" id="bsBackdrop" onclick="closeBottomSheet()"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="bottom-sheet-handle"></div>
+  <button class="bottom-sheet-item" onclick="openExport();closeBottomSheet()">
+    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    <span class="bs-label">Exportieren</span>
+  </button>
+  <div class="bottom-sheet-divider"></div>
+  <button class="bottom-sheet-item" onclick="openSettings();closeBottomSheet()">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+    <span class="bs-label">Verbindung</span>
+    <span class="bottom-sheet-conn-dot" id="bsConnDot" style="background:var(--error)"></span>
+  </button>
+</div>
+
 
 <div class="page">
 
@@ -2773,8 +2831,21 @@ let ghConnectionVerified = false;
 
 function updateGhSettingsBtn(){
   const btn = document.getElementById('ghSettingsBtn');
-  if(!btn) return;
-  btn.classList.toggle('configured', ghConnectionVerified);
+  const hamburger = document.getElementById('hamburgerBtn');
+  const bsDot = document.getElementById('bsConnDot');
+  const color = ghConnectionVerified ? '#60a5fa' : 'var(--error)';
+  if(btn) btn.classList.toggle('configured', ghConnectionVerified);
+  if(hamburger) hamburger.classList.toggle('configured', ghConnectionVerified);
+  if(bsDot) bsDot.style.background = color;
+}
+
+function openBottomSheet(){
+  document.getElementById('bsBackdrop').classList.add('open');
+  document.getElementById('bottomSheet').classList.add('open');
+}
+function closeBottomSheet(){
+  document.getElementById('bsBackdrop').classList.remove('open');
+  document.getElementById('bottomSheet').classList.remove('open');
 }
 
 // ── GitHub API helpers ────────────────────────────────────────
@@ -2902,6 +2973,7 @@ document.addEventListener('keydown',e=>{
     if(!document.getElementById('searchOverlay').classList.contains('hidden')){ closeSearch(); return; }
     if(!document.getElementById('exportOverlay').classList.contains('hidden')){ closeExport(); return; }
     if(!document.getElementById('settingsOverlay').classList.contains('hidden')){ closeSettings(); return; }
+    if(document.getElementById('bottomSheet').classList.contains('open')){ closeBottomSheet(); return; }
     if(document.getElementById('dpOverlay').classList.contains('open')){ closeDatePicker(); return; }
   }
   const tag=document.activeElement.tagName;
