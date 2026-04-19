@@ -384,9 +384,9 @@
     .gh-icon-btn { position:relative; }
     .gh-icon-btn .gh-dot {
       position:absolute;top:3px;right:3px;width:6px;height:6px;
-      border-radius:50%;background:var(--accent);display:none;
+      border-radius:50%;background:var(--error);display:block;
     }
-    .gh-icon-btn.configured .gh-dot { display:block; }
+    .gh-icon-btn.configured .gh-dot { background:#60a5fa; }
     .settings-overlay { position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:80px; }
     .settings-overlay.hidden { display:none; }
     .settings-backdrop { position:absolute;inset:0;background:rgba(0,0,0,.45); }
@@ -2510,10 +2510,20 @@ function updateExportFolderBtn(){
   const btn=document.getElementById('exportFolderBtn');
   if(!lbl||!btn) return;
   if(exportOutputHandle){
+    // Explicit folder chosen
     lbl.textContent=exportOutputHandle.name;
     btn.classList.add('set');
+  } else if(connectionMode==='github' && ghConfig.publicRepo){
+    // GitHub mode: writes to public repo
+    lbl.textContent='→ '+ghConfig.publicRepo.split('/')[1];
+    btn.classList.add('set');
+  } else if(connectionMode==='github'){
+    // GitHub mode but no public repo configured
+    lbl.textContent='Öffentliches Repo nicht konfiguriert';
+    btn.classList.remove('set');
   } else if(vaultHandle){
-    lbl.textContent='_Export (Standard)';
+    // Local mode: default _Export subfolder
+    lbl.textContent=vaultHandle.name+'/_Export';
     btn.classList.remove('set');
   } else {
     lbl.textContent='Ausgabeordner wählen';
@@ -2751,6 +2761,7 @@ async function saveSettings(){
   }
   localStorage.setItem('connectionMode', connectionMode);
   updateGhSettingsBtn();
+  updateExportFolderBtn();
   // In GitHub mode, load the current date via API
   if(connectionMode === 'github'){
     status.textContent='Verbunden ✓'; status.className='settings-status show ok';
@@ -2878,6 +2889,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   loadGhConfig();
   setMode(connectionMode, false);
   updateGhSettingsBtn();
+  updateExportFolderBtn();
 });
 // ──────────────────────────────────────────────────────────────
 
