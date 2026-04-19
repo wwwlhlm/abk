@@ -994,6 +994,7 @@ function updateIndexEntry(date, content){
   const coffeeCount = parseFloat(scalar('coffee')||0);
   const coffeeLocations = list('coffee_locations');
   const hasContent = !(coffeeCount===0 && coffeeLocations.includes('Home'));
+  const wi = scalar('weekday_index');
   const entry = {
     date,
     text: body,
@@ -1003,6 +1004,12 @@ function updateIndexEntry(date, content){
     sport: list('sport').join(' '),
     coffeeLocations: coffeeLocations.join(' '),
     hasContent,
+    apples:    parseFloat(scalar('apples')  ||0)||0,
+    bananas:   parseFloat(scalar('bananas') ||0)||0,
+    coffee:    coffeeCount,
+    mood:      parseFloat(scalar('mood')    ||0)||0,
+    cycling_km:parseFloat(scalar('cycling_km')||0)||0,
+    weekday_index: wi!==null ? parseFloat(wi) : undefined,
     _size: new Blob([content]).size,
     _modified: Date.now(),
   };
