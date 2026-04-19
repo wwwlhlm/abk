@@ -206,19 +206,22 @@
     .inline-input:focus { border-color:var(--accent); }
     .inline-input::placeholder { color:var(--text-3); }
     .header-wrap { position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border); }
-    /* Desktop: single row */
-    .header-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;position:relative; }
+    .header-inner { display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:relative; }
     .header-center { position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px; }
-    .header-right { display:flex;gap:8px;align-items:center; }
-    /* Mobile: two rows */
+    .header-right { display:flex;gap:4px;align-items:center; }
+    /* Action buttons in header — same size as nav-btn */
+    .hdr-btn {
+      width:28px;height:28px;border-radius:6px;border:1px solid var(--border);
+      background:transparent;color:var(--text-3);
+      display:flex;align-items:center;justify-content:center;
+      cursor:pointer;transition:all .15s;flex-shrink:0;position:relative;
+    }
+    .hdr-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .hdr-btn svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8; }
+    /* Mobile: single row, hide folder btn */
     @media (max-width:600px){
-      .header-inner { flex-direction:column;gap:0;padding:0;position:static; }
-      .header-row1 { display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 14px; }
-      .header-row2 { display:flex;align-items:center;justify-content:space-between;width:100%;padding:6px 14px 8px;border-top:1px solid var(--border); }
-      .header-center { position:static;transform:none;flex:1;justify-content:center; }
-      .header-left { display:flex;gap:6px;align-items:center; }
-      .header-right { gap:6px; }
-      .folder-btn { max-width:120px;font-size:12px; }
+      .header-row1, .header-row2 { display:contents; }
+      .folder-btn { display:none !important; }
     }
     @media (min-width:601px){
       .header-row1, .header-row2 { display:contents; }
@@ -381,9 +384,8 @@
     .export-btn-run:hover { background:rgba(253,147,159,.2); }
     .export-btn-run:disabled { opacity:.4;cursor:default; }
     /* ── GitHub Settings ──────────────────────────────────── */
-    .gh-icon-btn { position:relative; }
     .gh-icon-btn .gh-dot {
-      position:absolute;top:3px;right:3px;width:6px;height:6px;
+      position:absolute;top:2px;right:2px;width:5px;height:5px;
       border-radius:50%;background:var(--error);display:block;
     }
     .gh-icon-btn.configured .gh-dot { background:#60a5fa; }
@@ -454,55 +456,47 @@
 <div class="header-wrap">
 <div class="header-inner">
 
-  <!-- Row 1 (mobile) / left+right (desktop) -->
-  <div class="header-row1">
-    <div class="header-left">
-      <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
-      <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
-    </div>
-    <div class="header-right">
-      <button class="icon-btn" onclick="openSearch()" title="Suchen (F)">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </button>
-      <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
-        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-      </button>
-      <button class="icon-btn" onclick="openExport()" title="Exportieren">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      </button>
-      <button class="icon-btn gh-icon-btn" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
-        <span class="gh-dot"></span>
-      </button>
-      <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
-        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span id="folderBtnLabel">Wählen</span>
-      </button>
-    </div>
+  <div class="header-left">
+    <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
+    <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
   </div>
 
-  <!-- Row 2 (mobile) / center (desktop) -->
-  <div class="header-row2">
-    <div class="header-center">
-      <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-      </button>
-      <span class="header-date" id="headerDate" onclick="toggleDatePicker()" title="Datum wählen"></span>
-      <div class="dp-overlay" id="dpOverlay">
-        <div class="dp-backdrop" onclick="closeDatePicker()"></div>
-        <div class="dp-panel" onclick="event.stopPropagation()" id="dpPanel">
-          <div class="dp-head">
-            <button class="dp-nav" onclick="dpShiftMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-            <span class="dp-title" id="dpTitle" onclick="toggleYearView()"></span>
-            <button class="dp-nav" onclick="dpShiftMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-          </div>
-          <div id="dpBody"></div>
+  <div class="header-center">
+    <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <span class="header-date" id="headerDate" onclick="toggleDatePicker()" title="Datum wählen"></span>
+    <div class="dp-overlay" id="dpOverlay">
+      <div class="dp-backdrop" onclick="closeDatePicker()"></div>
+      <div class="dp-panel" onclick="event.stopPropagation()" id="dpPanel">
+        <div class="dp-head">
+          <button class="dp-nav" onclick="dpShiftMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+          <span class="dp-title" id="dpTitle" onclick="toggleYearView()"></span>
+          <button class="dp-nav" onclick="dpShiftMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
         </div>
+        <div id="dpBody"></div>
       </div>
-      <button class="nav-btn" onclick="navigateDay(1)" title="Nächster Tag">
-        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
     </div>
+    <button class="nav-btn" onclick="navigateDay(1)" title="Nächster Tag">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+
+  <div class="header-right">
+    <button class="hdr-btn" onclick="openSearch()" title="Suchen (F)">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    </button>
+    <button class="hdr-btn" onclick="openExport()" title="Exportieren">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="hdr-btn gh-icon-btn" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+      <span class="gh-dot"></span>
+    </button>
+    <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
+      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      <span id="folderBtnLabel">Wählen</span>
+    </button>
   </div>
 
 </div>
@@ -2758,6 +2752,7 @@ async function saveSettings(){
     }
     ghConfig = { token, privateRepo, publicRepo, branch, diaryPath };
     localStorage.setItem('ghConfig', JSON.stringify(ghConfig));
+    ghConnectionVerified = true;
   }
   localStorage.setItem('connectionMode', connectionMode);
   updateGhSettingsBtn();
@@ -2774,11 +2769,12 @@ async function saveSettings(){
   }
 }
 
+let ghConnectionVerified = false;
+
 function updateGhSettingsBtn(){
   const btn = document.getElementById('ghSettingsBtn');
   if(!btn) return;
-  const isGh = connectionMode==='github' && ghConfig.token && ghConfig.privateRepo;
-  btn.classList.toggle('configured', !!isGh);
+  btn.classList.toggle('configured', ghConnectionVerified);
 }
 
 // ── GitHub API helpers ────────────────────────────────────────
@@ -2826,14 +2822,17 @@ async function loadFile(date){
     const data = await ghGet(path);
     if(data){
       const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
-      // Store sha for future writes
       window._ghFileSha = data.sha;
+      ghConnectionVerified = true;
+      updateGhSettingsBtn();
       populate(content);
       updateIndexEntry(date, content);
       updateHeaderState();
       showStatus('Geladen (GitHub)', `${yyyy}/${fname}`, true);
     } else {
       window._ghFileSha = null;
+      ghConnectionVerified = true;
+      updateGhSettingsBtn();
       const templateContent = buildNewFileContent(date);
       populate(templateContent);
       updateHeaderState();
