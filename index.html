@@ -274,6 +274,97 @@
     .tag-rename-cancel { font-size:13px;color:var(--text-3);cursor:pointer;padding:0 4px; }
     .tag-rename-cancel:hover { color:var(--text); }
     .tag-rename-progress { font-size:12px;color:var(--text-3);margin-left:auto; }
+
+    /* ── Export Overlay ───────────────────────────────────── */
+    .export-overlay { position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:80px; }
+    .export-overlay.hidden { display:none; }
+    .export-backdrop { position:absolute;inset:0;background:rgba(0,0,0,.45); }
+    .export-panel {
+      position:relative;width:min(480px,92vw);
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);overflow:hidden;
+      box-shadow:0 24px 60px rgba(0,0,0,.35);
+    }
+    .export-head {
+      display:flex;align-items:center;gap:8px;
+      padding:11px 14px 10px;border-bottom:1px solid var(--border);
+    }
+    .export-head svg { width:13px;height:13px;stroke:var(--text-3);fill:none;stroke-width:2;flex-shrink:0; }
+    .export-head-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3); }
+    .export-head .export-close { border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0;margin-left:auto; }
+    .export-head .export-close:hover { color:var(--text); }
+    .export-section { padding:14px 14px 16px; }
+    .export-section + .export-section { border-top:1px solid var(--border); }
+    .export-section-label { font-size:11px;color:var(--text-3);font-weight:400;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px; }
+    /* year range row */
+    .export-range-row { display:flex;align-items:center;gap:10px; }
+    .export-range-year {
+      font-size:22px;font-weight:400;color:var(--text-2);
+      min-width:42px;text-align:center;flex-shrink:0;
+      font-variant-numeric:tabular-nums;
+    }
+    /* dual-thumb slider — thumbR=8px (half of 16px thumb) */
+    .export-slider-wrap { position:relative;flex:1;display:flex;flex-direction:column; }
+    .export-slider-row { position:relative;height:28px;display:flex;align-items:center; }
+    .export-slider-track { position:absolute;left:0;right:0;height:3.3px;background:var(--border-2);border-radius:2px;pointer-events:none; }
+    .export-slider-fill { position:absolute;height:3.3px;background:var(--accent);border-radius:2px;pointer-events:none; }
+    .export-slider-row input[type=range] {
+      position:absolute;left:0;width:100%;
+      height:3px;-webkit-appearance:none;appearance:none;
+      background:transparent;outline:none;pointer-events:none;margin:0;
+    }
+    .export-slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+      background:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.5);
+      pointer-events:all;cursor:pointer;transition:transform .1s;
+    }
+    .export-slider-row input[type=range]::-webkit-slider-thumb:hover { transform:scale(1.2); }
+    /* tick marks: margin-inset=thumbR aligns first/last tick with thumb centres */
+    .export-ticks-row { position:relative;height:6px;margin-left:8px;margin-right:8px; }
+    .export-tick-mark {
+      position:absolute;transform:translateX(-50%);
+      width:1.3px;height:5px;border-radius:1px;transition:background .15s;
+    }
+    /* progress + log */
+    .export-progress-wrap { height:2px;background:var(--border);overflow:hidden;display:none; }
+    .export-progress-wrap.show { display:block; }
+    .export-progress-bar { height:100%;background:var(--accent);transition:width .2s;width:0%; }
+    .export-log {
+      font-size:10px;color:var(--text-3);line-height:1.7;
+      max-height:110px;overflow-y:auto;
+      padding:10px 14px;border-top:1px solid var(--border);display:none;
+    }
+    .export-log.show { display:block; }
+    .export-log-line { white-space:nowrap; }
+    .export-log-line.ok { color:var(--good); }
+    .export-log-line.err { color:var(--error); }
+    /* bottom row buttons — same shape as header folder-btn */
+    .export-actions-row { display:flex;align-items:center;gap:8px; }
+    .export-actions-row .spacer { flex:1; }
+    .export-folder-btn {
+      display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;
+      border-radius:8px;border:1px solid var(--border);background:transparent;
+      color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;
+      transition:all .15s;font-family:inherit;max-width:200px;overflow:hidden;white-space:nowrap;
+    }
+    .export-folder-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .export-folder-btn svg { width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0; }
+    .export-folder-btn.set { color:var(--accent);background:var(--accent-bg);border-color:rgba(253,147,159,.4); }
+    .export-btn-cancel {
+      display:flex;align-items:center;height:34px;padding:0 12px;
+      border-radius:8px;border:1px solid var(--border);background:transparent;
+      color:var(--text-2);font-size:13px;font-weight:500;cursor:pointer;
+      transition:all .15s;font-family:inherit;
+    }
+    .export-btn-cancel:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .export-btn-run {
+      display:flex;align-items:center;height:34px;padding:0 12px;
+      border-radius:8px;border:1px solid rgba(253,147,159,.4);background:var(--accent-bg);
+      color:var(--accent);font-size:13px;font-weight:500;cursor:pointer;
+      transition:all .15s;font-family:inherit;
+    }
+    .export-btn-run:hover { background:rgba(253,147,159,.2); }
+    .export-btn-run:disabled { opacity:.4;cursor:default; }
   </style>
 </head>
 <body>
@@ -313,6 +404,9 @@
     </button>
     <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
       <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+    </button>
+    <button class="icon-btn" onclick="openExport()" title="Exportieren">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
     </button>
     <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
       <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
@@ -456,6 +550,60 @@
 
 </div>
 
+<!-- Export Overlay -->
+<div class="export-overlay hidden" id="exportOverlay">
+  <div class="export-backdrop" onclick="closeExport()"></div>
+  <div class="export-panel" onclick="event.stopPropagation()">
+
+    <!-- Head -->
+    <div class="export-head">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <span class="export-head-title">Export</span>
+      <button class="export-close" onclick="closeExport()">✕</button>
+    </div>
+
+    <!-- Year range -->
+    <div class="export-section">
+      <div class="export-section-label">Jahresrange</div>
+      <div class="export-range-row">
+        <span class="export-range-year" id="exportYearFrom">–</span>
+        <div class="export-slider-wrap" id="exportSliderWrap">
+          <div class="export-slider-row">
+            <div class="export-slider-track"></div>
+            <div class="export-slider-fill" id="exportSliderFill"></div>
+            <input type="range" id="exportSliderFrom" min="0" max="0" value="0" oninput="onExportSlider()">
+            <input type="range" id="exportSliderTo"   min="0" max="0" value="0" oninput="onExportSlider()">
+          </div>
+          <div class="export-ticks-row" id="exportYearTicks"></div>
+        </div>
+        <span class="export-range-year" id="exportYearTo">–</span>
+      </div>
+    </div>
+
+    <!-- Progress bar (between sections, no padding) -->
+    <div class="export-progress-wrap" id="exportProgressWrap">
+      <div class="export-progress-bar" id="exportProgressBar"></div>
+    </div>
+
+    <!-- Log -->
+    <div class="export-log" id="exportLog"></div>
+
+    <!-- Folder + actions -->
+    <div class="export-section">
+      <div class="export-actions-row">
+        <button class="export-folder-btn" id="exportFolderBtn" onclick="chooseExportFolder()">
+          <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <span id="exportFolderLabel">Ausgabeordner wählen</span>
+        </button>
+        <div class="spacer"></div>
+        <button class="export-btn-cancel" onclick="closeExport()">Abbrechen</button>
+        <button class="export-btn-run" id="exportRunBtn" onclick="runExport()">Exportieren</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 <!-- Search Overlay -->
 <div class="search-overlay hidden" id="searchOverlay">
   <div class="search-backdrop" onclick="closeSearch()"></div>
@@ -594,11 +742,20 @@ function showSaveNotif(dateStr){
 }
 
 async function autoSave(){
-  if(!fileHandle||!isDirty) return;
+  if(!isDirty) return;
+  if(!vaultHandle){ toast('Zuerst Ordner wählen','err'); return; }
   try{
     const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
     saveKnownTags(tags);
     const content=buildContent();
+
+    // Create year dir + file handle if this is a new file
+    if(!fileHandle){
+      const yyyy=currentDate.split('-')[0];
+      const yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true});
+      fileHandle=await yearDir.getFileHandle(currentDate+'.md',{create:true});
+    }
+
     const w=await fileHandle.createWritable();
     await w.write(content); await w.close();
     isDirty=false;
@@ -672,27 +829,66 @@ async function navigateToDate(dateStr){
 }
 
 window.addEventListener('beforeunload',()=>{ if(fileHandle) autoSave(); });
+// Default template for new diary entries (Day.md)
+function buildNewFileContent(date){
+  const d = new Date(date+'T12:00:00');
+  const wi = d.getDay(); // 0=So, 1=Mo … 6=Sa (JS-Standard)
+  return [
+    '---',
+    `date: ${date}`,
+    'apples: 0',
+    'bananas: 0',
+    'coffee: 0',
+    'mood: 0',
+    'tags:',
+    'location:',
+    '  - Zurich',
+    'country:',
+    '  - CH',
+    'coordinates:',
+    'coffee_locations:',
+    '  - Home',
+    'sport:',
+    'people:',
+    `weekday_index: ${wi}`,
+    'visibility: public',
+    'updated:',
+    '---',
+    '—',
+  ].join('\n');
+}
+
 async function loadFile(date){
   currentDate=date; updateHeaderDate(); updateLastEditedBtn();
   const yyyy=date.split('-')[0], fname=date+'.md';
   showSpinner();
   try{
     let yearDir;
+    // Get or create the year directory
     try{ yearDir=await vaultHandle.getDirectoryHandle(yyyy); }
-    catch{ toast('Jahr '+yyyy+' nicht gefunden','err'); hideSpinner(); return; }
+    catch{ yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true}); }
+
+    let existingFile=null;
     try{
-      fileHandle=await yearDir.getFileHandle(fname,{create:false});
-      const file=await fileHandle.getFile();
-      const content=await file.text();
+      const fh=await yearDir.getFileHandle(fname,{create:false});
+      existingFile=await fh.getFile();
+      fileHandle=fh;
+    }catch{ existingFile=null; fileHandle=null; }
+
+    if(existingFile){
+      const content=await existingFile.text();
       populate(content);
       updateIndexEntry(date, content);
       updateHeaderState();
       showStatus('Geladen', yyyy+'/'+fname, true);
-    }catch{
-      fileHandle=null;
+    } else {
+      // New file: pre-fill form from template, don't write yet
+      fileHandle=null; // will be created on first save
+      const templateContent=buildNewFileContent(date);
+      populate(templateContent);
       updateHeaderState();
-      showStatus('Nicht gefunden', yyyy+'/'+fname, false);
-      resetDefaults(); toast('Datei nicht vorhanden','err');
+      showStatus('Neu', yyyy+'/'+fname, false);
+      isDirty=false; // not dirty until user actually changes something
     }
   }catch(e){ toast('Fehler: '+e.message,'err'); }
   finally{ hideSpinner(); }
@@ -1992,6 +2188,258 @@ async function executeFieldRename(parsed, affected){
 }
 // ──────────────────────────────────────────────────────────────
 
+// ── Export ────────────────────────────────────────────────────
+let exportOutputHandle = null;
+let exportAvailableYears = [];
+
+async function openExport(){
+  exportAvailableYears = [];
+  if(vaultHandle){
+    for await(const [name, h] of vaultHandle.entries()){
+      if(h.kind==='directory' && /^\d{4}$/.test(name)) exportAvailableYears.push(name);
+    }
+    exportAvailableYears.sort();
+  }
+  if(!exportAvailableYears.length && searchIndexBuilt){
+    exportAvailableYears = [...new Set(searchIndex.map(e=>e.date.slice(0,4)))].sort();
+  }
+
+  const saved = JSON.parse(localStorage.getItem('exportRange')||'null');
+  const n = exportAvailableYears.length;
+  let fromIdx=0, toIdx=Math.max(0,n-1);
+  if(saved && n){
+    const fi=exportAvailableYears.indexOf(String(saved.from));
+    const ti=exportAvailableYears.indexOf(String(saved.to));
+    if(fi>=0) fromIdx=fi;
+    if(ti>=0) toIdx=ti;
+  }
+
+  // Show current output target in button
+  updateExportFolderBtn();
+
+  const slFrom=document.getElementById('exportSliderFrom');
+  const slTo=document.getElementById('exportSliderTo');
+  slFrom.min=0; slFrom.max=n-1; slFrom.value=fromIdx;
+  slTo.min=0;   slTo.max=n-1;   slTo.value=toIdx;
+
+  updateExportRangeLabel();
+  updateExportFill();
+  renderExportTicks();
+  resetExportLog();
+  document.getElementById('exportOverlay').classList.remove('hidden');
+}
+
+function closeExport(){
+  document.getElementById('exportOverlay').classList.add('hidden');
+}
+
+function onExportSlider(){
+  const slFrom=document.getElementById('exportSliderFrom');
+  const slTo=document.getElementById('exportSliderTo');
+  let f=parseInt(slFrom.value), t=parseInt(slTo.value);
+  if(f>t){
+    if(document.activeElement===slFrom){ slFrom.value=t; f=t; }
+    else{ slTo.value=f; t=f; }
+  }
+  updateExportRangeLabel();
+  updateExportFill();
+  renderExportTicks();
+  saveExportRange();
+}
+
+function getExportRange(){
+  const f=parseInt(document.getElementById('exportSliderFrom').value);
+  const t=parseInt(document.getElementById('exportSliderTo').value);
+  return { fromYear:exportAvailableYears[f], toYear:exportAvailableYears[t], fromIdx:f, toIdx:t };
+}
+
+function updateExportFill(){
+  if(!exportAvailableYears.length) return;
+  const {fromIdx,toIdx}=getExportRange();
+  const fill=document.getElementById('exportSliderFill');
+  if(!fill) return;
+  const n=exportAvailableYears.length;
+  const thumbR=8; // px, matches ::-webkit-slider-thumb width/2
+  // Use CSS calc so fill aligns precisely with thumb centres regardless of container width
+  const fromFrac = n>1 ? fromIdx/(n-1) : 0;
+  const toFrac   = n>1 ? toIdx/(n-1)   : 1;
+  fill.style.left  = `calc(${thumbR}px + ${fromFrac} * (100% - ${2*thumbR}px))`;
+  fill.style.width = `calc(${toFrac-fromFrac} * (100% - ${2*thumbR}px))`;
+}
+
+function renderExportTicks(){
+  if(!exportAvailableYears.length) return;
+  const {fromIdx,toIdx}=getExportRange();
+  const el=document.getElementById('exportYearTicks');
+  if(!el) return;
+  const n=exportAvailableYears.length;
+  el.innerHTML=exportAvailableYears.map((y,i)=>{
+    // left:0% = first thumb centre, left:100% = last thumb centre
+    // because .export-ticks-row has margin-left/right = thumbR
+    const pct = n>1 ? (i/(n-1))*100 : 50;
+    const inRange = i>=fromIdx && i<=toIdx;
+    const col = inRange ? 'var(--accent)' : 'var(--border-2)';
+    return `<div class="export-tick-mark" style="left:${pct}%;background:${col}"></div>`;
+  }).join('');
+}
+
+function saveExportRange(){
+  const {fromYear,toYear}=getExportRange();
+  localStorage.setItem('exportRange',JSON.stringify({from:fromYear,to:toYear}));
+}
+
+function updateExportRangeLabel(){
+  const {fromYear,toYear}=getExportRange();
+  const fy=document.getElementById('exportYearFrom');
+  const ty=document.getElementById('exportYearTo');
+  if(fy) fy.textContent=fromYear||'–';
+  if(ty) ty.textContent=toYear||'–';
+}
+
+function updateExportFolderBtn(){
+  const lbl=document.getElementById('exportFolderLabel');
+  const btn=document.getElementById('exportFolderBtn');
+  if(!lbl||!btn) return;
+  if(exportOutputHandle){
+    lbl.textContent=exportOutputHandle.name;
+    btn.classList.add('set');
+  } else if(vaultHandle){
+    lbl.textContent='_Export (Standard)';
+    btn.classList.remove('set');
+  } else {
+    lbl.textContent='Ausgabeordner wählen';
+    btn.classList.remove('set');
+  }
+}
+
+async function chooseExportFolder(){
+  if(!window.showDirectoryPicker){ toast('File System Access nicht verfügbar','err'); return; }
+  try{
+    exportOutputHandle=await window.showDirectoryPicker({mode:'readwrite'});
+    updateExportFolderBtn();
+  }catch(e){ if(e.name!=='AbortError') toast('Fehler: '+e.message,'err'); }
+}
+
+function exportLog(msg,type=''){
+  const log=document.getElementById('exportLog');
+  log.classList.add('show');
+  const line=document.createElement('div');
+  line.className='export-log-line'+(type?' '+type:'');
+  line.textContent=msg;
+  log.appendChild(line);
+  log.scrollTop=log.scrollHeight;
+}
+
+function resetExportLog(){
+  const log=document.getElementById('exportLog');
+  log.innerHTML=''; log.classList.remove('show');
+  const pw=document.getElementById('exportProgressWrap');
+  pw.classList.remove('show');
+  document.getElementById('exportProgressBar').style.width='0%';
+}
+
+function setExportProgress(done,total){
+  document.getElementById('exportProgressWrap').classList.add('show');
+  document.getElementById('exportProgressBar').style.width=Math.round((done/total)*100)+'%';
+}
+
+async function runExport(){
+  if(!vaultHandle){ toast('Zuerst Vault-Ordner wählen','err'); return; }
+  if(!exportAvailableYears.length){ toast('Keine Jahre gefunden','err'); return; }
+
+  // Resolve output directory: explicit choice or default _Export in vault
+  let outputDir=exportOutputHandle;
+  if(!outputDir){
+    try{ outputDir=await vaultHandle.getDirectoryHandle('_Export',{create:true}); }
+    catch(e){ toast('Konnte _Export nicht erstellen: '+e.message,'err'); return; }
+  }
+
+  const {fromYear,toYear}=getExportRange();
+  const yearsToExport=exportAvailableYears.filter(y=>y>=fromYear&&y<=toYear);
+  const btn=document.getElementById('exportRunBtn');
+  btn.disabled=true;
+  resetExportLog();
+  exportLog(`Exportiere ${fromYear}–${toYear}…`);
+
+  const parseNum=v=>{ const n=parseFloat(v); return isNaN(n)?0:n; };
+  let totalApples=0,totalBananas=0,totalCoffee=0,totalDays=0;
+  let totalFiles=0,doneFiles=0;
+
+  for(const year of yearsToExport){
+    try{
+      const yearDir=await vaultHandle.getDirectoryHandle(year);
+      for await(const [fname] of yearDir.entries()){ if(fname.endsWith('.md')) totalFiles++; }
+    }catch{}
+  }
+  setExportProgress(0,Math.max(totalFiles,1));
+
+  for(const year of yearsToExport){
+    let yearDir;
+    try{ yearDir=await vaultHandle.getDirectoryHandle(year); }
+    catch{ exportLog(`Ordner ${year} nicht gefunden – übersprungen`,'err'); continue; }
+
+    const entries=[];
+    for await(const [fname,fh] of yearDir.entries()){
+      if(!fname.endsWith('.md')) continue;
+      try{
+        const text=await (await fh.getFile()).text();
+        const fmMatch=text.match(/^---\n([\s\S]*?)\n---/);
+        if(!fmMatch){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
+        const fm={};
+        for(const line of fmMatch[1].split('\n')){
+          const ci=line.indexOf(':'); if(ci===-1) continue;
+          fm[line.slice(0,ci).trim()]=line.slice(ci+1).trim();
+        }
+        if(!fm.date){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
+        const body=text.slice(fmMatch[0].length).trim();
+        if(!body){ doneFiles++; setExportProgress(doneFiles,totalFiles); continue; }
+        const entry={
+          date:fm.date, apples:parseNum(fm.apples), bananas:parseNum(fm.bananas),
+          coffee:parseNum(fm.coffee), mood:parseNum(fm.mood),
+          cycling_km:parseNum(fm.cycling_km),
+          weekday_index:fm.weekday_index!==undefined?parseNum(fm.weekday_index):undefined,
+          text:body
+        };
+        if(entry.weekday_index===undefined) delete entry.weekday_index;
+        entries.push(entry);
+        totalApples+=entry.apples; totalBananas+=entry.bananas;
+        totalCoffee+=entry.coffee; totalDays++;
+      }catch(e){ exportLog(`Fehler ${fname}: ${e.message}`,'err'); }
+      doneFiles++; setExportProgress(doneFiles,totalFiles);
+    }
+
+    entries.sort((a,b)=>a.date.localeCompare(b.date));
+    try{
+      const fh=await outputDir.getFileHandle(`${year}.json`,{create:true});
+      const w=await fh.createWritable();
+      await w.write(JSON.stringify({entries},null,2)); await w.close();
+      exportLog(`${year}.json — ${entries.length} Einträge`,'ok');
+    }catch(e){ exportLog(`${year}.json Fehler: ${e.message}`,'err'); }
+  }
+
+  // stats.md
+  const statsContent=[
+    '---',
+    `year_first: ${fromYear}`,`year_last: ${toYear}`,
+    `total_days: ${totalDays}`,
+    `total_apples: ${Math.round(totalApples)}`,
+    `total_bananas: ${Math.round(totalBananas)}`,
+    `total_coffee: ${Math.round(totalCoffee)}`,
+    '---',''
+  ].join('\n');
+  try{
+    const fh=await outputDir.getFileHandle('stats.md',{create:true});
+    const w=await fh.createWritable(); await w.write(statsContent); await w.close();
+    exportLog('stats.md geschrieben','ok');
+  }catch(e){ exportLog(`stats.md Fehler: ${e.message}`,'err'); }
+
+  setExportProgress(1,1);
+  exportLog(`Fertig — ${totalDays} Tage · ${Math.round(totalApples)} Äpfel · ${Math.round(totalBananas)} Bananen · ${Math.round(totalCoffee)} Kaffees`);
+  btn.disabled=false;
+}
+// ──────────────────────────────────────────────────────────────
+
+
 // ── Keyboard Shortcuts ────────────────────────────────────────
 document.addEventListener('click', e=>{
   const ov = document.getElementById('dpOverlay');
@@ -2000,6 +2448,7 @@ document.addEventListener('click', e=>{
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(!document.getElementById('searchOverlay').classList.contains('hidden')){ closeSearch(); return; }
+    if(!document.getElementById('exportOverlay').classList.contains('hidden')){ closeExport(); return; }
     if(document.getElementById('dpOverlay').classList.contains('open')){ closeDatePicker(); return; }
   }
   const tag=document.activeElement.tagName;
