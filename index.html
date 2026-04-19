@@ -206,8 +206,23 @@
     .inline-input:focus { border-color:var(--accent); }
     .inline-input::placeholder { color:var(--text-3); }
     .header-wrap { position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border); }
+    /* Desktop: single row */
     .header-inner { display:flex;align-items:center;justify-content:space-between;padding:14px 20px;position:relative; }
     .header-center { position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px; }
+    .header-right { display:flex;gap:8px;align-items:center; }
+    /* Mobile: two rows */
+    @media (max-width:600px){
+      .header-inner { flex-direction:column;gap:0;padding:0;position:static; }
+      .header-row1 { display:flex;align-items:center;justify-content:space-between;width:100%;padding:8px 14px; }
+      .header-row2 { display:flex;align-items:center;justify-content:space-between;width:100%;padding:6px 14px 8px;border-top:1px solid var(--border); }
+      .header-center { position:static;transform:none;flex:1;justify-content:center; }
+      .header-left { display:flex;gap:6px;align-items:center; }
+      .header-right { gap:6px; }
+      .folder-btn { max-width:120px;font-size:12px; }
+    }
+    @media (min-width:601px){
+      .header-row1, .header-row2 { display:contents; }
+    }
     .nav-btn { width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0; }
     .nav-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
     .nav-btn svg { width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5; }
@@ -365,6 +380,70 @@
     }
     .export-btn-run:hover { background:rgba(253,147,159,.2); }
     .export-btn-run:disabled { opacity:.4;cursor:default; }
+    /* ── GitHub Settings ──────────────────────────────────── */
+    .gh-icon-btn { position:relative; }
+    .gh-icon-btn .gh-dot {
+      position:absolute;top:3px;right:3px;width:6px;height:6px;
+      border-radius:50%;background:var(--accent);display:none;
+    }
+    .gh-icon-btn.configured .gh-dot { display:block; }
+    .settings-overlay { position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center;padding-top:80px; }
+    .settings-overlay.hidden { display:none; }
+    .settings-backdrop { position:absolute;inset:0;background:rgba(0,0,0,.45); }
+    .settings-panel {
+      position:relative;width:min(480px,92vw);
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);overflow:hidden;
+      box-shadow:0 24px 60px rgba(0,0,0,.35);
+    }
+    .settings-head {
+      display:flex;align-items:center;gap:8px;
+      padding:11px 14px 10px;border-bottom:1px solid var(--border);
+    }
+    .settings-head svg { width:13px;height:13px;stroke:var(--text-3);fill:none;stroke-width:2;flex-shrink:0; }
+    .settings-head-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3); }
+    .settings-head .export-close { border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:14px;padding:0;line-height:1;flex-shrink:0;margin-left:auto; }
+    .settings-head .export-close:hover { color:var(--text); }
+    .settings-section { padding:14px; }
+    .settings-section + .settings-section { border-top:1px solid var(--border); }
+    .settings-mode-row { display:flex;gap:8px;margin-bottom:14px; }
+    .settings-mode-btn {
+      flex:1;height:34px;border-radius:8px;border:1px solid var(--border);
+      background:transparent;font-size:12px;font-weight:500;color:var(--text-3);
+      cursor:pointer;transition:all .15s;font-family:inherit;
+    }
+    .settings-mode-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .settings-mode-btn.active { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
+    .settings-field { margin-bottom:10px; }
+    .settings-field:last-child { margin-bottom:0; }
+    .settings-label { font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px; }
+    .settings-input {
+      width:100%;background:var(--surface-2);border:1px solid var(--border);
+      border-radius:7px;padding:7px 10px;font-size:13px;color:var(--text);
+      outline:none;transition:border-color .15s;font-family:inherit;
+    }
+    .settings-input:focus { border-color:var(--accent); }
+    .settings-input::placeholder { color:var(--text-3); }
+    .settings-hint { font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5; }
+    .settings-hint a { color:var(--accent);text-decoration:none; }
+    .settings-actions { display:flex;justify-content:flex-end;gap:8px;padding:14px;border-top:1px solid var(--border); }
+    .settings-save {
+      height:34px;padding:0 16px;border-radius:8px;
+      border:1px solid rgba(253,147,159,.4);background:var(--accent-bg);
+      font-size:13px;font-weight:500;color:var(--accent);cursor:pointer;
+      transition:all .15s;font-family:inherit;
+    }
+    .settings-save:hover { background:rgba(253,147,159,.2); }
+    .settings-cancel {
+      height:34px;padding:0 14px;border-radius:8px;border:1px solid var(--border);
+      background:transparent;font-size:13px;color:var(--text-3);cursor:pointer;
+      transition:all .15s;font-family:inherit;
+    }
+    .settings-cancel:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .settings-status { font-size:12px;padding:8px 14px;color:var(--text-3);border-top:1px solid var(--border);display:none; }
+    .settings-status.show { display:block; }
+    .settings-status.ok { color:var(--good); }
+    .settings-status.err { color:var(--error); }
   </style>
 </head>
 <body>
@@ -374,45 +453,58 @@
 
 <div class="header-wrap">
 <div class="header-inner">
-  <div class="header-left">
-    <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
-    <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
-  </div>
-  <div class="header-center">
-    <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
-      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-    </button>
-    <span class="header-date" id="headerDate" onclick="toggleDatePicker()" title="Datum wählen"></span>
-    <div class="dp-overlay" id="dpOverlay">
-      <div class="dp-backdrop" onclick="closeDatePicker()"></div>
-      <div class="dp-panel" onclick="event.stopPropagation()" id="dpPanel">
-        <div class="dp-head">
-          <button class="dp-nav" onclick="dpShiftMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
-          <span class="dp-title" id="dpTitle" onclick="toggleYearView()"></span>
-          <button class="dp-nav" onclick="dpShiftMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
-        </div>
-        <div id="dpBody"></div>
-      </div>
+
+  <!-- Row 1 (mobile) / left+right (desktop) -->
+  <div class="header-row1">
+    <div class="header-left">
+      <button class="today-btn hidden" id="todayBtn" onclick="navigateToToday()">Heute</button>
+      <button class="today-btn hidden" id="lastEditedBtn" onclick="navigateToLastEdited()" title="Zuletzt bearbeitet"></button>
     </div>
-    <button class="nav-btn" onclick="navigateDay(1)" title="Nächster Tag">
-      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-    </button>
+    <div class="header-right">
+      <button class="icon-btn" onclick="openSearch()" title="Suchen (F)">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </button>
+      <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
+        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
+      </button>
+      <button class="icon-btn" onclick="openExport()" title="Exportieren">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+      <button class="icon-btn gh-icon-btn" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+        <span class="gh-dot"></span>
+      </button>
+      <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
+        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span id="folderBtnLabel">Wählen</span>
+      </button>
+    </div>
   </div>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button class="icon-btn" onclick="openSearch()" title="Suchen (F)">
-      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    </button>
-    <button class="icon-btn" onclick="reloadFile()" title="Neu laden">
-      <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/></svg>
-    </button>
-    <button class="icon-btn" onclick="openExport()" title="Exportieren">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-    </button>
-    <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
-      <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      <span id="folderBtnLabel">Wählen</span>
-    </button>
+
+  <!-- Row 2 (mobile) / center (desktop) -->
+  <div class="header-row2">
+    <div class="header-center">
+      <button class="nav-btn" onclick="navigateDay(-1)" title="Vorheriger Tag">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="header-date" id="headerDate" onclick="toggleDatePicker()" title="Datum wählen"></span>
+      <div class="dp-overlay" id="dpOverlay">
+        <div class="dp-backdrop" onclick="closeDatePicker()"></div>
+        <div class="dp-panel" onclick="event.stopPropagation()" id="dpPanel">
+          <div class="dp-head">
+            <button class="dp-nav" onclick="dpShiftMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+            <span class="dp-title" id="dpTitle" onclick="toggleYearView()"></span>
+            <button class="dp-nav" onclick="dpShiftMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <div id="dpBody"></div>
+        </div>
+      </div>
+      <button class="nav-btn" onclick="navigateDay(1)" title="Nächster Tag">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </div>
   </div>
+
 </div>
 </div>
 
@@ -601,6 +693,67 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Search Overlay -->
+<!-- Settings Overlay -->
+<div class="settings-overlay hidden" id="settingsOverlay">
+  <div class="settings-backdrop" onclick="closeSettings()"></div>
+  <div class="settings-panel" onclick="event.stopPropagation()">
+    <div class="settings-head">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      <span class="settings-head-title">Verbindung</span>
+      <button class="export-close" onclick="closeSettings()">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-mode-row">
+        <button class="settings-mode-btn active" id="modeLocalBtn" onclick="setMode('local')">
+          Lokaler Ordner
+        </button>
+        <button class="settings-mode-btn" id="modeGithubBtn" onclick="setMode('github')">
+          GitHub API
+        </button>
+      </div>
+
+      <!-- Local mode info -->
+      <div id="modeLocalPanel">
+        <p class="settings-hint">Zugriff via File System Access API — funktioniert in Chrome/Edge auf Desktop. Ordner wird über den «Wählen»-Button im Header gesetzt.</p>
+      </div>
+
+      <!-- GitHub mode fields -->
+      <div id="modeGithubPanel" style="display:none">
+        <div class="settings-field">
+          <label class="settings-label">Personal Access Token</label>
+          <input class="settings-input" type="password" id="ghToken" placeholder="ghp_…" autocomplete="off">
+          <p class="settings-hint">Token mit <code>repo</code>-Berechtigung. <a href="https://github.com/settings/tokens/new" target="_blank">Erstellen auf github.com →</a></p>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Privates Repo (Rohdaten)</label>
+          <input class="settings-input" type="text" id="ghPrivateRepo" placeholder="username/diary-private">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Öffentliches Repo (Webseite)</label>
+          <input class="settings-input" type="text" id="ghPublicRepo" placeholder="username/username.github.io">
+          <p class="settings-hint">Export-Button schreibt JSON-Dateien direkt in <code>data/</code> dieses Repos.</p>
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Branch</label>
+          <input class="settings-input" type="text" id="ghBranch" placeholder="main" value="main">
+        </div>
+        <div class="settings-field">
+          <label class="settings-label">Tagebuch-Ordner im privaten Repo</label>
+          <input class="settings-input" type="text" id="ghDiaryPath" placeholder="Diary" value="Diary">
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-status" id="settingsStatus"></div>
+    <div class="settings-actions">
+      <button class="settings-cancel" onclick="closeSettings()">Abbrechen</button>
+      <button class="settings-save" id="settingsSaveBtn" onclick="saveSettings()">Speichern</button>
+    </div>
   </div>
 </div>
 
@@ -2435,10 +2588,224 @@ async function runExport(){
 
   setExportProgress(1,1);
   exportLog(`Fertig — ${totalDays} Tage · ${Math.round(totalApples)} Äpfel · ${Math.round(totalBananas)} Bananen · ${Math.round(totalCoffee)} Kaffees`);
+
+  // Also push to public GitHub repo if configured
+  if(connectionMode==='github' && ghConfig.publicRepo){
+    exportLog('Pushe zu GitHub Pages…');
+    try{
+      for(const year of yearsToExport){
+        // Re-fetch the just-written JSON from outputDir to push
+        try{
+          const fh=await outputDir.getFileHandle(`${year}.json`);
+          const txt=await(await fh.getFile()).text();
+          await ghPublishFile(`${year}.json`, txt);
+          exportLog(`${year}.json → GitHub ✓`,'ok');
+        }catch(e){ exportLog(`${year}.json → GitHub Fehler: ${e.message}`,'err'); }
+      }
+      await ghPublishFile('stats.md', statsContent);
+      exportLog('stats.md → GitHub ✓','ok');
+    }catch(e){ exportLog('GitHub Push Fehler: '+e.message,'err'); }
+  }
+
   btn.disabled=false;
 }
 // ──────────────────────────────────────────────────────────────
 
+
+// ── Connection Mode & GitHub API ─────────────────────────────
+let connectionMode = 'local'; // 'local' | 'github'
+let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'Diary' };
+
+function loadGhConfig(){
+  const saved = JSON.parse(localStorage.getItem('ghConfig')||'null');
+  if(saved) ghConfig = {...ghConfig, ...saved};
+  connectionMode = localStorage.getItem('connectionMode')||'local';
+}
+
+function openSettings(){
+  loadGhConfig();
+  setMode(connectionMode, false);
+  document.getElementById('ghToken').value       = ghConfig.token;
+  document.getElementById('ghPrivateRepo').value = ghConfig.privateRepo;
+  document.getElementById('ghPublicRepo').value  = ghConfig.publicRepo;
+  document.getElementById('ghBranch').value      = ghConfig.branch||'main';
+  document.getElementById('ghDiaryPath').value   = ghConfig.diaryPath||'Diary';
+  document.getElementById('settingsStatus').className='settings-status';
+  document.getElementById('settingsStatus').textContent='';
+  document.getElementById('settingsOverlay').classList.remove('hidden');
+}
+
+function closeSettings(){
+  document.getElementById('settingsOverlay').classList.add('hidden');
+}
+
+function setMode(mode, persist=true){
+  connectionMode = mode;
+  document.getElementById('modeLocalBtn').classList.toggle('active', mode==='local');
+  document.getElementById('modeGithubBtn').classList.toggle('active', mode==='github');
+  document.getElementById('modeLocalPanel').style.display  = mode==='local'  ? '' : 'none';
+  document.getElementById('modeGithubPanel').style.display = mode==='github' ? '' : 'none';
+  // Show/hide folder button
+  const fb = document.getElementById('folderBtn');
+  if(fb) fb.style.display = mode==='github' ? 'none' : '';
+  if(persist) localStorage.setItem('connectionMode', mode);
+}
+
+async function saveSettings(){
+  const status = document.getElementById('settingsStatus');
+  if(connectionMode === 'github'){
+    const token      = document.getElementById('ghToken').value.trim();
+    const privateRepo= document.getElementById('ghPrivateRepo').value.trim();
+    const publicRepo = document.getElementById('ghPublicRepo').value.trim();
+    const branch     = document.getElementById('ghBranch').value.trim()||'main';
+    const diaryPath  = document.getElementById('ghDiaryPath').value.trim()||'Diary';
+    if(!token || !privateRepo){
+      status.textContent='Token und privates Repo sind erforderlich.';
+      status.className='settings-status show err'; return;
+    }
+    status.textContent='Verbindung wird geprüft…';
+    status.className='settings-status show';
+    // Test: read repo info
+    const res = await fetch(`https://api.github.com/repos/${privateRepo}`,{
+      headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }
+    });
+    if(!res.ok){
+      status.textContent=`Fehler ${res.status}: Repo nicht gefunden oder kein Zugriff.`;
+      status.className='settings-status show err'; return;
+    }
+    ghConfig = { token, privateRepo, publicRepo, branch, diaryPath };
+    localStorage.setItem('ghConfig', JSON.stringify(ghConfig));
+  }
+  localStorage.setItem('connectionMode', connectionMode);
+  updateGhSettingsBtn();
+  // In GitHub mode, load the current date via API
+  if(connectionMode === 'github'){
+    status.textContent='Verbunden ✓'; status.className='settings-status show ok';
+    setTimeout(()=>closeSettings(), 800);
+    updateHeaderState();
+    await loadFile(currentDate);
+  } else {
+    closeSettings();
+  }
+}
+
+function updateGhSettingsBtn(){
+  const btn = document.getElementById('ghSettingsBtn');
+  if(!btn) return;
+  const isGh = connectionMode==='github' && ghConfig.token && ghConfig.privateRepo;
+  btn.classList.toggle('configured', !!isGh);
+}
+
+// ── GitHub API helpers ────────────────────────────────────────
+async function ghGet(path){
+  const { token, privateRepo, branch } = ghConfig;
+  const url = `https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`;
+  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }});
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error(`GitHub GET ${path}: ${res.status}`);
+  return res.json();
+}
+
+async function ghPut(path, content, message, sha){
+  const { token, privateRepo, branch } = ghConfig;
+  const url = `https://api.github.com/repos/${privateRepo}/contents/${path}`;
+  const body = { message, content: btoa(unescape(encodeURIComponent(content))), branch };
+  if(sha) body.sha = sha;
+  const res = await fetch(url, { method:'PUT', headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body:JSON.stringify(body)});
+  if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
+  return res.json();
+}
+
+async function ghListYears(){
+  const { token, privateRepo, branch, diaryPath } = ghConfig;
+  const url = `https://api.github.com/repos/${privateRepo}/contents/${diaryPath}?ref=${branch}`;
+  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }});
+  if(!res.ok) return [];
+  const items = await res.json();
+  return items.filter(i=>i.type==='dir'&&/^\d{4}$/.test(i.name)).map(i=>i.name).sort();
+}
+
+// ── GitHub-aware loadFile ─────────────────────────────────────
+// Override is done by patching the existing loadFile/autoSave at runtime
+const _origLoadFile = loadFile;
+const _origAutoSave = autoSave;
+
+async function loadFile(date){
+  if(connectionMode!=='github'){ return _origLoadFile(date); }
+  currentDate=date; updateHeaderDate(); updateLastEditedBtn();
+  const { diaryPath, branch } = ghConfig;
+  const yyyy=date.slice(0,4), fname=date+'.md';
+  const path=`${diaryPath}/${yyyy}/${fname}`;
+  showSpinner();
+  try{
+    const data = await ghGet(path);
+    if(data){
+      const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+      // Store sha for future writes
+      window._ghFileSha = data.sha;
+      populate(content);
+      updateIndexEntry(date, content);
+      updateHeaderState();
+      showStatus('Geladen (GitHub)', `${yyyy}/${fname}`, true);
+    } else {
+      window._ghFileSha = null;
+      const templateContent = buildNewFileContent(date);
+      populate(templateContent);
+      updateHeaderState();
+      showStatus('Neu (GitHub)', `${yyyy}/${fname}`, false);
+      isDirty=false;
+    }
+  }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
+  finally{ hideSpinner(); }
+}
+
+async function autoSave(){
+  if(connectionMode!=='github'){ return _origAutoSave(); }
+  if(!isDirty) return;
+  try{
+    const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
+    saveKnownTags(tags);
+    const content=buildContent();
+    const { diaryPath } = ghConfig;
+    const yyyy=currentDate.slice(0,4), fname=currentDate+'.md';
+    const path=`${diaryPath}/${yyyy}/${fname}`;
+    const d=new Date(currentDate+'T12:00:00');
+    const msg=`Update ${currentDate}`;
+    await ghPut(path, content, msg, window._ghFileSha||undefined);
+    // Refresh sha
+    const data = await ghGet(path);
+    if(data) window._ghFileSha=data.sha;
+    isDirty=false;
+    localStorage.setItem('lastEditedDate', currentDate);
+    updateIndexEntry(currentDate, content);
+    showSaveNotif(currentDate);
+  }catch(e){ toast('Speicherfehler (GitHub): '+e.message,'err'); }
+}
+
+// ── GitHub export to public repo ──────────────────────────────
+async function ghPublishFile(filename, content){
+  const { token, publicRepo, branch } = ghConfig;
+  if(!token||!publicRepo) throw new Error('Kein öffentliches Repo konfiguriert');
+  const path=`data/${filename}`;
+  const url=`https://api.github.com/repos/${publicRepo}/contents/${path}?ref=${branch}`;
+  // Get current sha if file exists
+  let sha;
+  const res=await fetch(url,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+  if(res.ok){ const d=await res.json(); sha=d.sha; }
+  const putUrl=`https://api.github.com/repos/${publicRepo}/contents/${path}`;
+  const body={message:`Export ${filename}`,content:btoa(unescape(encodeURIComponent(content))),branch};
+  if(sha) body.sha=sha;
+  const r=await fetch(putUrl,{method:'PUT',headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const e=await r.json();throw new Error(e.message||r.status);}
+}
+
+// Initialise on load
+document.addEventListener('DOMContentLoaded',()=>{
+  loadGhConfig();
+  setMode(connectionMode, false);
+  updateGhSettingsBtn();
+});
+// ──────────────────────────────────────────────────────────────
 
 // ── Keyboard Shortcuts ────────────────────────────────────────
 document.addEventListener('click', e=>{
@@ -2449,6 +2816,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){
     if(!document.getElementById('searchOverlay').classList.contains('hidden')){ closeSearch(); return; }
     if(!document.getElementById('exportOverlay').classList.contains('hidden')){ closeExport(); return; }
+    if(!document.getElementById('settingsOverlay').classList.contains('hidden')){ closeSettings(); return; }
     if(document.getElementById('dpOverlay').classList.contains('open')){ closeDatePicker(); return; }
   }
   const tag=document.activeElement.tagName;
