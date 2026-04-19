@@ -1829,7 +1829,13 @@ async function rebuildIndex(existingIndex){
             newIndex.push({date,text:body,tags:tags.join(' '),
               locations:[...list('location'),...list('country')].join(' '),
               people:list('people').join(' '),sport:list('sport').join(' '),
-              coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size});
+              coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size,
+              apples:parseFloat(scalar('apples')||0)||0,
+              bananas:parseFloat(scalar('bananas')||0)||0,
+              coffee:parseFloat(scalar('coffee')||0)||0,
+              mood:parseFloat(scalar('mood')||0)||0,
+              cycling_km:parseFloat(scalar('cycling_km')||0)||0,
+              weekday_index:scalar('weekday_index')!==null?parseFloat(scalar('weekday_index')):undefined});
           }
         }catch{}
         done++;
@@ -1875,7 +1881,13 @@ async function rebuildIndex(existingIndex){
             locations:[...list('location'),...list('country')].join(' '),
             people:list('people').join(' '),sport:list('sport').join(' '),
             coffeeLocations:coffeeLocations.join(' '),hasContent,
-            _size:file.size,_modified:file.lastModified});
+            _size:file.size,_modified:file.lastModified,
+            apples:parseFloat(scalar('apples')||0)||0,
+            bananas:parseFloat(scalar('bananas')||0)||0,
+            coffee:parseFloat(scalar('coffee')||0)||0,
+            mood:parseFloat(scalar('mood')||0)||0,
+            cycling_km:parseFloat(scalar('cycling_km')||0)||0,
+            weekday_index:scalar('weekday_index')!==null?parseFloat(scalar('weekday_index')):undefined});
         }
       }catch{}
       done++;
@@ -2617,6 +2629,7 @@ function setExportProgress(done,total){
 async function runExport(){
   if(!isConnected()){ toast('Zuerst Verbindung herstellen','err'); return; }
   if(!exportAvailableYears.length){ toast('Keine Jahre gefunden','err'); return; }
+  if(!searchIndexBuilt){ toast('Index wird noch aufgebaut – bitte warten','err'); return; }
 
   // In local mode: resolve output directory
   let outputDir = null;
@@ -2633,78 +2646,47 @@ async function runExport(){
   const btn=document.getElementById('exportRunBtn');
   btn.disabled=true;
   resetExportLog();
-  exportLog(`Exportiere ${fromYear}–${toYear}…`);
+  exportLog(`Exportiere ${fromYear}\u2013${toYear} aus Index\u2026`);
 
-  const parseNum=v=>{ const n=parseFloat(v); return isNaN(n)?0:n; };
   let totalApples=0,totalBananas=0,totalCoffee=0,totalDays=0;
-  let totalFiles=0,doneFiles=0;
-  const yearJsonMap = {}; // year → JSON string, for GitHub push
+  const yearJsonMap = {};
 
-  // Helper: parse frontmatter text → entry object
-  function parseEntry(text){
-    const fmMatch=text.match(/^---\n([\s\S]*?)\n---/);
-    if(!fmMatch) return null;
-    const fm={};
-    for(const line of fmMatch[1].split('\n')){ const ci=line.indexOf(':'); if(ci===-1) continue; fm[line.slice(0,ci).trim()]=line.slice(ci+1).trim(); }
-    if(!fm.date) return null;
-    const body=text.slice(fmMatch[0].length).trim();
-    if(!body) return null;
-    const entry={date:fm.date,apples:parseNum(fm.apples),bananas:parseNum(fm.bananas),coffee:parseNum(fm.coffee),mood:parseNum(fm.mood),cycling_km:parseNum(fm.cycling_km),weekday_index:fm.weekday_index!==undefined?parseNum(fm.weekday_index):undefined,text:body};
-    if(entry.weekday_index===undefined) delete entry.weekday_index;
-    return entry;
+  for(let yi=0; yi<yearsToExport.length; yi++){
+    const year=yearsToExport[yi];
+    setExportProgress(yi, yearsToExport.length);
+
+    const entries = searchIndex
+      .filter(e=>e.date.startsWith(year) && e.text !== undefined && e.text !== null)
+      .sort((a,b)=>a.date.localeCompare(b.date))
+      .map(e=>{
+        const entry={
+          date:e.date,
+          apples:e.apples||0,
+          bananas:e.bananas||0,
+          coffee:e.coffee||0,
+          mood:e.mood||0,
+          cycling_km:e.cycling_km||0,
+          text:e.text
+        };
+        if(e.weekday_index!==undefined) entry.weekday_index=e.weekday_index;
+        return entry;
+      });
+
+    entries.forEach(e=>{ totalApples+=e.apples; totalBananas+=e.bananas; totalCoffee+=e.coffee; totalDays++; });
+
+    const json=JSON.stringify({entries},null,2);
+    yearJsonMap[year]=json;
+
+    if(outputDir){
+      try{
+        const fh=await outputDir.getFileHandle(`${year}.json`,{create:true});
+        const w=await fh.createWritable(); await w.write(json); await w.close();
+      }catch(e){ exportLog(`${year}.json lokal Fehler: ${e.message}`,'err'); }
+    }
+    exportLog(`${year}.json \u2014 ${entries.length} Eintr\u00e4ge`,'ok');
   }
+  setExportProgress(1,1);
 
-  if(connectionMode==='github'){
-    const { token, privateRepo, branch, diaryPath } = ghConfig;
-    // Count files
-    for(const year of yearsToExport){
-      const base=(diaryPath?`${diaryPath}/`:'')+year;
-      try{ const r=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}); if(r.ok){ const its=await r.json(); totalFiles+=its.filter(i=>i.name.endsWith('.md')).length; } }catch{}
-    }
-    setExportProgress(0,Math.max(totalFiles,1));
-    for(const year of yearsToExport){
-      const base=(diaryPath?`${diaryPath}/`:'')+year;
-      let items=[];
-      try{ const r=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}); if(r.ok) items=await r.json(); }
-      catch{ exportLog(`${year} nicht gefunden`,'err'); continue; }
-      const entries=[];
-      for(const item of items.filter(i=>i.name.endsWith('.md'))){
-        try{ const text=await(await fetch(item.download_url)).text(); const e=parseEntry(text); if(e){ entries.push(e); totalApples+=e.apples; totalBananas+=e.bananas; totalCoffee+=e.coffee; totalDays++; } }
-        catch(e){ exportLog(`Fehler ${item.name}: ${e.message}`,'err'); }
-        doneFiles++; setExportProgress(doneFiles,totalFiles);
-      }
-      entries.sort((a,b)=>a.date.localeCompare(b.date));
-      const json=JSON.stringify({entries},null,2);
-      yearJsonMap[year]=json;
-      if(outputDir){
-        try{ const fh=await outputDir.getFileHandle(`${year}.json`,{create:true}); const w=await fh.createWritable(); await w.write(json); await w.close(); }catch(e){ exportLog(`${year}.json lokal Fehler: ${e.message}`,'err'); }
-      }
-      exportLog(`${year}.json — ${entries.length} Einträge`,'ok');
-    }
-  } else {
-    // Local mode
-    for(const year of yearsToExport){
-      try{ const yearDir=await vaultHandle.getDirectoryHandle(year); for await(const [fname] of yearDir.entries()){ if(fname.endsWith('.md')) totalFiles++; } }catch{}
-    }
-    setExportProgress(0,Math.max(totalFiles,1));
-    for(const year of yearsToExport){
-      let yearDir;
-      try{ yearDir=await vaultHandle.getDirectoryHandle(year); }
-      catch{ exportLog(`Ordner ${year} nicht gefunden`,'err'); continue; }
-      const entries=[];
-      for await(const [fname,fh] of yearDir.entries()){
-        if(!fname.endsWith('.md')) continue;
-        try{ const text=await(await fh.getFile()).text(); const e=parseEntry(text); if(e){ entries.push(e); totalApples+=e.apples; totalBananas+=e.bananas; totalCoffee+=e.coffee; totalDays++; } }
-        catch(e){ exportLog(`Fehler ${fname}: ${e.message}`,'err'); }
-        doneFiles++; setExportProgress(doneFiles,totalFiles);
-      }
-      entries.sort((a,b)=>a.date.localeCompare(b.date));
-      try{ const fh=await outputDir.getFileHandle(`${year}.json`,{create:true}); const w=await fh.createWritable(); const json=JSON.stringify({entries},null,2); yearJsonMap[year]=json; await w.write(json); await w.close(); exportLog(`${year}.json — ${entries.length} Einträge`,'ok'); }
-      catch(e){ exportLog(`${year}.json Fehler: ${e.message}`,'err'); }
-    }
-  }
-
-  // stats.md
   const statsContent=[
     '---',
     `year_first: ${fromYear}`,`year_last: ${toYear}`,
@@ -2715,35 +2697,29 @@ async function runExport(){
     '---',''
   ].join('\n');
 
-  // Write stats.md locally if we have an outputDir
   if(outputDir){
-    try{ const fh=await outputDir.getFileHandle('stats.md',{create:true}); const w=await fh.createWritable(); await w.write(statsContent); await w.close(); exportLog('stats.md lokal geschrieben','ok'); }
-    catch(e){ exportLog(`stats.md Fehler: ${e.message}`,'err'); }
-  }
-
-  // Push to public GitHub repo if configured
-  if(ghConfig.publicRepo){
-    exportLog('Pushe zu GitHub Pages…');
     try{
-      for(const year of yearsToExport){
-        const json = yearJsonMap[year];
-        if(json){ await ghPublishFile(`${year}.json`, json); exportLog(`${year}.json → GitHub ✓`,'ok'); }
-        else { exportLog(`${year}.json fehlt für Push`,'err'); }
-      }
-      await ghPublishFile('stats.md', statsContent);
-      exportLog('stats.md → GitHub ✓','ok');
-    }catch(e){ exportLog('GitHub Push Fehler: '+e.message,'err'); }
+      const fh=await outputDir.getFileHandle('stats.md',{create:true});
+      const w=await fh.createWritable(); await w.write(statsContent); await w.close();
+      exportLog('stats.md lokal geschrieben','ok');
+    }catch(e){ exportLog(`stats.md Fehler: ${e.message}`,'err'); }
   }
 
-  setExportProgress(1,1);
-  exportLog(`Fertig — ${totalDays} Tage · ${Math.round(totalApples)} Äpfel · ${Math.round(totalBananas)} Bananen · ${Math.round(totalCoffee)} Kaffees`);
+  if(ghConfig.publicRepo){
+    exportLog('Pushe zu GitHub Pages\u2026');
+    for(const year of yearsToExport){
+      const json=yearJsonMap[year];
+      if(!json){ exportLog(`${year}.json fehlt`,'err'); continue; }
+      try{ await ghPublishFile(`${year}.json`,json); exportLog(`${year}.json \u2192 GitHub \u2713`,'ok'); }
+      catch(e){ exportLog(`${year}.json Push Fehler: ${e.message}`,'err'); }
+    }
+    try{ await ghPublishFile('stats.md',statsContent); exportLog('stats.md \u2192 GitHub \u2713','ok'); }
+    catch(e){ exportLog(`stats.md Push Fehler: ${e.message}`,'err'); }
+  }
+
+  exportLog(`Fertig \u2014 ${totalDays} Tage \u00b7 ${Math.round(totalApples)} \u00c4pfel \u00b7 ${Math.round(totalBananas)} Bananen \u00b7 ${Math.round(totalCoffee)} Kaffees`);
   btn.disabled=false;
 }
-// ──────────────────────────────────────────────────────────────
-
-
-// ── Connection Mode & GitHub API ─────────────────────────────
-let connectionMode = 'local'; // 'local' | 'github'
 
 function isConnected(){
   if(connectionMode==='github') return !!(ghConfig.token && ghConfig.privateRepo);
@@ -2942,16 +2918,23 @@ async function ghPublishFile(filename, content){
   const { token, publicRepo, branch } = ghConfig;
   if(!token||!publicRepo) throw new Error('Kein öffentliches Repo konfiguriert');
   const path=`data/${filename}`;
-  const url=`https://api.github.com/repos/${publicRepo}/contents/${path}?ref=${branch}`;
-  // Get current sha if file exists
+  const headers={Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'};
+  // Get current SHA if file exists (needed for update)
   let sha;
-  const res=await fetch(url,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
-  if(res.ok){ const d=await res.json(); sha=d.sha; }
-  const putUrl=`https://api.github.com/repos/${publicRepo}/contents/${path}`;
+  const getRes=await fetch(`https://api.github.com/repos/${publicRepo}/contents/${path}`,{headers});
+  if(getRes.ok){ sha=(await getRes.json()).sha; }
+  else if(getRes.status!==404){
+    const e=await getRes.json().catch(()=>({}));
+    throw new Error(`GET ${publicRepo}/${path}: ${getRes.status} ${e.message||''}`);
+  }
   const body={message:`Export ${filename}`,content:btoa(unescape(encodeURIComponent(content))),branch};
   if(sha) body.sha=sha;
-  const r=await fetch(putUrl,{method:'PUT',headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok){const e=await r.json();throw new Error(e.message||r.status);}
+  const putRes=await fetch(`https://api.github.com/repos/${publicRepo}/contents/${path}`,
+    {method:'PUT',headers,body:JSON.stringify(body)});
+  if(!putRes.ok){
+    const e=await putRes.json().catch(()=>({}));
+    throw new Error(`PUT ${publicRepo}/${path}: ${putRes.status} ${e.message||''}`);
+  }
 }
 
 // Initialise on load
