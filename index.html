@@ -744,7 +744,7 @@
         </div>
         <div class="settings-field">
           <label class="settings-label">Tagebuch-Ordner im privaten Repo</label>
-          <input class="settings-input" type="text" id="ghDiaryPath" placeholder="Diary" value="Diary">
+          <input class="settings-input" type="text" id="ghDiaryPath" placeholder="Leer = Root des Repos">
         </div>
       </div>
     </div>
@@ -2614,7 +2614,7 @@ async function runExport(){
 
 // ── Connection Mode & GitHub API ─────────────────────────────
 let connectionMode = 'local'; // 'local' | 'github'
-let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'Diary' };
+let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'' };
 
 function loadGhConfig(){
   const saved = JSON.parse(localStorage.getItem('ghConfig')||'null');
@@ -2629,7 +2629,7 @@ function openSettings(){
   document.getElementById('ghPrivateRepo').value = ghConfig.privateRepo;
   document.getElementById('ghPublicRepo').value  = ghConfig.publicRepo;
   document.getElementById('ghBranch').value      = ghConfig.branch||'main';
-  document.getElementById('ghDiaryPath').value   = ghConfig.diaryPath||'Diary';
+  document.getElementById('ghDiaryPath').value   = ghConfig.diaryPath||'';
   document.getElementById('settingsStatus').className='settings-status';
   document.getElementById('settingsStatus').textContent='';
   document.getElementById('settingsOverlay').classList.remove('hidden');
@@ -2658,7 +2658,7 @@ async function saveSettings(){
     const privateRepo= document.getElementById('ghPrivateRepo').value.trim();
     const publicRepo = document.getElementById('ghPublicRepo').value.trim();
     const branch     = document.getElementById('ghBranch').value.trim()||'main';
-    const diaryPath  = document.getElementById('ghDiaryPath').value.trim()||'Diary';
+    const diaryPath  = document.getElementById('ghDiaryPath').value.trim();
     if(!token || !privateRepo){
       status.textContent='Token und privates Repo sind erforderlich.';
       status.className='settings-status show err'; return;
@@ -2718,7 +2718,7 @@ async function ghPut(path, content, message, sha){
 
 async function ghListYears(){
   const { token, privateRepo, branch, diaryPath } = ghConfig;
-  const url = `https://api.github.com/repos/${privateRepo}/contents/${diaryPath}?ref=${branch}`;
+  const base=(diaryPath||''); const url=`https://api.github.com/repos/${privateRepo}/contents/${base?base+'/':''}?ref=${branch}`.replace('//?ref=','?ref=');
   const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }});
   if(!res.ok) return [];
   const items = await res.json();
@@ -2735,7 +2735,7 @@ async function loadFile(date){
   currentDate=date; updateHeaderDate(); updateLastEditedBtn();
   const { diaryPath, branch } = ghConfig;
   const yyyy=date.slice(0,4), fname=date+'.md';
-  const path=`${diaryPath}/${yyyy}/${fname}`;
+  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
   showSpinner();
   try{
     const data = await ghGet(path);
@@ -2768,7 +2768,7 @@ async function autoSave(){
     const content=buildContent();
     const { diaryPath } = ghConfig;
     const yyyy=currentDate.slice(0,4), fname=currentDate+'.md';
-    const path=`${diaryPath}/${yyyy}/${fname}`;
+    const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
     const d=new Date(currentDate+'T12:00:00');
     const msg=`Update ${currentDate}`;
     await ghPut(path, content, msg, window._ghFileSha||undefined);
