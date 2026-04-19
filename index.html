@@ -1714,7 +1714,7 @@ let searchIndexBuilt = false;
 let searchIndexing = false;
 
 async function saveIndexFile(index, tags){
-  const payload = JSON.stringify({v:8, built: new Date().toISOString(), index, tags});
+  const payload = JSON.stringify({v:9, built: new Date().toISOString(), index, tags});
   if(connectionMode==='github'){
     try{ await ghPut(INDEX_FILE, payload, 'Update search index', await ghGetSha(INDEX_FILE)); }
     catch(e){ console.warn('Index speichern (GitHub) fehlgeschlagen:', e); }
@@ -1759,7 +1759,7 @@ async function buildSearchIndex(){
   searchIndexBuilt = false;
 
   const saved = await loadIndexFile();
-  if(saved?.v===8 && Array.isArray(saved.index)){
+  if(saved?.v===9 && Array.isArray(saved.index)){
     searchIndex = saved.index;
     if(Array.isArray(saved.tags) && saved.tags.length){
       localStorage.setItem('knownTags', JSON.stringify(saved.tags));
@@ -1816,8 +1816,11 @@ async function rebuildIndex(existingIndex){
           continue;
         }
         try{
-          const fres=await fetch(item.download_url);
-          const text=await fres.text();
+          const fres=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}/${item.name}?ref=${branch}`,
+            {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+          if(!fres.ok){ done++; if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total); continue; }
+          const fdata=await fres.json();
+          const text=decodeURIComponent(escape(atob(fdata.content.replace(/\n/g,''))));
           const fm=text.match(/^---\n([\s\S]*?)\n---/);
           if(fm){
             const yaml=fm[1], body=text.slice(fm[0].length).trim();
@@ -2648,6 +2651,12 @@ async function runExport(){
   resetExportLog();
   exportLog(`Exportiere ${fromYear}\u2013${toYear} aus Index\u2026`);
 
+  // Sanity check: does the index have numeric fields?
+  const sampleWithNumerics = searchIndex.find(e=>e.apples!==undefined||e.coffee!==undefined);
+  if(!sampleWithNumerics){
+    exportLog('Hinweis: Index enthält noch keine Mengenfelder (Äpfel/Kaffee). Bitte warten bis der Index-Rebuild abgeschlossen ist.','err');
+  }
+
   let totalApples=0,totalBananas=0,totalCoffee=0,totalDays=0;
   const yearJsonMap = {};
 
@@ -2898,14 +2907,11 @@ async function autoSave(){
     saveKnownTags(tags);
     const content=buildContent();
     const { diaryPath } = ghConfig;
-    const yyyy=currentDate.slice(0,4), fname=currentDate+'.md';
-    const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
-    const d=new Date(currentDate+'T12:00:00');
-    const msg=`Update ${currentDate}`;
-    await ghPut(path, content, msg, window._ghFileSha||undefined);
-    // Refresh sha
-    const data = await ghGet(path);
-    if(data) window._ghFileSha=data.sha;
+    const yyyy=currentDate.slice(0,4);
+    const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
+    // Always fetch current SHA fresh — never use cached value to avoid conflicts
+    const currentSha = await ghGetSha(path);
+    await ghPut(path, content, `Update ${currentDate}`, currentSha);
     isDirty=false;
     localStorage.setItem('lastEditedDate', currentDate);
     updateIndexEntry(currentDate, content);
