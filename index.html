@@ -232,7 +232,7 @@
       /* Hide desktop-only header items */
       .hdr-desktop { display:none !important; }
       /* Show hamburger */
-      .hdr-hamburger { display:flex; margin-left:-16px; }
+      .hdr-hamburger { display:flex; margin-left:-8px; }
             /* Folder btn always hidden on mobile (File System API not available) */
       .folder-btn { display:none !important; }
     }
@@ -531,10 +531,10 @@
     </button>
     <!-- Desktop only -->
     <button class="hdr-icon hdr-desktop" onclick="openExport()" title="Exportieren">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <svg viewBox="0 0 24 24" width="18" height="18"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     </button>
     <button class="hdr-icon gh-icon-btn hdr-desktop" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+      <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
       <span class="gh-dot"></span>
     </button>
     <button class="folder-btn unloaded" id="folderBtn" onclick="openFolder()" title="Ordner wählen">
