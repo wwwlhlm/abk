@@ -947,6 +947,8 @@ function showSaveNotif(dateStr){
 }
 
 let _saving = false;
+let _navigating = false;
+const _knownSha = {}; // path → SHA from last successful PUT
 
 async function autoSave(){
   if(!isDirty) return;
@@ -962,16 +964,20 @@ async function autoSave(){
       const { diaryPath } = ghConfig;
       const yyyy=currentDate.slice(0,4);
       const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
-      let sha = await ghGetSha(path);
+      // Use cached SHA from last PUT, fall back to fresh fetch
+      let sha = _knownSha[path] !== undefined ? _knownSha[path] : await ghGetSha(path);
       for(let attempt=0; attempt<2; attempt++){
         try{
-          await ghPut(path, content, `Update ${currentDate}`, sha);
+          const result = await ghPut(path, content, `Update ${currentDate}`, sha);
+          // Store the new SHA from the PUT response for next save
+          if(result?.content?.sha) _knownSha[path] = result.content.sha;
           break; // success
         }catch(e){
           if(attempt===0 && e.message.includes('does not match')){
-            // Get definitive current SHA via full file fetch
+            // Definitive SHA via full file fetch
             const current = await ghGet(path);
             sha = current ? current.sha : undefined;
+            delete _knownSha[path]; // clear stale cache
             continue;
           }
           throw e;
@@ -1047,11 +1053,15 @@ function updateIndexEntry(date, content){
 
 async function navigateDay(delta){
   if(!isConnected()){ toast('Zuerst Ordner/Verbindung wählen','err'); return; }
-  await autoSave();
-  const d=new Date(currentDate+'T12:00:00');
-  d.setDate(d.getDate()+delta);
-  currentDate=d.toISOString().split('T')[0];
-  await loadFile(currentDate);
+  if(_navigating) return; // ignore concurrent navigation
+  _navigating = true;
+  try{
+    await autoSave();
+    const d=new Date(currentDate+'T12:00:00');
+    d.setDate(d.getDate()+delta);
+    currentDate=d.toISOString().split('T')[0];
+    await loadFile(currentDate);
+  }finally{ _navigating = false; }
 }
 async function navigateToToday(){
   await autoSave();
@@ -1107,6 +1117,7 @@ async function loadFile(date){
     const applyContent=(c,sha)=>{
       if(c!==null){
         window._ghFileSha=sha;
+        if(sha) _knownSha[path]=sha; // seed SHA cache for next autoSave
         populate(c); updateIndexEntry(date,c);
         updateHeaderState(); showStatus('Geladen (GitHub)',`${yyyy}/${fname}`,true);
       } else {
