@@ -946,23 +946,36 @@ function showSaveNotif(dateStr){
   showStatus('Gespeichert', label, true);
 }
 
+let _saving = false;
+
 async function autoSave(){
   if(!isDirty) return;
+  if(_saving) return; // prevent concurrent saves
   if(!isConnected()){ toast('Zuerst Ordner/Verbindung wählen','err'); return; }
+  _saving = true;
   try{
     const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
     saveKnownTags(tags);
     const content=buildContent();
 
     if(connectionMode==='github'){
-      // GitHub mode: write via API
       const { diaryPath } = ghConfig;
       const yyyy=currentDate.slice(0,4);
       const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
-      const currentSha=await ghGetSha(path);
-      await ghPut(path, content, `Update ${currentDate}`, currentSha);
+      // Retry once on SHA conflict (file changed between fetch and put)
+      for(let attempt=0; attempt<2; attempt++){
+        const currentSha=await ghGetSha(path);
+        try{
+          await ghPut(path, content, `Update ${currentDate}`, currentSha);
+          break; // success
+        }catch(e){
+          if(attempt===0 && e.message.includes('does not match')){
+            continue; // retry with fresh SHA
+          }
+          throw e;
+        }
+      }
     } else {
-      // Local mode: write via File System API
       if(!fileHandle){
         const yyyy=currentDate.split('-')[0];
         const yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true});
@@ -988,6 +1001,7 @@ async function autoSave(){
     updateIndexEntry(currentDate, content);
     showSaveNotif(currentDate);
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
+  finally{ _saving = false; }
 }
 
 function updateIndexEntry(date, content){
