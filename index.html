@@ -954,21 +954,30 @@ async function autoSave(){
     saveKnownTags(tags);
     const content=buildContent();
 
-    // Create year dir + file handle if this is a new file
-    if(!fileHandle){
-      const yyyy=currentDate.split('-')[0];
-      const yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true});
-      fileHandle=await yearDir.getFileHandle(currentDate+'.md',{create:true});
+    if(connectionMode==='github'){
+      // GitHub mode: write via API
+      const { diaryPath } = ghConfig;
+      const yyyy=currentDate.slice(0,4);
+      const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
+      const currentSha=await ghGetSha(path);
+      await ghPut(path, content, `Update ${currentDate}`, currentSha);
+    } else {
+      // Local mode: write via File System API
+      if(!fileHandle){
+        const yyyy=currentDate.split('-')[0];
+        const yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true});
+        fileHandle=await yearDir.getFileHandle(currentDate+'.md',{create:true});
+      }
+      const w=await fileHandle.createWritable();
+      await w.write(content); await w.close();
+      const rs=new Set(JSON.parse(localStorage.getItem('recentlySaved')||'[]'));
+      rs.add(currentDate);
+      localStorage.setItem('recentlySaved', JSON.stringify([...rs]));
+      if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
     }
 
-    const w=await fileHandle.createWritable();
-    await w.write(content); await w.close();
     isDirty=false;
     localStorage.setItem('lastEditedDate', currentDate);
-    const rs = new Set(JSON.parse(localStorage.getItem('recentlySaved')||'[]'));
-    rs.add(currentDate);
-    localStorage.setItem('recentlySaved', JSON.stringify([...rs]));
-    if(document.getElementById('dpOverlay').classList.contains('open')) renderDpCalendar();
     localStorage.setItem('lastUsed', JSON.stringify({
       locations: sel.locations,
       countriesOrdered: sel.countriesOrdered,
@@ -1073,34 +1082,58 @@ function buildNewFileContent(date){
 async function loadFile(date){
   currentDate=date; updateHeaderDate(); updateLastEditedBtn();
   const yyyy=date.split('-')[0], fname=date+'.md';
+
+  if(connectionMode==='github'){
+    // GitHub mode — handled by prefetch-aware path below
+    const { diaryPath } = ghConfig;
+    const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
+
+    const applyContent=(c,sha)=>{
+      if(c!==null){
+        window._ghFileSha=sha;
+        populate(c); updateIndexEntry(date,c);
+        updateHeaderState(); showStatus('Geladen (GitHub)',`${yyyy}/${fname}`,true);
+      } else {
+        window._ghFileSha=null;
+        populate(buildNewFileContent(date));
+        updateHeaderState(); showStatus('Neu (GitHub)',`${yyyy}/${fname}`,false);
+        isDirty=false;
+      }
+      ghConnectionVerified=true; updateGhSettingsBtn();
+      prefetchAround(date);
+    };
+
+    const cached=prefetchCache[date];
+    if(cached!==undefined && cached!==null){ delete prefetchCache[date]; applyContent(cached.content,cached.sha); return; }
+
+    showSpinner();
+    try{
+      const data=await ghGet(path);
+      if(data){ const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))); applyContent(c,data.sha); }
+      else { applyContent(null,null); }
+    }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
+    finally{ hideSpinner(); }
+    return;
+  }
+
+  // Local mode
   showSpinner();
   try{
     let yearDir;
-    // Get or create the year directory
     try{ yearDir=await vaultHandle.getDirectoryHandle(yyyy); }
     catch{ yearDir=await vaultHandle.getDirectoryHandle(yyyy,{create:true}); }
-
     let existingFile=null;
-    try{
-      const fh=await yearDir.getFileHandle(fname,{create:false});
-      existingFile=await fh.getFile();
-      fileHandle=fh;
-    }catch{ existingFile=null; fileHandle=null; }
-
+    try{ const fh=await yearDir.getFileHandle(fname,{create:false}); existingFile=await fh.getFile(); fileHandle=fh; }
+    catch{ existingFile=null; fileHandle=null; }
     if(existingFile){
       const content=await existingFile.text();
-      populate(content);
-      updateIndexEntry(date, content);
-      updateHeaderState();
-      showStatus('Geladen', yyyy+'/'+fname, true);
+      populate(content); updateIndexEntry(date,content);
+      updateHeaderState(); showStatus('Geladen',yyyy+'/'+fname,true);
     } else {
-      // New file: pre-fill form from template, don't write yet
-      fileHandle=null; // will be created on first save
-      const templateContent=buildNewFileContent(date);
-      populate(templateContent);
-      updateHeaderState();
-      showStatus('Neu', yyyy+'/'+fname, false);
-      isDirty=false; // not dirty until user actually changes something
+      fileHandle=null;
+      populate(buildNewFileContent(date));
+      updateHeaderState(); showStatus('Neu',yyyy+'/'+fname,false);
+      isDirty=false;
     }
   }catch(e){ toast('Fehler: '+e.message,'err'); }
   finally{ hideSpinner(); }
@@ -2871,9 +2904,6 @@ async function ghListYears(){
 
 // ── GitHub-aware loadFile ─────────────────────────────────────
 // Override is done by patching the existing loadFile/autoSave at runtime
-const _origLoadFile = loadFile;
-const _origAutoSave = autoSave;
-
 // ── Prefetch Cache ────────────────────────────────────────────
 const prefetchCache = {};
 const PREFETCH_DAYS = 2;
@@ -2910,54 +2940,6 @@ function prefetchAround(date){
   }
 }
 // ─────────────────────────────────────────────────────────────
-
-async function loadFile(date){
-  if(connectionMode!=='github'){ return _origLoadFile(date); }
-  currentDate=date; updateHeaderDate(); updateLastEditedBtn();
-  const { diaryPath } = ghConfig;
-  const yyyy=date.slice(0,4), fname=date+'.md';
-  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
-
-  const applyContent=(content,sha)=>{
-    if(content!==null){
-      window._ghFileSha=sha;
-      populate(content);
-      updateIndexEntry(date,content);
-      updateHeaderState();
-      showStatus('Geladen (GitHub)',`${yyyy}/${fname}`,true);
-    } else {
-      window._ghFileSha=null;
-      populate(buildNewFileContent(date));
-      updateHeaderState();
-      showStatus('Neu (GitHub)',`${yyyy}/${fname}`,false);
-      isDirty=false;
-    }
-    ghConnectionVerified=true;
-    updateGhSettingsBtn();
-    prefetchAround(date);
-  };
-
-  // Use prefetch cache if already loaded
-  const cached=prefetchCache[date];
-  if(cached!==undefined && cached!==null){
-    delete prefetchCache[date];
-    applyContent(cached.content,cached.sha);
-    return;
-  }
-
-  showSpinner();
-  try{
-    const data=await ghGet(path);
-    if(data){
-      const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
-      applyContent(c,data.sha);
-    } else {
-      applyContent(null,null);
-    }
-  }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
-  finally{ hideSpinner(); }
-}
-
 // Initialise on load
 document.addEventListener('DOMContentLoaded',()=>{
   loadGhConfig();
