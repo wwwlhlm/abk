@@ -994,21 +994,10 @@ async function autoSave(){
       const yyyy=currentDate.slice(0,4);
       const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
       // Always fetch fresh SHA right before writing — eliminates all caching issues
-      let sha = await ghGetSha(path);
-      for(let attempt = 0; attempt < 3; attempt++){
-        try{
-          await ghPut(path, content, `Update ${currentDate}`, sha);
-          break; // success
-        }catch(e){
-          if(e.message.includes('does not match') && attempt < 2){
-            // GitHub returned a different SHA — fetch it definitively via full GET
-            const fresh = await ghGet(path);
-            sha = fresh ? fresh.sha : undefined;
-            continue;
-          }
-          throw e;
-        }
-      }
+      // Always use ghGet for SHA — same request that returns content,
+      // so GitHub is guaranteed consistent between SHA fetch and PUT
+      const existing = await ghGet(path);
+      await ghPut(path, content, `Update ${currentDate}`, existing ? existing.sha : undefined);
     } else {
       if(!fileHandle){
         const yyyy=currentDate.split('-')[0];
