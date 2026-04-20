@@ -962,15 +962,17 @@ async function autoSave(){
       const { diaryPath } = ghConfig;
       const yyyy=currentDate.slice(0,4);
       const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
-      // Retry once on SHA conflict (file changed between fetch and put)
+      let sha = await ghGetSha(path);
       for(let attempt=0; attempt<2; attempt++){
-        const currentSha=await ghGetSha(path);
         try{
-          await ghPut(path, content, `Update ${currentDate}`, currentSha);
+          await ghPut(path, content, `Update ${currentDate}`, sha);
           break; // success
         }catch(e){
           if(attempt===0 && e.message.includes('does not match')){
-            continue; // retry with fresh SHA
+            // Get definitive current SHA via full file fetch
+            const current = await ghGet(path);
+            sha = current ? current.sha : undefined;
+            continue;
           }
           throw e;
         }
@@ -1783,13 +1785,14 @@ async function saveIndexFile(index, tags){
 }
 
 async function ghGetSha(path){
-  try{
-    const { token, privateRepo, branch } = ghConfig;
-    const res = await fetch(`https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`,
-      {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
-    if(!res.ok) return undefined;
-    return (await res.json()).sha;
-  }catch{ return undefined; }
+  const { token, privateRepo, branch } = ghConfig;
+  const res = await fetch(
+    `https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`,
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}
+  );
+  if(res.status===404) return undefined; // new file
+  if(!res.ok) throw new Error(`SHA-Abfrage fehlgeschlagen: ${res.status}`);
+  return (await res.json()).sha;
 }
 
 async function loadIndexFile(){
