@@ -3066,17 +3066,17 @@ document.addEventListener('keydown',e=>{
 })();
 // ─────────────────────────────────────────────────────────────
 
-// ── iOS keyboard: lift mic bar above keyboard/autocomplete bar ─
+// ── iOS keyboard: hide mic bar when keyboard is open ──────────
 if(window.visualViewport){
   const _micBar = document.querySelector('.mic-bar');
-  const _updateMicPos = ()=>{
+  const _updateMicVis = ()=>{
     if(!_micBar) return;
     const vv = window.visualViewport;
-    const gap = window.innerHeight - (vv.offsetTop + vv.height);
-    _micBar.style.bottom = Math.max(0, gap) + 'px';
+    const keyboardHeight = window.innerHeight - (vv.offsetTop + vv.height);
+    _micBar.style.visibility = keyboardHeight > 50 ? 'hidden' : '';
   };
-  window.visualViewport.addEventListener('resize', _updateMicPos, {passive:true});
-  window.visualViewport.addEventListener('scroll', _updateMicPos, {passive:true});
+  window.visualViewport.addEventListener('resize', _updateMicVis, {passive:true});
+  window.visualViewport.addEventListener('scroll', _updateMicVis, {passive:true});
 }
 // ─────────────────────────────────────────────────────────────
 
