@@ -1028,9 +1028,13 @@ async function autoSave(){
     }));
     updateIndexEntry(currentDate, content);
     showSaveNotif(currentDate);
-    // Prefetch neighbors AFTER save — cache is always post-save fresh
-    delete prefetchCache[currentDate]; // current day never cached (loaded fresh)
-    prefetchAround(currentDate);
+    // Invalidate neighbors so next loadFile triggers a fresh prefetch
+    delete prefetchCache[currentDate];
+    for(let i=1; i<=2; i++){
+      delete prefetchCache[dateOffset(currentDate, i)];
+      delete prefetchCache[dateOffset(currentDate, -i)];
+    }
+    prefetchAround(currentDate); // also re-fetch neighbors now with fresh no-store calls
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
   finally{ _saving = false; }
 }
@@ -1149,6 +1153,7 @@ async function loadFile(date){
         isDirty=false;
       }
       ghConnectionVerified=true; updateGhSettingsBtn();
+      prefetchAround(date); // start prefetching neighbors immediately
       return;
     }
 
@@ -1165,6 +1170,7 @@ async function loadFile(date){
         isDirty=false;
       }
       ghConnectionVerified=true; updateGhSettingsBtn();
+      prefetchAround(date); // start prefetching neighbors immediately
     }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
     finally{ hideSpinner(); }
     return;
