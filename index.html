@@ -973,6 +973,11 @@ async function prefetchDay(date){
 
 function prefetchAround(date){
   if(connectionMode!=='github') return;
+  // Force-clear neighbors so prefetchDay always fetches fresh after a save
+  for(let i=1; i<=2; i++){
+    delete prefetchCache[dateOffset(date, i)];
+    delete prefetchCache[dateOffset(date, -i)];
+  }
   prefetchDay(dateOffset(date, 1));
   prefetchDay(dateOffset(date, 2));
   prefetchDay(dateOffset(date, -1));
@@ -1821,7 +1826,7 @@ async function ghGetSha(path){
   const { token, privateRepo, branch } = ghConfig;
   const res = await fetch(
     `https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`,
-    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}}
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'}
   );
   if(res.status===404) return undefined; // new file
   if(!res.ok) throw new Error(`SHA-Abfrage fehlgeschlagen: ${res.status}`);
@@ -1884,7 +1889,7 @@ async function rebuildIndex(existingIndex){
       const base=(diaryPath?`${diaryPath}/`:'')+year;
       try{
         const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
-          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
         if(res.ok){ const items=await res.json(); total+=items.filter(i=>i.name.endsWith('.md')).length; }
       }catch{}
     }
@@ -1893,7 +1898,7 @@ async function rebuildIndex(existingIndex){
       let items=[];
       try{
         const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
-          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+          {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
         if(res.ok) items=await res.json();
       }catch{ continue; }
       for(const item of items.filter(i=>i.name.endsWith('.md'))){
@@ -1907,7 +1912,7 @@ async function rebuildIndex(existingIndex){
         }
         try{
           const fres=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}/${item.name}?ref=${branch}`,
-            {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+            {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
           if(!fres.ok){ done++; if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total); continue; }
           const fdata=await fres.json();
           const text=decodeURIComponent(escape(atob(fdata.content.replace(/\n/g,''))));
@@ -2927,7 +2932,7 @@ function closeBottomSheet(){
 async function ghGet(path){
   const { token, privateRepo, branch } = ghConfig;
   const url = `https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`;
-  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }});
+  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }, cache:'no-store'});
   if(res.status===404) return null;
   if(!res.ok) throw new Error(`GitHub GET ${path}: ${res.status}`);
   return res.json();
@@ -2938,7 +2943,7 @@ async function ghPut(path, content, message, sha){
   const url = `https://api.github.com/repos/${privateRepo}/contents/${path}`;
   const body = { message, content: btoa(unescape(encodeURIComponent(content))), branch };
   if(sha) body.sha = sha;
-  const res = await fetch(url, { method:'PUT', headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, body:JSON.stringify(body)});
+  const res = await fetch(url, { method:'PUT', headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, cache:'no-store', body:JSON.stringify(body)});
   if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
   return res.json();
 }
@@ -2946,7 +2951,7 @@ async function ghPut(path, content, message, sha){
 async function ghListYears(){
   const { token, privateRepo, branch, diaryPath } = ghConfig;
   const base=(diaryPath||''); const url=`https://api.github.com/repos/${privateRepo}/contents/${base?base+'/':''}?ref=${branch}`.replace('//?ref=','?ref=');
-  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }});
+  const res = await fetch(url, { headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json' }, cache:'no-store'});
   if(!res.ok) return [];
   const items = await res.json();
   return items.filter(i=>i.type==='dir'&&/^\d{4}$/.test(i.name)).map(i=>i.name).sort();
