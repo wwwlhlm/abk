@@ -3006,7 +3006,41 @@ document.addEventListener('keydown',e=>{
 });
 // ──────────────────────────────────────────────────────────────
 
-let toastT;
+// ── Mobile Swipe Navigation ───────────────────────────────────
+(function(){
+  const THRESHOLD = 50;  // min horizontal px to count as swipe
+  const RATIO     = 1.5; // horizontal must be this times larger than vertical
+  let tx0=0, ty0=0, swiping=false;
+
+  document.addEventListener('touchstart', e=>{
+    // Ignore if touching an input, textarea, select, or overlay
+    const t = e.target;
+    if(t.closest('input,textarea,select,.search-overlay,.export-overlay,.settings-overlay,.dp-overlay,.bottom-sheet')) return;
+    if(e.touches.length !== 1) return;
+    tx0 = e.touches[0].clientX;
+    ty0 = e.touches[0].clientY;
+    swiping = true;
+  }, {passive:true});
+
+  document.addEventListener('touchend', e=>{
+    if(!swiping) return;
+    swiping = false;
+    const dx = e.changedTouches[0].clientX - tx0;
+    const dy = e.changedTouches[0].clientY - ty0;
+    if(Math.abs(dx) < THRESHOLD) return;
+    if(Math.abs(dx) < Math.abs(dy) * RATIO) return; // too vertical
+    navigateDay(dx < 0 ? 1 : -1); // swipe left = next day, right = prev day
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!swiping) return;
+    const dx = e.touches[0].clientX - tx0;
+    const dy = e.touches[0].clientY - ty0;
+    // Cancel swipe if clearly vertical scroll
+    if(Math.abs(dy) > Math.abs(dx) * RATIO) swiping = false;
+  }, {passive:true});
+})();
+// ─────────────────────────────────────────────────────────────
 function toast(msg,type=''){
   const el=document.getElementById('toast');
   el.textContent=msg; el.className='toast show'+(type?' '+type:'');
