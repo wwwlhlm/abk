@@ -948,7 +948,36 @@ function showSaveNotif(dateStr){
 
 let _saving = false;
 let _navigating = false;
-const _knownSha = {}; // path → SHA from last successful PUT
+const prefetchCache = {}; // date → {content, sha}  — only populated after successful save
+
+function dateOffset(dateStr, delta){
+  const d = new Date(dateStr+'T12:00:00');
+  d.setDate(d.getDate()+delta);
+  return d.toISOString().split('T')[0];
+}
+
+async function prefetchDay(date){
+  if(connectionMode!=='github') return;
+  if(prefetchCache[date] !== undefined) return; // already cached
+  prefetchCache[date] = null; // in-flight marker
+  const { diaryPath } = ghConfig;
+  const path=(diaryPath?`${diaryPath}/`:'')+`${date.slice(0,4)}/${date}.md`;
+  try{
+    const data = await ghGet(path);
+    if(prefetchCache[date] !== null) return; // was invalidated while fetching
+    prefetchCache[date] = data
+      ? { content: decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))), sha: data.sha }
+      : { content: null, sha: null };
+  }catch{ delete prefetchCache[date]; }
+}
+
+function prefetchAround(date){
+  if(connectionMode!=='github') return;
+  prefetchDay(dateOffset(date, 1));
+  prefetchDay(dateOffset(date, 2));
+  prefetchDay(dateOffset(date, -1));
+  prefetchDay(dateOffset(date, -2));
+}
 
 async function autoSave(){
   if(!isDirty) return;
@@ -967,7 +996,6 @@ async function autoSave(){
       // Always fetch fresh SHA right before writing — eliminates all caching issues
       const sha = await ghGetSha(path);
       await ghPut(path, content, `Update ${currentDate}`, sha);
-      delete prefetchCache[currentDate]; // invalidate prefetch so next visit reloads fresh
     } else {
       if(!fileHandle){
         const yyyy=currentDate.split('-')[0];
@@ -993,6 +1021,9 @@ async function autoSave(){
     }));
     updateIndexEntry(currentDate, content);
     showSaveNotif(currentDate);
+    // Prefetch neighbors AFTER save — cache is always post-save fresh
+    delete prefetchCache[currentDate]; // current day never cached (loaded fresh)
+    prefetchAround(currentDate);
   }catch(e){ toast('Speicherfehler: '+e.message,'err'); }
   finally{ _saving = false; }
 }
@@ -1095,34 +1126,38 @@ async function loadFile(date){
   const yyyy=date.split('-')[0], fname=date+'.md';
 
   if(connectionMode==='github'){
-    // GitHub mode — handled by prefetch-aware path below
     const { diaryPath } = ghConfig;
     const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
 
-    const applyContent=(c,sha)=>{
-      if(c!==null){
-        window._ghFileSha=sha;
-        if(sha) _knownSha[path]=sha; // seed SHA cache for next autoSave
+    // Use prefetch cache if available (only populated after a save, so always fresh)
+    const cached = prefetchCache[date];
+    if(cached !== undefined && cached !== null){
+      delete prefetchCache[date];
+      if(cached.content !== null){
+        populate(cached.content); updateIndexEntry(date, cached.content);
+        updateHeaderState(); showStatus('Geladen (GitHub)', `${yyyy}/${fname}`, true);
+      } else {
+        populate(buildNewFileContent(date));
+        updateHeaderState(); showStatus('Neu (GitHub)', `${yyyy}/${fname}`, false);
+        isDirty=false;
+      }
+      ghConnectionVerified=true; updateGhSettingsBtn();
+      return;
+    }
+
+    showSpinner();
+    try{
+      const data=await ghGet(path);
+      if(data){
+        const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
         populate(c); updateIndexEntry(date,c);
         updateHeaderState(); showStatus('Geladen (GitHub)',`${yyyy}/${fname}`,true);
       } else {
-        window._ghFileSha=null;
         populate(buildNewFileContent(date));
         updateHeaderState(); showStatus('Neu (GitHub)',`${yyyy}/${fname}`,false);
         isDirty=false;
       }
       ghConnectionVerified=true; updateGhSettingsBtn();
-      prefetchAround(date);
-    };
-
-    const cached=prefetchCache[date];
-    if(cached!==undefined && cached!==null){ delete prefetchCache[date]; applyContent(cached.content,cached.sha); return; }
-
-    showSpinner();
-    try{
-      const data=await ghGet(path);
-      if(data){ const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))); applyContent(c,data.sha); }
-      else { applyContent(null,null); }
     }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
     finally{ hideSpinner(); }
     return;
@@ -2917,44 +2952,7 @@ async function ghListYears(){
 
 // ── GitHub-aware loadFile ─────────────────────────────────────
 // Override is done by patching the existing loadFile/autoSave at runtime
-// ── Prefetch Cache ────────────────────────────────────────────
-const prefetchCache = {};
-const PREFETCH_DAYS = 2;
 
-function dateOffset(dateStr, delta){
-  const d = new Date(dateStr+'T12:00:00');
-  d.setDate(d.getDate()+delta);
-  return d.toISOString().split('T')[0];
-}
-
-async function prefetchDay(date){
-  if(connectionMode!=='github') return;
-  if(prefetchCache[date] !== undefined) return;
-  prefetchCache[date] = null; // mark in-flight
-  const { diaryPath } = ghConfig;
-  const yyyy=date.slice(0,4);
-  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${date}.md`;
-  try{
-    const data = await ghGet(path);
-    // Only store if still in-flight — a save may have deleted the entry meanwhile
-    if(prefetchCache[date] !== null) return;
-    if(data){
-      const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
-      prefetchCache[date]={content:c,sha:data.sha};
-    } else {
-      prefetchCache[date]={content:null,sha:null};
-    }
-  }catch{ delete prefetchCache[date]; }
-}
-
-function prefetchAround(date){
-  if(connectionMode!=='github') return;
-  for(let i=1;i<=PREFETCH_DAYS;i++){
-    prefetchDay(dateOffset(date,i));
-    prefetchDay(dateOffset(date,-i));
-  }
-}
-// ─────────────────────────────────────────────────────────────
 // Initialise on load
 document.addEventListener('DOMContentLoaded',()=>{
   loadGhConfig();
