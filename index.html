@@ -964,26 +964,10 @@ async function autoSave(){
       const { diaryPath } = ghConfig;
       const yyyy=currentDate.slice(0,4);
       const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
-      // Use cached SHA from last PUT, fall back to fresh fetch
-      let sha = _knownSha[path] !== undefined ? _knownSha[path] : await ghGetSha(path);
-      for(let attempt=0; attempt<2; attempt++){
-        try{
-          const result = await ghPut(path, content, `Update ${currentDate}`, sha);
-          // Store the new SHA from the PUT response for next save
-          if(result?.content?.sha) _knownSha[path] = result.content.sha;
-          delete prefetchCache[currentDate]; // invalidate stale prefetch for this day
-          break; // success
-        }catch(e){
-          if(attempt===0 && e.message.includes('does not match')){
-            // Definitive SHA via full file fetch
-            const current = await ghGet(path);
-            sha = current ? current.sha : undefined;
-            delete _knownSha[path]; // clear stale cache
-            continue;
-          }
-          throw e;
-        }
-      }
+      // Always fetch fresh SHA right before writing — eliminates all caching issues
+      const sha = await ghGetSha(path);
+      await ghPut(path, content, `Update ${currentDate}`, sha);
+      delete prefetchCache[currentDate]; // invalidate prefetch so next visit reloads fresh
     } else {
       if(!fileHandle){
         const yyyy=currentDate.split('-')[0];
