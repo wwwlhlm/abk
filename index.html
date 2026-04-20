@@ -907,18 +907,7 @@ function markDirty(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC(); updateLastEditedBtn();
-  // Disable iOS autocomplete/autofill — 'new-password' is the only value iOS respects
-  document.querySelectorAll('input:not([type=password]), textarea').forEach(el=>{
-    el.setAttribute('autocomplete','new-password');
-  });
-  const observer = new MutationObserver(muts=>{
-    muts.forEach(m=>m.addedNodes.forEach(n=>{
-      if(n.nodeType===1) n.querySelectorAll('input, textarea').forEach(el=>{
-        el.setAttribute('autocomplete','new-password');
-      });
-    }));
-  });
-  observer.observe(document.body, {childList:true, subtree:true});
+
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
@@ -3076,6 +3065,21 @@ document.addEventListener('keydown',e=>{
   }, {passive:true});
 })();
 // ─────────────────────────────────────────────────────────────
+
+// ── iOS keyboard: lift mic bar above keyboard/autocomplete bar ─
+if(window.visualViewport){
+  const _micBar = document.querySelector('.mic-bar');
+  const _updateMicPos = ()=>{
+    if(!_micBar) return;
+    const vv = window.visualViewport;
+    const gap = window.innerHeight - (vv.offsetTop + vv.height);
+    _micBar.style.bottom = Math.max(0, gap) + 'px';
+  };
+  window.visualViewport.addEventListener('resize', _updateMicPos, {passive:true});
+  window.visualViewport.addEventListener('scroll', _updateMicPos, {passive:true});
+}
+// ─────────────────────────────────────────────────────────────
+
 function toast(msg,type=''){
   const el=document.getElementById('toast');
   el.textContent=msg; el.className='toast show'+(type?' '+type:'');
