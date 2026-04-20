@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <meta name="format-detection" content="telephone=no">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>Erfassen</title>
   <style>
@@ -531,7 +532,7 @@
     </button>
     <!-- Desktop only -->
     <button class="hdr-icon hdr-desktop" onclick="openExport()" title="Synchronisieren">
-      <svg viewBox="0 0 24 24" width="15" height="15"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <svg viewBox="0 0 24 24" width="14" height="14"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     </button>
     <button class="hdr-icon gh-icon-btn hdr-desktop" id="ghSettingsBtn" onclick="openSettings()" title="Verbindung">
       <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
@@ -556,7 +557,7 @@
 <div class="bottom-sheet" id="bottomSheet">
   <div class="bottom-sheet-handle"></div>
   <button class="bottom-sheet-item" onclick="openExport();closeBottomSheet()">
-    <svg viewBox="0 0 24 24" width="15" height="15"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    <svg viewBox="0 0 24 24" width="14" height="14"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
     <span class="bs-label">Synchronisieren</span>
   </button>
   <div class="bottom-sheet-divider"></div>
@@ -693,7 +694,7 @@
           </div>
           <div class="inline-field">
             <label>Koordinaten</label>
-            <input class="inline-input" id="coords" placeholder="48.12, 8.56">
+            <input class="inline-input" id="coords" autocomplete="off" placeholder="48.12, 8.56">
           </div>
         </div>
       </div>
@@ -709,7 +710,7 @@
 
     <!-- Head -->
     <div class="export-head">
-      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       <span class="export-head-title">Synchronisieren</span>
       <button class="export-close" onclick="closeExport()">✕</button>
     </div>
@@ -791,20 +792,20 @@
         </div>
         <div class="settings-field">
           <label class="settings-label">Privates Repo (Rohdaten)</label>
-          <input class="settings-input" type="text" id="ghPrivateRepo" placeholder="username/diary-private">
+          <input class="settings-input" type="text" id="ghPrivateRepo" autocomplete="off" placeholder="username/diary-private">
         </div>
         <div class="settings-field">
           <label class="settings-label">Öffentliches Repo (Webseite)</label>
-          <input class="settings-input" type="text" id="ghPublicRepo" placeholder="username/username.github.io">
+          <input class="settings-input" type="text" id="ghPublicRepo" autocomplete="off" placeholder="username/username.github.io">
           <p class="settings-hint">Export-Button schreibt JSON-Dateien direkt in <code>data/</code> dieses Repos.</p>
         </div>
         <div class="settings-field">
           <label class="settings-label">Branch</label>
-          <input class="settings-input" type="text" id="ghBranch" placeholder="main" value="main">
+          <input class="settings-input" type="text" id="ghBranch" autocomplete="off" placeholder="main" value="main">
         </div>
         <div class="settings-field">
           <label class="settings-label">Tagebuch-Ordner im privaten Repo</label>
-          <input class="settings-input" type="text" id="ghDiaryPath" placeholder="Leer = Root des Repos">
+          <input class="settings-input" type="text" id="ghDiaryPath" autocomplete="off" placeholder="Leer = Root des Repos">
         </div>
       </div>
     </div>
@@ -906,6 +907,17 @@ function markDirty(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC(); updateLastEditedBtn();
+  // Disable browser autocomplete/autofill on all inputs (prevents iOS suggestions overlapping UI)
+  document.querySelectorAll('input:not([type=password]), textarea').forEach(el=>{
+    if(!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete','off');
+  });
+  // Re-apply on dynamic chip inputs (created later)
+  const observer = new MutationObserver(muts=>{
+    muts.forEach(m=>m.addedNodes.forEach(n=>{
+      if(n.nodeType===1) n.querySelectorAll('input').forEach(el=>{ if(!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete','off'); });
+    }));
+  });
+  observer.observe(document.querySelector('.page'), {childList:true, subtree:true});
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
