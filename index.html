@@ -2936,6 +2936,8 @@ async function prefetchDay(date){
   const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${date}.md`;
   try{
     const data = await ghGet(path);
+    // Only store if still in-flight — a save may have deleted the entry meanwhile
+    if(prefetchCache[date] !== null) return;
     if(data){
       const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
       prefetchCache[date]={content:c,sha:data.sha};
