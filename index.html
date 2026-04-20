@@ -135,15 +135,6 @@
     .card-head svg { width:13px;height:13px;stroke:var(--text-3);fill:none;stroke-width:2;flex-shrink:0; }
     .card-head-title { font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3); }
     .card-body { padding:14px; }
-    .mic-btn {
-      width:44px;height:44px;border-radius:50%;
-      border:1.5px solid rgba(253,147,159,.4);background:var(--accent-bg);
-      color:var(--accent);display:flex;align-items:center;justify-content:center;
-      cursor:pointer;flex-shrink:0;transition:all .2s;
-    }
-    .mic-btn:hover { background:rgba(253,147,159,.2);border-color:rgba(253,147,159,.6); }
-    .mic-btn.on { border-color:var(--error);color:var(--error);background:rgba(229,115,115,.1);animation:pulse .9s ease infinite; }
-    .mic-btn svg { width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8; }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
     .status-line { display:flex;align-items:baseline;gap:8px;font-size:12px;min-height:16px;opacity:0;transition:opacity .3s ease; }
     .status-line.show { opacity:1; }
@@ -192,7 +183,19 @@
     .entry-area { width:100%;min-height:80px;background:transparent;border:none;outline:none;font-size:15px;line-height:1.7;color:var(--text);resize:vertical;font-family:inherit; }
     .entry-area::placeholder { color:var(--text-3); }
     .entry-hint { font-size:11px;color:var(--text-3);margin-top:6px; }
-    .mic-bar { position:fixed;bottom:0;left:0;right:0;padding:10px 16px 14px;background:linear-gradient(to top,var(--bg) 60%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:40; }
+    .mic-bar { position:fixed;bottom:0;left:0;right:0;padding:10px 16px 14px;background:transparent;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:40;pointer-events:none; }
+    .mic-bar > * { pointer-events:all; }
+    .mic-btn {
+      width:44px;height:44px;border-radius:50%;
+      border:1.5px solid rgba(253,147,159,.4);background:var(--bg);
+      color:var(--accent);display:flex;align-items:center;justify-content:center;
+      cursor:pointer;flex-shrink:0;transition:all .2s;
+      box-shadow:0 0 0 4px var(--bg), 0 0 32px 12px rgba(0,0,0,.45);
+    }
+    .mic-btn:hover { background:var(--surface);border-color:rgba(253,147,159,.6); }
+    .mic-btn.on { border-color:var(--error);color:var(--error);background:var(--bg);animation:pulse .9s ease infinite;
+      box-shadow:0 0 0 4px var(--bg), 0 0 32px 12px rgba(229,115,115,.4); }
+    .mic-btn svg { width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8; }
     .toast { position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;white-space:nowrap;z-index:99; }
     .toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
     .toast.ok { border-color:rgba(129,199,132,.4);color:var(--good); }
@@ -3066,22 +3069,7 @@ document.addEventListener('keydown',e=>{
 })();
 // ─────────────────────────────────────────────────────────────
 
-// ── Hide mic bar when any input/textarea is focused (iOS keyboard) ─
-(()=>{
-  const _micBar = document.querySelector('.mic-bar');
-  if(!_micBar) return;
-  document.addEventListener('focusin', e=>{
-    if(e.target.matches('input, textarea')) _micBar.style.visibility='hidden';
-  }, {passive:true});
-  document.addEventListener('focusout', ()=>{
-    // Small delay so it doesn't flicker when tabbing between fields
-    setTimeout(()=>{
-      if(!document.activeElement?.matches('input, textarea'))
-        _micBar.style.visibility='';
-    }, 100);
-  }, {passive:true});
-})();
-// ─────────────────────────────────────────────────────────────
+
 
 function toast(msg,type=''){
   const el=document.getElementById('toast');
