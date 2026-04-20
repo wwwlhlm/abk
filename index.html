@@ -971,6 +971,7 @@ async function autoSave(){
           const result = await ghPut(path, content, `Update ${currentDate}`, sha);
           // Store the new SHA from the PUT response for next save
           if(result?.content?.sha) _knownSha[path] = result.content.sha;
+          delete prefetchCache[currentDate]; // invalidate stale prefetch for this day
           break; // success
         }catch(e){
           if(attempt===0 && e.message.includes('does not match')){
