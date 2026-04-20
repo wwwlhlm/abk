@@ -183,18 +183,16 @@
     .entry-area { width:100%;min-height:80px;background:transparent;border:none;outline:none;font-size:15px;line-height:1.7;color:var(--text);resize:vertical;font-family:inherit; }
     .entry-area::placeholder { color:var(--text-3); }
     .entry-hint { font-size:11px;color:var(--text-3);margin-top:6px; }
-    .mic-bar { position:fixed;bottom:0;left:0;right:0;padding:10px 16px 26px;background:transparent;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:40;pointer-events:none; }
+    .mic-bar { position:fixed;bottom:0;left:0;right:0;padding:10px 16px 16px;background:linear-gradient(to top,var(--bg) 60%,transparent);display:flex;flex-direction:column;align-items:center;gap:8px;z-index:40; }
     .mic-bar > * { pointer-events:all; }
     .mic-btn {
       width:44px;height:44px;border-radius:50%;
-      border:1.5px solid rgba(253,147,159,.4);background:var(--surface);
+      border:1.5px solid rgba(253,147,159,.4);background:var(--accent-bg);
       color:var(--accent);display:flex;align-items:center;justify-content:center;
       cursor:pointer;flex-shrink:0;transition:all .2s;
-      box-shadow:0 0 24px 8px rgba(26,26,26,.9), 0 0 48px 20px rgba(26,26,26,.6);
     }
-    .mic-btn:hover { background:var(--surface-2);border-color:rgba(253,147,159,.6); }
-    .mic-btn.on { border-color:var(--error);color:var(--error);background:var(--surface);animation:pulse .9s ease infinite;
-      box-shadow:0 0 24px 8px rgba(26,26,26,.9), 0 0 48px 20px rgba(229,115,115,.35); }
+    .mic-btn:hover { background:rgba(253,147,159,.2);border-color:rgba(253,147,159,.6); }
+    .mic-btn.on { border-color:var(--error);color:var(--error);background:rgba(229,115,115,.1);animation:pulse .9s ease infinite; }
     .mic-btn svg { width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8; }
     .toast { position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface-2);border:1px solid var(--border-2);color:var(--text);padding:9px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:all .25s ease;white-space:nowrap;z-index:99; }
     .toast.show { opacity:1;transform:translateX(-50%) translateY(0); }
@@ -3072,19 +3070,7 @@ document.addEventListener('keydown',e=>{
 
 
 
-// ── Mobile: fade mic-bar when scrolled past first viewport ────
-(()=>{
-  const bar = document.querySelector('.mic-bar');
-  if(!bar) return;
-  const update = ()=>{
-    if(window.innerWidth > 600){ bar.style.opacity=''; return; }
-    const ratio = Math.max(0, 1 - window.scrollY / (window.innerHeight * 0.4));
-    bar.style.opacity = ratio;
-  };
-  window.addEventListener('scroll', update, {passive:true});
-  window.addEventListener('resize', update, {passive:true});
-})();
-// ─────────────────────────────────────────────────────────────
+
 let toastT;
 function toast(msg,type=''){
   el.textContent=msg; el.className='toast show'+(type?' '+type:'');
