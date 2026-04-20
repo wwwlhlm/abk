@@ -907,17 +907,18 @@ function markDirty(){
 
 document.addEventListener('DOMContentLoaded',()=>{
   updateHeaderDate(); renderAll(); hideSpinner(); initTagsAC(); updateLastEditedBtn();
-  // Disable browser autocomplete/autofill on all inputs (prevents iOS suggestions overlapping UI)
+  // Disable iOS autocomplete/autofill — 'new-password' is the only value iOS respects
   document.querySelectorAll('input:not([type=password]), textarea').forEach(el=>{
-    if(!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete','off');
+    el.setAttribute('autocomplete','new-password');
   });
-  // Re-apply on dynamic chip inputs (created later)
   const observer = new MutationObserver(muts=>{
     muts.forEach(m=>m.addedNodes.forEach(n=>{
-      if(n.nodeType===1) n.querySelectorAll('input').forEach(el=>{ if(!el.hasAttribute('autocomplete')) el.setAttribute('autocomplete','off'); });
+      if(n.nodeType===1) n.querySelectorAll('input, textarea').forEach(el=>{
+        el.setAttribute('autocomplete','new-password');
+      });
     }));
   });
-  observer.observe(document.querySelector('.page'), {childList:true, subtree:true});
+  observer.observe(document.body, {childList:true, subtree:true});
   // Mark dirty on any direct input change
   document.addEventListener('input', e=>{
     if(e.target.closest('.page')) markDirty();
