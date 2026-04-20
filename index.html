@@ -2874,88 +2874,100 @@ async function ghListYears(){
 const _origLoadFile = loadFile;
 const _origAutoSave = autoSave;
 
-async function loadFile(date){
-  if(connectionMode!=='github'){ return _origLoadFile(date); }
-  currentDate=date; updateHeaderDate(); updateLastEditedBtn();
-  const { diaryPath, branch } = ghConfig;
-  const yyyy=date.slice(0,4), fname=date+'.md';
-  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
-  showSpinner();
+// ── Prefetch Cache ────────────────────────────────────────────
+const prefetchCache = {};
+const PREFETCH_DAYS = 2;
+
+function dateOffset(dateStr, delta){
+  const d = new Date(dateStr+'T12:00:00');
+  d.setDate(d.getDate()+delta);
+  return d.toISOString().split('T')[0];
+}
+
+async function prefetchDay(date){
+  if(connectionMode!=='github') return;
+  if(prefetchCache[date] !== undefined) return;
+  prefetchCache[date] = null; // mark in-flight
+  const { diaryPath } = ghConfig;
+  const yyyy=date.slice(0,4);
+  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${date}.md`;
   try{
     const data = await ghGet(path);
     if(data){
-      const content = decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
-      window._ghFileSha = data.sha;
-      ghConnectionVerified = true;
-      updateGhSettingsBtn();
-      populate(content);
-      updateIndexEntry(date, content);
-      updateHeaderState();
-      showStatus('Geladen (GitHub)', `${yyyy}/${fname}`, true);
+      const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+      prefetchCache[date]={content:c,sha:data.sha};
     } else {
-      window._ghFileSha = null;
-      ghConnectionVerified = true;
-      updateGhSettingsBtn();
-      const templateContent = buildNewFileContent(date);
-      populate(templateContent);
+      prefetchCache[date]={content:null,sha:null};
+    }
+  }catch{ delete prefetchCache[date]; }
+}
+
+function prefetchAround(date){
+  if(connectionMode!=='github') return;
+  for(let i=1;i<=PREFETCH_DAYS;i++){
+    prefetchDay(dateOffset(date,i));
+    prefetchDay(dateOffset(date,-i));
+  }
+}
+// ─────────────────────────────────────────────────────────────
+
+async function loadFile(date){
+  if(connectionMode!=='github'){ return _origLoadFile(date); }
+  currentDate=date; updateHeaderDate(); updateLastEditedBtn();
+  const { diaryPath } = ghConfig;
+  const yyyy=date.slice(0,4), fname=date+'.md';
+  const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${fname}`;
+
+  const applyContent=(content,sha)=>{
+    if(content!==null){
+      window._ghFileSha=sha;
+      populate(content);
+      updateIndexEntry(date,content);
       updateHeaderState();
-      showStatus('Neu (GitHub)', `${yyyy}/${fname}`, false);
+      showStatus('Geladen (GitHub)',`${yyyy}/${fname}`,true);
+    } else {
+      window._ghFileSha=null;
+      populate(buildNewFileContent(date));
+      updateHeaderState();
+      showStatus('Neu (GitHub)',`${yyyy}/${fname}`,false);
       isDirty=false;
+    }
+    ghConnectionVerified=true;
+    updateGhSettingsBtn();
+    prefetchAround(date);
+  };
+
+  // Use prefetch cache if already loaded
+  const cached=prefetchCache[date];
+  if(cached!==undefined && cached!==null){
+    delete prefetchCache[date];
+    applyContent(cached.content,cached.sha);
+    return;
+  }
+
+  showSpinner();
+  try{
+    const data=await ghGet(path);
+    if(data){
+      const c=decodeURIComponent(escape(atob(data.content.replace(/\n/g,''))));
+      applyContent(c,data.sha);
+    } else {
+      applyContent(null,null);
     }
   }catch(e){ toast('GitHub Fehler: '+e.message,'err'); }
   finally{ hideSpinner(); }
 }
 
-async function autoSave(){
-  if(connectionMode!=='github'){ return _origAutoSave(); }
-  if(!isDirty) return;
-  try{
-    const tags=document.getElementById('tags').value.trim().split(',').map(t=>t.trim()).filter(Boolean);
-    saveKnownTags(tags);
-    const content=buildContent();
-    const { diaryPath } = ghConfig;
-    const yyyy=currentDate.slice(0,4);
-    const path=(diaryPath?`${diaryPath}/`:'')+`${yyyy}/${currentDate}.md`;
-    // Always fetch current SHA fresh — never use cached value to avoid conflicts
-    const currentSha = await ghGetSha(path);
-    await ghPut(path, content, `Update ${currentDate}`, currentSha);
-    isDirty=false;
-    localStorage.setItem('lastEditedDate', currentDate);
-    updateIndexEntry(currentDate, content);
-    showSaveNotif(currentDate);
-  }catch(e){ toast('Speicherfehler (GitHub): '+e.message,'err'); }
-}
-
-// ── GitHub export to public repo ──────────────────────────────
-async function ghPublishFile(filename, content){
-  const { token, publicRepo, branch } = ghConfig;
-  if(!token||!publicRepo) throw new Error('Kein öffentliches Repo konfiguriert');
-  const path=`data/${filename}`;
-  const headers={Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'};
-  // Get current SHA if file exists (needed for update)
-  let sha;
-  const getRes=await fetch(`https://api.github.com/repos/${publicRepo}/contents/${path}`,{headers});
-  if(getRes.ok){ sha=(await getRes.json()).sha; }
-  else if(getRes.status!==404){
-    const e=await getRes.json().catch(()=>({}));
-    throw new Error(`GET ${publicRepo}/${path}: ${getRes.status} ${e.message||''}`);
-  }
-  const body={message:`Export ${filename}`,content:btoa(unescape(encodeURIComponent(content))),branch};
-  if(sha) body.sha=sha;
-  const putRes=await fetch(`https://api.github.com/repos/${publicRepo}/contents/${path}`,
-    {method:'PUT',headers,body:JSON.stringify(body)});
-  if(!putRes.ok){
-    const e=await putRes.json().catch(()=>({}));
-    throw new Error(`PUT ${publicRepo}/${path}: ${putRes.status} ${e.message||''}`);
-  }
-}
-
 // Initialise on load
 document.addEventListener('DOMContentLoaded',()=>{
   loadGhConfig();
-  setMode(connectionMode, false);
+  setMode(connectionMode,false);
   updateGhSettingsBtn();
   updateExportFolderBtn();
+  // Auto-connect in GitHub mode — works on PWA reopen (iOS)
+  if(connectionMode==='github' && ghConfig.token && ghConfig.privateRepo){
+    loadFile(currentDate).then(()=>{ buildSearchIndex(); });
+  }
 });
 // ──────────────────────────────────────────────────────────────
 
