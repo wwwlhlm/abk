@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    :root {
+      --bg:        #1a1a1a;
+      --surface:   #262626;
+      --surface-2: #2f2f2f;
+      --border:    #383838;
+      --border-2:  #444444;
+      --text:      #ececec;
+      --text-2:    #a0a0a0;
+      --text-3:    #666666;
+      --accent:    #FD939F;
+      --accent-bg: rgba(253,147,159,.12);
+      --error:     #e57373;
+      --good:      #81c784;
+      --radius:    11px;
+      --c-apple:   #81c784;
+      --c-banana:  #ffd54f;
+      --c-coffee:  #FD939F;
+      --c-km:      #64b5f6;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-size: 15px; line-height: 1.5;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header-wrap {
+      position: sticky; top: 0; z-index: 50;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+    }
+    .header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 18px; position: relative;
+    }
+    .header-left, .header-right { display: flex; align-items: center; gap: 4px; }
+    /* Absolute-centered like capture.html date nav */
+    .header-center {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    /* Borderless icon button (35×35, icon 18×18, stroke 1.8) */
+    .hdr-icon {
+      width: 35px; height: 35px; border: none; background: transparent;
+      color: var(--text-3); display: flex; align-items: center;
+      justify-content: center; cursor: pointer; transition: color .15s;
+      flex-shrink: 0; position: relative; padding: 0;
+    }
+    .hdr-icon:hover { color: var(--text); }
+    .hdr-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+    .gh-dot {
+      position: absolute; top: 5px; right: 4px;
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--error); border: 1.5px solid var(--bg); transition: background .2s;
+    }
+    .hdr-icon.ok .gh-dot { background: #60a5fa; }
+
+    /* ── Dropdown buttons (period selectors) ────────────────── */
+    .dropdown-anchor { position: relative; }
+    .period-btn {
+      height: 37px; padding: 0 13px; border-radius: 9px;
+      border: 1px solid var(--border); background: var(--surface);
+      font-size: 14px; color: var(--text-2); cursor: pointer;
+      display: inline-flex; align-items: center; gap: 7px;
+      transition: all .15s; font-family: inherit; white-space: nowrap;
+    }
+    .period-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+    .period-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(253,147,159,.4); }
+    .period-btn:disabled { opacity: .35; pointer-events: none; }
+    .chevron { font-size: 9px; opacity: .5; transition: transform .15s; }
+    .period-btn.open .chevron { transform: rotate(180deg); }
+
+    .dropdown {
+      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+      background: var(--surface); border: 1px solid var(--border-2);
+      border-radius: var(--radius); box-shadow: 0 9px 26px rgba(0,0,0,.4);
+      z-index: 200; min-width: 150px; max-height: 280px; overflow-y: auto; display: none;
+    }
+    .dropdown.open { display: block; }
+    .dropdown-item { padding: 9px 14px; font-size: 14px; color: var(--text-2); cursor: pointer; transition: background .1s; white-space: nowrap; }
+    .dropdown-item:hover { background: var(--surface-2); color: var(--text); }
+    .dropdown-item.active { color: var(--accent); }
+    .dropdown-divider { height: 1px; background: var(--border); margin: 3px 0; }
+
+    /* ── Layout ─────────────────────────────────────────────── */
+    /* Single column up to 580px; two-col for lower cards 580+;
+       wider page from 1056px (like capture.html) */
+    .page {
+      padding: 22px 18px 110px;
+      display: flex; flex-direction: column; gap: 13px;
+      max-width: 638px; margin: 0 auto;
+    }
+    @media (min-width: 1056px) {
+      .page { max-width: 1210px; padding: 22px 26px 110px; }
+    }
+    .cols { display: flex; flex-direction: column; gap: 13px; }
+    .col  { display: flex; flex-direction: column; gap: 13px; }
+    @media (min-width: 580px) {
+      .cols { display: grid; grid-template-columns: 1fr 1fr; column-gap: 13px; }
+    }
+    @media (min-width: 1056px) {
+      .cols { column-gap: 22px; }
+    }
+
+    /* ── Cards ──────────────────────────────────────────────── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .card-head {
+      height: 40px; display: flex; align-items: center; gap: 9px;
+      padding: 0 15px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .card-head svg { width: 14px; height: 14px; stroke: var(--text-3); fill: none; stroke-width: 2; flex-shrink: 0; }
+    .card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-3); }
+    .card-body { padding: 15px; }
+
+    /* ── Overview strip ─────────────────────────────────────── */
+    .ov-strip { display: grid; grid-template-columns: repeat(4,1fr); }
+    .ov-item { display: flex; flex-direction: column; gap: 2px; padding: 13px 15px; border-right: 1px solid var(--border); }
+    .ov-item:last-child { border-right: none; }
+    @media (max-width: 440px) {
+      .ov-strip { grid-template-columns: 1fr 1fr; }
+      .ov-item { border-bottom: 1px solid var(--border); }
+      .ov-item:nth-child(2) { border-right: none; }
+      .ov-item:nth-child(3) { border-right: 1px solid var(--border); }
+      .ov-item:nth-child(3),.ov-item:nth-child(4) { border-bottom: none; }
+    }
+    .ov-val   { font-size: 24px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .ov-label { font-size: 12px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; margin-top: 3px; }
+    .ov-avg   { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+    .ov-footer { padding: 9px 15px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-3); display: flex; gap: 16px; flex-wrap: wrap; }
+    .ov-footer strong { color: var(--text-2); }
+
+    /* ── Trend legend ───────────────────────────────────────── */
+    .trend-legend { display: flex; gap: 13px; margin-bottom: 12px; }
+    .legend-item  { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-3); }
+    .legend-dot   { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Grouped vertical bar chart ─────────────────────────── */
+    .bc-chart { display: flex; align-items: flex-end; height: 96px; }
+    /* Gap between groups injected inline per mode */
+    .bc-col {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      gap: 4px; height: 100%; cursor: pointer; min-width: 0;
+    }
+    .bc-col:hover .bc-bar { opacity: 1 !important; }
+    .bc-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; gap: 2px; }
+    .bc-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 0; }
+    .bc-lbl { font-size: 9px; color: var(--text-3); white-space: nowrap; }
+
+    /* ── Horizontal bar charts (consistent 7px height) ──────── */
+    .bar-list  { display: flex; flex-direction: column; gap: 9px; }
+    .bar-row   { display: flex; align-items: center; gap: 9px; min-height: 20px; }
+    .bar-name  { font-size: 13px; color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; width: 84px; }
+    .bar-track { flex: 1; height: 7px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; }
+    .bar-count { min-width: 28px; text-align: right; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+    /* ── Mood — diverging bars from center ──────────────────── */
+    .mood-bars { display: flex; flex-direction: column; gap: 6px; }
+    .mood-row-item { display: flex; align-items: center; gap: 9px; }
+    .mood-lbl   { width: 28px; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; flex-shrink: 0; }
+    .mood-area  { flex: 1; display: flex; align-items: center; height: 7px; }
+    /* Each half is a 7px tall track, the bar grows from the center line */
+    .mood-half {
+      flex: 1; height: 7px; background: var(--surface-2); overflow: hidden;
+    }
+    .mood-half-neg { border-radius: 4px 0 0 4px; display: flex; justify-content: flex-end; }
+    .mood-half-pos { border-radius: 0 4px 4px 0; display: flex; justify-content: flex-start; }
+    .mood-half-bar { height: 100%; }
+    .mood-half-bar-neg { border-radius: 4px 0 0 4px; }
+    .mood-half-bar-pos { border-radius: 0 4px 4px 0; }
+    /* Thin center divider between halves */
+    .mood-center { width: 1px; height: 11px; background: var(--border-2); flex-shrink: 0; }
+    .mood-count { width: 44px; text-align: right; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+
+    /* ── Weekday ────────────────────────────────────────────── */
+    .wd-chart   { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
+    .wd-col     { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; height: 100%; }
+    .wd-bar-wrap{ flex: 1; width: 100%; display: flex; align-items: flex-end; }
+    .wd-bar     { width: 100%; border-radius: 2px 2px 0 0; }
+    .wd-lbl     { font-size: 11px; color: var(--text-3); }
+    .wd-val     { font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+
+    /* ── People chips ───────────────────────────────────────── */
+    .people-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .person-chip {
+      height: 31px; padding: 0 11px; border-radius: 15px;
+      border: 1px solid var(--border); background: transparent;
+      font-size: 14px; color: var(--text-2); display: inline-flex; align-items: center; gap: 6px; transition: all .15s;
+    }
+    .person-chip:hover { border-color: var(--border-2); color: var(--text); }
+    .person-chip-count { font-size: 11px; color: var(--text-3); }
+
+    /* ── States ─────────────────────────────────────────────── */
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 80px; }
+    .spinner { width: 31px; height: 31px; border: 2.6px solid var(--border-2); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .not-connected { margin: 32px 18px; padding: 28px 22px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); text-align: center; max-width: 420px; margin-left: auto; margin-right: auto; }
+    .not-connected h2 { font-size: 16px; font-weight: 500; margin-bottom: 9px; }
+    .not-connected p  { font-size: 14px; color: var(--text-2); line-height: 1.6; }
+    .not-connected a  { color: var(--accent); text-decoration: none; }
+    .empty-card { padding: 22px; text-align: center; font-size: 14px; color: var(--text-3); }
+    .hidden { display: none !important; }
+
+    /* ── Settings overlay ───────────────────────────────────── */
+    .settings-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: flex-end; justify-content: center; }
+    .settings-overlay.hidden { display: none !important; }
+    .settings-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.45); }
+    .settings-panel { position: relative; width: min(528px,100vw); background: var(--surface); border-radius: 15px 15px 0 0; border: 1px solid var(--border-2); box-shadow: 0 26px 66px rgba(0,0,0,.35); padding-bottom: calc(22px + env(safe-area-inset-bottom)); }
+    .settings-head { display: flex; align-items: center; gap: 9px; padding: 12px 15px 11px; border-bottom: 1px solid var(--border); }
+    .settings-head svg { width: 14px; height: 14px; stroke: var(--text-3); fill: none; stroke-width: 2; flex-shrink: 0; }
+    .settings-head-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px; color: var(--text-3); }
+    .settings-close { margin-left: auto; border: none; background: transparent; color: var(--text-3); cursor: pointer; font-size: 15px; padding: 4px; transition: color .15s; line-height: 1; }
+    .settings-close:hover { color: var(--text); }
+    .settings-body { display: flex; flex-direction: column; gap: 14px; padding: 16px 15px; }
+    .settings-field { display: flex; flex-direction: column; gap: 5px; }
+    .settings-label { font-size: 12px; font-weight: 500; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; }
+    .settings-input { width: 100%; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 11px; font-size: 14px; color: var(--text); outline: none; transition: border-color .15s; font-family: inherit; }
+    .settings-input:focus { border-color: var(--accent); }
+    .settings-input::placeholder { color: var(--text-3); }
+    .settings-hint { font-size: 12px; color: var(--text-3); }
+    .settings-hint a { color: var(--accent); text-decoration: none; }
+    .settings-status { font-size: 12px; color: var(--text-3); min-height: 16px; }
+    .settings-status.ok  { color: var(--good); }
+    .settings-status.err { color: var(--error); }
+    .settings-actions { display: flex; gap: 9px; justify-content: flex-end; padding: 0 15px 2px; }
+    .btn-primary { height: 37px; padding: 0 18px; border-radius: 9px; border: 1px solid rgba(253,147,159,.4); background: var(--accent-bg); font-size: 14px; font-weight: 500; color: var(--accent); cursor: pointer; transition: all .15s; font-family: inherit; }
+    .btn-primary:hover { background: rgba(253,147,159,.2); }
+    .btn-secondary { height: 37px; padding: 0 15px; border-radius: 9px; border: 1px solid var(--border); background: transparent; font-size: 14px; color: var(--text-3); cursor: pointer; transition: all .15s; font-family: inherit; }
+    .btn-secondary:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+  </style>
+</head>
+<body>
+
+<div class="header-wrap">
+  <div class="header-inner">
+    <div class="header-left"><!-- reserved --></div>
+
+    <div class="header-center">
+      <div class="dropdown-anchor">
+        <button class="period-btn" id="yearBtn" onclick="toggleDropdown('yearDrop')">
+          <span id="yearLabel">Jahr</span><span class="chevron">▾</span>
+        </button>
+        <div class="dropdown" id="yearDrop"></div>
+      </div>
+      <div class="dropdown-anchor">
+        <button class="period-btn" id="monthBtn" onclick="toggleDropdown('monthDrop')">
+          <span id="monthLabel">Ganzes Jahr</span><span class="chevron">▾</span>
+        </button>
+        <div class="dropdown" id="monthDrop"></div>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <button class="hdr-icon" id="connectBtn" onclick="openSettings()" title="Verbindung">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        <span class="gh-dot" id="connDot"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="settings-overlay hidden" id="settingsOverlay">
+  <div class="settings-backdrop" onclick="closeSettings()"></div>
+  <div class="settings-panel">
+    <div class="settings-head">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+      <span class="settings-head-title">GitHub-Verbindung</span>
+      <button class="settings-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="settings-body">
+      <div class="settings-field">
+        <label class="settings-label">Personal Access Token</label>
+        <input class="settings-input" type="password" id="cfgToken" placeholder="ghp_…" autocomplete="off">
+        <p class="settings-hint">Token mit <code>repo</code>-Berechtigung. <a href="https://github.com/settings/tokens/new" target="_blank">Erstellen →</a></p>
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Privates Repo</label>
+        <input class="settings-input" type="text" id="cfgRepo" placeholder="username/diary-private" autocomplete="off">
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Branch</label>
+        <input class="settings-input" type="text" id="cfgBranch" placeholder="main" autocomplete="off">
+      </div>
+      <div class="settings-status" id="settingsStatus"></div>
+    </div>
+    <div class="settings-actions">
+      <button class="btn-secondary" onclick="closeSettings()">Abbrechen</button>
+      <button class="btn-primary" onclick="saveSettings()">Verbinden</button>
+    </div>
+  </div>
+</div>
+
+<div id="spinnerWrap" class="spinner-wrap"><div class="spinner"></div></div>
+<div id="notConnected" class="not-connected hidden"></div>
+
+<div class="page hidden" id="dashboard">
+  <div class="card" id="cardOverview"></div>
+  <div class="card" id="cardTrend"></div>
+  <div class="cols">
+    <div class="col">
+      <div class="card" id="cardMood"></div>
+      <div class="card" id="cardCoffee"></div>
+      <div class="card" id="cardSport"></div>
+    </div>
+    <div class="col">
+      <div class="card" id="cardWeekday"></div>
+      <div class="card" id="cardLocations"></div>
+      <div class="card" id="cardPeople"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MONTHS_SHORT = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+const MONTHS_FULL  = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+const WD_ORDER     = [1,2,3,4,5,6,0];
+const WD_LABELS    = ['Mo','Di','Mi','Do','Fr','Sa','So'];
+const MOOD_VALUES  = [-2,-1.5,-1,-0.5,0,0.5,1,1.5,2];
+const MOOD_COLORS  = {'-2':'#e57373','-1.5':'#ef9a9a','-1':'#ffcc80','-0.5':'#9aa0a6','0':'#a0a0a0','0.5':'#a5d6a7','1':'#81c784','1.5':'#66bb6a','2':'#43a047'};
+const METRICS = [
+  { key:'coffee',  hex:'#FD939F', label:'Kaffee'  },
+  { key:'apples',  hex:'#81c784', label:'Äpfel'   },
+  { key:'bananas', hex:'#ffd54f', label:'Bananen' },
+];
+
+let INDEX = [], selYear = null, selMonth = null;
+let ghCfg = { token:'', privateRepo:'', branch:'main' };
+let mode  = 'local';
+
+// ── Config — same localStorage keys as capture.html ──────────
+// Both files share window.localStorage when served from the same origin
+// → connecting once in capture.html is enough for dashboard.html too.
+function loadCfg() {
+  const s = JSON.parse(localStorage.getItem('ghConfig') || 'null');
+  if (s) ghCfg = { ...ghCfg, ...s };
+  mode = localStorage.getItem('connectionMode') || 'local';
+}
+function saveCfg(t, r, b) {
+  ghCfg = { ...ghCfg, token:t, privateRepo:r, branch:b||'main' };
+  mode  = 'github';
+  localStorage.setItem('ghConfig', JSON.stringify(ghCfg));
+  localStorage.setItem('connectionMode', 'github');
+}
+
+// ── Settings overlay ──────────────────────────────────────────
+function openSettings() {
+  loadCfg();
+  document.getElementById('cfgToken').value  = ghCfg.token || '';
+  document.getElementById('cfgRepo').value   = ghCfg.privateRepo || '';
+  document.getElementById('cfgBranch').value = ghCfg.branch || 'main';
+  document.getElementById('settingsStatus').textContent = '';
+  document.getElementById('settingsStatus').className = 'settings-status';
+  document.getElementById('settingsOverlay').classList.remove('hidden');
+}
+function closeSettings() { document.getElementById('settingsOverlay').classList.add('hidden'); }
+async function saveSettings() {
+  const token=document.getElementById('cfgToken').value.trim();
+  const repo =document.getElementById('cfgRepo').value.trim();
+  const branch=document.getElementById('cfgBranch').value.trim()||'main';
+  const status=document.getElementById('settingsStatus');
+  if (!token||!repo) { status.textContent='Token und Repo erforderlich.'; status.className='settings-status err'; return; }
+  status.textContent='Wird geprüft…'; status.className='settings-status';
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}`,{headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}});
+    if (!res.ok) throw new Error(`Repo nicht erreichbar (${res.status})`);
+    saveCfg(token,repo,branch);
+    status.textContent='Verbunden ✓'; status.className='settings-status ok';
+    setTimeout(()=>{ closeSettings(); startLoad(); },600);
+  } catch(e) { status.textContent=e.message; status.className='settings-status err'; }
+}
+
+// ── Dropdown ─────────────────────────────────────────────────
+function toggleDropdown(id) {
+  const drop=document.getElementById(id), isOpen=drop.classList.contains('open');
+  closeAllDropdowns();
+  if (!isOpen) { drop.classList.add('open'); drop.closest('.dropdown-anchor').querySelector('.period-btn').classList.add('open'); }
+}
+function closeAllDropdowns() {
+  document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('open'));
+}
+document.addEventListener('click',e=>{ if(!e.target.closest('.dropdown-anchor')) closeAllDropdowns(); });
+
+function renderDropdowns() {
+  const years=getYears();
+  document.getElementById('yearLabel').textContent = selYear ? String(selYear) : 'Alle Jahre';
+  document.getElementById('yearBtn').classList.toggle('active', selYear!==null);
+  document.getElementById('yearDrop').innerHTML =
+    `<div class="dropdown-item ${selYear===null?'active':''}" onclick="pickYear(null)">Alle Jahre</div><div class="dropdown-divider"></div>`+
+    years.map(y=>`<div class="dropdown-item ${selYear===y?'active':''}" onclick="pickYear(${y})">${y}</div>`).join('');
+
+  const monthBtn=document.getElementById('monthBtn');
+  if (!selYear) {
+    document.getElementById('monthLabel').textContent='–';
+    monthBtn.classList.remove('active'); monthBtn.disabled=true;
+    document.getElementById('monthDrop').innerHTML='';
+  } else {
+    monthBtn.disabled=false;
+    const months=getMonthsInYear(selYear);
+    document.getElementById('monthLabel').textContent = selMonth ? MONTHS_FULL[selMonth-1] : 'Ganzes Jahr';
+    monthBtn.classList.toggle('active', selMonth!==null);
+    document.getElementById('monthDrop').innerHTML =
+      `<div class="dropdown-item ${selMonth===null?'active':''}" onclick="pickMonth(null)">Ganzes Jahr</div><div class="dropdown-divider"></div>`+
+      months.map(m=>`<div class="dropdown-item ${selMonth===m?'active':''}" onclick="pickMonth(${m})">${MONTHS_FULL[m-1]}</div>`).join('');
+  }
+}
+function pickYear(y)  { selYear=y; selMonth=null; closeAllDropdowns(); renderAll(); }
+function pickMonth(m) { selMonth=m; closeAllDropdowns(); renderAll(); }
+
+// ── GitHub ───────────────────────────────────────────────────
+async function ghGet(path) {
+  const {token,privateRepo,branch}=ghCfg;
+  const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${path}?ref=${branch}`,
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error(`GitHub ${res.status}: ${path}`);
+  return res.json();
+}
+async function fetchIndex() {
+  if(mode!=='github'||!ghCfg.token||!ghCfg.privateRepo) return null;
+  const raw=await ghGet('search-index.json');
+  if(!raw) return null;
+  return JSON.parse(decodeURIComponent(escape(atob(raw.content.replace(/\n/g,'')))));
+}
+
+// ── Data helpers ─────────────────────────────────────────────
+function getFiltered() {
+  return INDEX.filter(e=>{
+    if(selYear  && e.date.slice(0,4)!==String(selYear))    return false;
+    if(selMonth && parseInt(e.date.slice(5,7))!==selMonth) return false;
+    return true;
+  });
+}
+function sum(arr,f) { return arr.reduce((s,e)=>s+(parseFloat(e[f])||0),0); }
+function parseList(str) { return (str||'').split(' ').filter(Boolean); }
+function countList(entries,field) {
+  const c={};
+  entries.forEach(e=>parseList(e[field]).forEach(v=>{c[v]=(c[v]||0)+1;}));
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]);
+}
+function moodDist(entries) {
+  const d={}; MOOD_VALUES.forEach(v=>{d[v]=0;});
+  entries.forEach(e=>{const v=parseFloat(e.mood); if(!isNaN(v)&&d[v]!==undefined) d[v]++;});
+  return d;
+}
+function weekdayAvgs(entries,field) {
+  const sums=Array(7).fill(0),counts=Array(7).fill(0);
+  entries.forEach(e=>{const wi=e.weekday_index!==undefined?parseInt(e.weekday_index):-1; if(wi>=0){sums[wi]+=(parseFloat(e[field])||0);counts[wi]++;}});
+  return sums.map((s,i)=>counts[i]>0?+(s/counts[i]).toFixed(2):0);
+}
+function monthlyTotals(entries,field) {
+  const t=Array(12).fill(0);
+  entries.forEach(e=>{t[parseInt(e.date.slice(5,7))-1]+=(parseFloat(e[field])||0);});
+  return t;
+}
+function getYears() { return [...new Set(INDEX.map(e=>parseInt(e.date.slice(0,4))))].sort((a,b)=>a-b); }
+function getMonthsInYear(y) { return [...new Set(INDEX.filter(e=>e.date.slice(0,4)===String(y)).map(e=>parseInt(e.date.slice(5,7))))].sort((a,b)=>a-b); }
+function getAvgDivisor(E) {
+  const today=new Date(),ty=today.getFullYear();
+  if(selYear===ty&&!selMonth) return Math.floor((today-new Date(ty,0,1))/86400000)+1;
+  return E.length||1;
+}
+const fmt=n=>Math.round(n).toLocaleString('de-CH');
+const fmtD=n=>n.toFixed(1);
+
+// ── Animation: bars start at 0, animate to data-w / data-h ──
+// Works even on full re-render because we trigger after DOM paint.
+function animateCharts() {
+  requestAnimationFrame(()=>{
+    document.querySelectorAll('[data-w]').forEach(el=>{
+      el.style.transition='width .45s cubic-bezier(.4,0,.2,1)';
+      el.style.width=el.dataset.w+'%';
+    });
+    document.querySelectorAll('[data-h]').forEach(el=>{
+      el.style.transition='height .45s cubic-bezier(.4,0,.2,1)';
+      el.style.height=el.dataset.h+'%';
+    });
+  });
+}
+
+// Helper: horizontal bar (animatable)
+function hBar(pct, color, extra='') {
+  return `<div class="bar-fill" data-w="${pct}" style="width:0%;background:${color};transition:none${extra}"></div>`;
+}
+
+// ── Overview card ─────────────────────────────────────────────
+function renderOverview(E) {
+  const n=getAvgDivisor(E);
+  const cc=sum(E,'coffee'),ac=sum(E,'apples'),bc=sum(E,'bananas'),km=sum(E,'cycling_km');
+  const avgMood=E.length?(sum(E,'mood')/E.length).toFixed(1):'–';
+  const dateRange=E.length?`${E[E.length-1].date} – ${E[0].date}`:'–';
+  const note=(selYear===new Date().getFullYear()&&!selMonth)?' <span style="opacity:.5">bisher</span>':'';
+  document.getElementById('cardOverview').innerHTML=`
+    <div class="ov-strip">
+      <div class="ov-item"><div class="ov-val" style="color:var(--c-coffee)">${fmt(cc)}</div><div class="ov-label">Kaffee</div><div class="ov-avg">⌀ ${fmtD(cc/n)}/Tag${note}</div></div>
+      <div class="ov-item"><div class="ov-val" style="color:var(--c-apple)">${fmt(ac)}</div><div class="ov-label">Äpfel</div><div class="ov-avg">⌀ ${fmtD(ac/n)}/Tag${note}</div></div>
+      <div class="ov-item"><div class="ov-val" style="color:var(--c-banana)">${fmt(bc)}</div><div class="ov-label">Bananen</div><div class="ov-avg">⌀ ${fmtD(bc/n)}/Tag${note}</div></div>
+      <div class="ov-item"><div class="ov-val" style="color:var(--c-km)">${fmt(km)}</div><div class="ov-label">Velo km</div><div class="ov-avg">⌀ ${fmtD(km/n)}/Tag${note}</div></div>
+    </div>
+    <div class="ov-footer"><span>${E.length} Einträge · ${dateRange}</span><span>⌀ Stimmung <strong>${avgMood}</strong></span></div>`;
+}
+
+// ── Trend card: grouped vertical bars with larger gaps ────────
+function renderTrend(E) {
+  const legend=METRICS.map(m=>`<div class="legend-item"><div class="legend-dot" style="background:${m.hex}"></div>${m.label}</div>`).join('');
+
+  let cols='', gap='', title='Konsum · Trend';
+
+  if (!selYear) {
+    // All years: shared max so coffee > apples > bananas visible
+    const years=getYears();
+    const data=METRICS.map(m=>years.map(y=>sum(INDEX.filter(e=>e.date.slice(0,4)===String(y)),m.key)));
+    const sharedMax=Math.max(...data.flatMap(v=>v),1);
+    gap='14px';
+    cols=years.map((y,i)=>`
+      <div class="bc-col" onclick="pickYear(${y})" title="${y}">
+        <div class="bc-bar-wrap">
+          ${METRICS.map((m,mi)=>{
+            const h=data[mi][i]/sharedMax*100;
+            return `<div class="bc-bar" data-h="${h}" style="height:0%;background:${m.hex};opacity:.7;transition:none"></div>`;
+          }).join('')}
+        </div>
+        <div class="bc-lbl">${y}</div>
+      </div>`).join('');
+  } else {
+    // Year view: per-metric normalization to show seasonal variation
+    const data=METRICS.map(m=>monthlyTotals(E,m.key));
+    const maxes=data.map(vals=>Math.max(...vals,1));
+    gap='8px';
+    cols=Array.from({length:12},(_,i)=>{
+      const active=selMonth===i+1;
+      return `
+      <div class="bc-col" onclick="pickMonth(${active?'null':i+1})" title="${MONTHS_FULL[i]}">
+        <div class="bc-bar-wrap">
+          ${METRICS.map((m,mi)=>{
+            const h=data[mi][i]/maxes[mi]*100;
+            return `<div class="bc-bar" data-h="${h}" style="height:0%;background:${m.hex};opacity:${active?1:.6};transition:none${active?';outline:1px solid '+m.hex+'55':''}"></div>`;
+          }).join('')}
+        </div>
+        <div class="bc-lbl" style="${active?'color:var(--accent)':''}">${MONTHS_SHORT[i]}</div>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('cardTrend').innerHTML=`
+    <div class="card-head">
+      <svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      <span class="card-title">${title}</span>
+    </div>
+    <div class="card-body">
+      <div class="trend-legend">${legend}</div>
+      <div class="bc-chart" style="gap:${gap}">${cols}</div>
+    </div>`;
+}
+
+// ── Mood: diverging bars from center ─────────────────────────
+// Negative values → bar extends LEFT; positive → RIGHT; 0 → neutral dot
+// Labels only for full integers (-2, -1, 0, +1, +2)
+function renderMood(E) {
+  const dist=moodDist(E);
+  const maxC=Math.max(...Object.values(dist),1);
+  const total=Object.values(dist).reduce((s,v)=>s+v,0)||1;
+
+  const rows=[...MOOD_VALUES].reverse().map(v=>{
+    const c=dist[v]||0;
+    const pct=Math.round(c/total*100);
+    const barPct=Math.round(c/maxC*100);
+    const col=MOOD_COLORS[String(v)];
+    // Only label full integers
+    const isInt=(v===Math.floor(v));
+    const lbl=!isInt?'':(v>0?`+${v}`:String(v));
+
+    let barHtml;
+    if (v<0) {
+      barHtml=`
+        <div class="mood-half mood-half-neg"><div class="mood-half-bar mood-half-bar-neg" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>
+        <div class="mood-center"></div>
+        <div class="mood-half mood-half-pos"></div>`;
+    } else if (v>0) {
+      barHtml=`
+        <div class="mood-half mood-half-neg"></div>
+        <div class="mood-center"></div>
+        <div class="mood-half mood-half-pos"><div class="mood-half-bar mood-half-bar-pos" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>`;
+    } else {
+      // Zero: small dot at center on both sides equally
+      const halfPct=Math.round(barPct/2);
+      barHtml=`
+        <div class="mood-half mood-half-neg"><div class="mood-half-bar mood-half-bar-neg" data-w="${halfPct}" style="width:0%;background:${col};opacity:.6;transition:none"></div></div>
+        <div class="mood-center" style="background:var(--text-3)"></div>
+        <div class="mood-half mood-half-pos"><div class="mood-half-bar mood-half-bar-pos" data-w="${halfPct}" style="width:0%;background:${col};opacity:.6;transition:none"></div></div>`;
+    }
+    return `<div class="mood-row-item">
+      <div class="mood-lbl" style="color:${c>0&&isInt?col:'var(--text-3)'}">${lbl}</div>
+      <div class="mood-area">${barHtml}</div>
+      <div class="mood-count">${c>0?c:''} <span style="opacity:.5">${c>0?pct+'%':''}</span></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('cardMood').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span></div>
+    <div class="card-body"><div class="mood-bars">${rows}</div></div>`;
+}
+
+// ── Weekday ───────────────────────────────────────────────────
+function renderWeekday(E) {
+  const avgs=weekdayAvgs(E,'coffee'), vals=WD_ORDER.map(i=>avgs[i]);
+  const maxV=Math.max(...vals,0.01);
+  const cols=vals.map((v,i)=>`
+    <div class="wd-col">
+      <div class="wd-bar-wrap"><div class="wd-bar" data-h="${v/maxV*100}" style="height:0%;background:var(--c-coffee);opacity:${.35+v/maxV*.65};min-height:${v>0?'0':'0'};border-radius:2px 2px 0 0;transition:none"></div></div>
+      <div class="wd-lbl">${WD_LABELS[i]}</div>
+      <div class="wd-val">${v>0?fmtD(v):'–'}</div>
+    </div>`).join('');
+  document.getElementById('cardWeekday').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="card-title">Wochentag · ⌀ Kaffee</span></div>
+    <div class="card-body"><div class="wd-chart">${cols}</div></div>`;
+}
+
+// ── Coffee locations ──────────────────────────────────────────
+function renderCoffee(E) {
+  const locs=countList(E,'coffeeLocations').slice(0,10), maxC=locs[0]?.[1]||1;
+  const rows=locs.map(([name,c])=>`
+    <div class="bar-row">
+      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-track">${hBar(c/maxC*100,'var(--c-coffee)')}</div>
+      <div class="bar-count">${c}</div>
+    </div>`).join('');
+  document.getElementById('cardCoffee').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg><span class="card-title">Kaffee-Orte</span></div>
+    <div class="card-body">${rows?`<div class="bar-list">${rows}</div>`:'<div class="empty-card">Keine Daten</div>'}</div>`;
+}
+
+// ── Locations ─────────────────────────────────────────────────
+function renderLocations(E) {
+  const counts={};
+  E.forEach(e=>parseList(e.locations).forEach(v=>{if(v.length>2) counts[v]=(counts[v]||0)+1;}));
+  const locs=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8), maxC=locs[0]?.[1]||1;
+  const rows=locs.map(([name,c])=>`
+    <div class="bar-row">
+      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-track">${hBar(c/maxC*100,'var(--good)')}</div>
+      <div class="bar-count">${c}</div>
+    </div>`).join('');
+  document.getElementById('cardLocations').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="card-title">Orte</span></div>
+    <div class="card-body">${rows?`<div class="bar-list">${rows}</div>`:'<div class="empty-card">Keine Ortsdaten</div>'}</div>`;
+}
+
+// ── Sport ─────────────────────────────────────────────────────
+function renderSport(E) {
+  const sports=countList(E,'sport').slice(0,8), maxC=sports[0]?.[1]||1;
+  const rows=sports.map(([name,c])=>`
+    <div class="bar-row">
+      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-track">${hBar(c/maxC*100,'var(--c-km)')}</div>
+      <div class="bar-count">${c}</div>
+    </div>`).join('');
+  document.getElementById('cardSport').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg><span class="card-title">Sport</span></div>
+    <div class="card-body">${rows?`<div class="bar-list">${rows}</div>`:'<div class="empty-card">Keine Daten</div>'}</div>`;
+}
+
+// ── People ────────────────────────────────────────────────────
+function renderPeople(E) {
+  const people=countList(E,'people').slice(0,20);
+  const chips=people.map(([n,c])=>`<span class="person-chip">${n}<span class="person-chip-count">${c}</span></span>`).join('');
+  document.getElementById('cardPeople').innerHTML=`
+    <div class="card-head"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="card-title">Personen</span></div>
+    <div class="card-body">${chips?`<div class="people-chips">${chips}</div>`:'<div class="empty-card">Keine Personendaten</div>'}</div>`;
+}
+
+// ── Render all ────────────────────────────────────────────────
+function renderAll() {
+  const E=getFiltered();
+  renderDropdowns();
+  renderOverview(E);
+  renderTrend(E);
+  renderMood(E);
+  renderWeekday(E);
+  renderCoffee(E);
+  renderLocations(E);
+  renderSport(E);
+  renderPeople(E);
+  animateCharts(); // fire after all DOM updates
+}
+
+// ── Init ──────────────────────────────────────────────────────
+function updateConnectBtn() {
+  const btn=document.getElementById('connectBtn');
+  if(mode==='github'&&ghCfg.token&&ghCfg.privateRepo) btn.classList.add('ok');
+  else btn.classList.remove('ok');
+}
+
+async function startLoad() {
+  const spinner=document.getElementById('spinnerWrap');
+  const notConn=document.getElementById('notConnected');
+  const dash=document.getElementById('dashboard');
+  notConn.classList.add('hidden'); dash.classList.add('hidden'); spinner.classList.remove('hidden');
+  loadCfg(); updateConnectBtn();
+  if(mode!=='github'||!ghCfg.token||!ghCfg.privateRepo) {
+    spinner.classList.add('hidden');
+    notConn.innerHTML=`<h2>Keine Verbindung</h2><p>Verbindung im Erfassen-Tool einrichten — das Dashboard nutzt dieselbe Konfiguration. Oder hier oben rechts neu verbinden.</p>`;
+    notConn.classList.remove('hidden'); return;
+  }
+  try {
+    const result=await fetchIndex();
+    if(!result?.index?.length) {
+      spinner.classList.add('hidden');
+      notConn.innerHTML=`<h2>Index nicht gefunden</h2><p>Öffne das <a href="index.html">Erfassen-Tool</a> und klicke auf Suchen — der Index wird automatisch aufgebaut.</p>`;
+      notConn.classList.remove('hidden'); return;
+    }
+    INDEX=result.index;
+    selYear=getYears().at(-1)??null;
+    renderAll();
+    spinner.classList.add('hidden'); dash.classList.remove('hidden');
+  } catch(err) {
+    spinner.classList.add('hidden');
+    notConn.innerHTML=`<h2>Fehler</h2><p>${err.message}</p>`;
+    notConn.classList.remove('hidden');
+  }
+}
+
+startLoad();
+</script>
+</body>
+</html>
