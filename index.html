@@ -23,7 +23,7 @@
     }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
-      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      font-family: ui-sans-serif, sans-serif;
       font-size: 15px; line-height: 1.5;
       background: var(--bg); color: var(--text);
       min-height: 100vh; -webkit-font-smoothing: antialiased;
@@ -120,7 +120,7 @@
     }
     .btn-small:hover { background:rgba(253,147,159,.2); }
     .card { background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden; }
-    .card-head { display:flex;align-items:center;gap:9px;padding:12px 15px 11px;border-bottom:1px solid var(--border); }
+    .card-head { display:flex;align-items:center;gap:9px;height:40px;padding:0 15px;border-bottom:1px solid var(--border); }
     .card-move-btns { display:flex;gap:2px;margin-left:auto; }
     .card-move-btn { width:22px;height:22px;border:none;background:transparent;color:var(--text-3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;border-radius:4px;padding:0;transition:color .15s;flex-shrink:0; }
     .entry-preview { height:100%;overflow-y:auto;font-size:16px;line-height:1.7;color:var(--text);white-space:pre-wrap;hyphens:auto; }
@@ -159,7 +159,7 @@
     .mood-ticks { display:flex;justify-content:space-between;margin-top:3px; }
     .mood-ticks span { font-size:11px;color:var(--text-3); }
     .chip-row { display:flex;flex-wrap:wrap;gap:7px;align-items:center; }
-    .chip { height:31px;padding:0 11px;border-radius:15px;border:1px solid var(--border);background:transparent;font-size:14px;color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap; }
+    .chip { height:31px;padding:0 11px;border-radius:15px;border:1px solid var(--border);background:transparent;font-size:14px;font-family:inherit;color:var(--text-2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap; }
     .chip:hover { border-color:var(--border-2);color:var(--text); }
     .chip.on { background:var(--accent-bg);border-color:rgba(253,147,159,.4);color:var(--accent); }
     .chip.on .chip-x { display:inline-block; }
@@ -167,7 +167,7 @@
     .chip-dot { width:6px;height:6px;border-radius:50%;background:var(--accent);display:none; }
     .chip.on .chip-dot { display:inline-block; }
     .ac-wrap { position:relative; }
-    .chip-input { height:31px;padding:0 11px;border-radius:15px;border:1px dashed var(--border-2);background:transparent;font-size:14px;color:var(--text);outline:none;min-width:121px;transition:all .15s; }
+    .chip-input { height:31px;padding:0 11px;border-radius:15px;border:1px dashed var(--border-2);background:transparent;font-size:14px;font-family:inherit;color:var(--text);outline:none;min-width:121px;transition:all .15s; }
     .chip-input:focus { border-style:solid;border-color:var(--accent); }
     .chip-input::placeholder { color:var(--text-3); }
     .ac-dropdown { position:fixed;background:var(--surface-2);border:1px solid var(--border-2);border-radius:9px;box-shadow:0 9px 26px rgba(0,0,0,.4);z-index:100;min-width:176px;max-height:198px;overflow-y:auto;display:none; }
@@ -651,7 +651,7 @@
 
   <div class="col-right-wrap">
     <div class="card" data-card="entry">
-      <div class="card-head" style="height:38.5px;box-sizing:border-box">
+      <div class="card-head">
         <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
         <span class="card-head-title">Eintrag</span>
         <div style="margin-left:auto;display:flex;gap:2px;align-items:center">
