@@ -1846,7 +1846,7 @@ let searchIndexBuilt = false;
 let searchIndexing = false;
 
 async function saveIndexFile(index, tags){
-  const payload = JSON.stringify({v:9, built: new Date().toISOString(), index, tags});
+  const payload = JSON.stringify({v:10, built: new Date().toISOString(), index, tags});
   if(connectionMode==='github'){
     try{ await ghPut(INDEX_FILE, payload, 'Update search index', await ghGetSha(INDEX_FILE)); }
     catch(e){ console.warn('Index speichern (GitHub) fehlgeschlagen:', e); }
@@ -1892,7 +1892,7 @@ async function buildSearchIndex(){
   searchIndexBuilt = false;
 
   const saved = await loadIndexFile();
-  if(saved?.v===9 && Array.isArray(saved.index)){
+  if(saved?.v===10 && Array.isArray(saved.index)){
     searchIndex = saved.index;
     if(Array.isArray(saved.tags) && saved.tags.length){
       localStorage.setItem('knownTags', JSON.stringify(saved.tags));
