@@ -2145,8 +2145,11 @@ function computeTopChips(){
   const curLocs     = sel.locations||[];
   const curCountries= [...new Set(sel.countriesOrdered||[])];
 
-  TOP.locations = build(curLocs,       [...last14N('locations',6).filter(v=>!v.match(/^[A-Z]{2}$/)), ...recentN('locations',2).filter(v=>!v.match(/^[A-Z]{2}$/))], topN(allLocs,8),       8);
-  TOP.countries = build(curCountries,  [...last14N('locations',4).filter(v=>v.match(/^[A-Z]{2}$/)),  ...recentN('locations',2).filter(v=>v.match(/^[A-Z]{2}$/))],  topN(allCountries,6),  6);
+  const locName  = t => t.split(':')[0];
+  const locCtry  = t => t.split(':')[1]||'';
+
+  TOP.locations = build(curLocs,       [...last14N('locations',6).map(locName).filter(Boolean), ...recentN('locations',2).map(locName).filter(Boolean)], topN(allLocs,8),       8);
+  TOP.countries = build(curCountries,  [...last14N('locations',4).map(locCtry).filter(v=>v&&/^[A-Z]{2}$/.test(v)), ...recentN('locations',2).map(locCtry).filter(v=>v&&/^[A-Z]{2}$/.test(v))], topN(allCountries,6),  6);
   TOP.coffee    = build(curCoffee,     [...last14N('coffeeLocations',6), ...recentN('coffeeLocations',2)], topN(allCoffee,9),  9);
   TOP.sport     = build(curSport,      [...last14N('sport',6),           ...recentN('sport',2)],           topN(allSport,8),   8);
   TOP.people    = build(curPeople,     recentN('people',2),                                                topN(allPeople,6),  6);
