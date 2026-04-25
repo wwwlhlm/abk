@@ -1095,7 +1095,7 @@ async function navigateDay(delta){
   if(_navigating) return; // ignore concurrent navigation
   _navigating = true;
   try{
-    await autoSave();
+    autoSave(); // fire-and-forget: captures currentDate+content sync before first await
     const d=new Date(currentDate+'T12:00:00');
     d.setDate(d.getDate()+delta);
     currentDate=d.toISOString().split('T')[0];
@@ -1103,12 +1103,12 @@ async function navigateDay(delta){
   }finally{ _navigating = false; }
 }
 async function navigateToToday(){
-  await autoSave();
+  autoSave();
   currentDate=todayISO(); await loadFile(currentDate);
 }
 async function navigateToDate(dateStr){
   if(!dateStr) return;
-  await autoSave();
+  autoSave();
   currentDate=dateStr;
   if(!isConnected()){ updateHeaderDate(); return; }
   await loadFile(currentDate);
@@ -2253,9 +2253,12 @@ function renderSuggestions(){
     .slice(0, 14);
   if(!matches.length){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  el.innerHTML = matches.map(t =>
-    `<button class="search-suggestion" data-term="${t.replace(/"/g,'&quot;')}">${highlight(escapeHtml(t), q)}</button>`
-  ).join('');
+  el.innerHTML = matches.map(t => {
+    const isCountry = /^[A-Z]{2}$/.test(t);
+    return isCountry
+      ? `<button class="search-suggestion" data-prefixchip="land:${t.replace(/"/g,'&quot;')}">${highlight(escapeHtml(t), q)}</button>`
+      : `<button class="search-suggestion" data-term="${t.replace(/"/g,'&quot;')}">${highlight(escapeHtml(t), q)}</button>`;
+  }).join('');
 }
 
 function addFilter(term){
@@ -2349,7 +2352,7 @@ function runSearch(){
         if(!(e.tags.toLowerCase().split(' ').includes(fl) ||
              e.locations.toLowerCase().split(' ').includes(fl) ||
              e.people.toLowerCase().split(' ').includes(fl) ||
-             e.sport.toLowerCase().includes(fl) ||
+             e.sport.toLowerCase().split(' ').includes(fl) ||
              (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl))) return false;
       }
     }
