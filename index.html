@@ -1065,11 +1065,30 @@ function updateIndexEntry(date, content){
   const coffeeLocations = list('coffee_locations');
   const hasContent = !(coffeeCount===0 && coffeeLocations.includes('Home'));
   const wi = scalar('weekday_index');
+  const nested = k => { const m=yaml.match(new RegExp('^\\s+'+k+':\\s*(.+)$','m')); return m?m[1].trim():null; };
+  const locParts = (()=>{
+    const ns=list('location'), cs=list('country');
+    if(ns.length||cs.length){
+      const pairs=[];
+      for(let i=0;i<Math.max(ns.length,cs.length);i++){
+        const n=ns[i]||'', ct=cs[i]||'';
+        if(n&&ct) pairs.push(n+':'+ct);
+        else if(n) pairs.push(n);
+        else if(ct) pairs.push(':'+ct);
+      }
+      return pairs;
+    }
+    const n=nested('name'), ct=nested('country');
+    if(n&&ct) return [n+':'+ct];
+    if(n) return [n];
+    if(ct) return [':'+ct];
+    return [];
+  })();
   const entry = {
     date,
     text: body,
     tags: tags.join(' '),
-    locations: [...list('location'),...list('country')].join(' '),
+    locations: locParts.join(' '),
     people: list('people').join(' '),
     sport: list('sport').join(' '),
     coffeeLocations: coffeeLocations.join(' '),
@@ -1940,11 +1959,30 @@ async function rebuildIndex(existingIndex){
             const yaml=fm[1], body=text.slice(fm[0].length).trim();
             const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
             const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+            const nested=k=>{const m=yaml.match(new RegExp('^\\s+'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+            const locParts=(()=>{
+    const ns=list('location'), cs=list('country');
+    if(ns.length||cs.length){
+      const pairs=[];
+      for(let i=0;i<Math.max(ns.length,cs.length);i++){
+        const n=ns[i]||'', ct=cs[i]||'';
+        if(n&&ct) pairs.push(n+':'+ct);
+        else if(n) pairs.push(n);
+        else if(ct) pairs.push(':'+ct);
+      }
+      return pairs;
+    }
+    const n=nested('name'), ct=nested('country');
+    if(n&&ct) return [n+':'+ct];
+    if(n) return [n];
+    if(ct) return [':'+ct];
+    return [];
+  })();
             const tags=list('tags'); tags.forEach(t=>allTags.add(t));
             const coffeeLocations=list('coffee_locations');
             const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
             newIndex.push({date,text:body,tags:tags.join(' '),
-              locations:[...list('location'),...list('country')].join(' '),
+              locations:locParts.join(' '),
               people:list('people').join(' '),sport:list('sport').join(' '),
               coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size,
               apples:parseFloat(scalar('apples')||0)||0,
@@ -1991,11 +2029,30 @@ async function rebuildIndex(existingIndex){
           const yaml=fm[1], body=text.slice(fm[0].length).trim();
           const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
           const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+          const nested=k=>{const m=yaml.match(new RegExp('^\\s+'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+          const locParts=(()=>{
+    const ns=list('location'), cs=list('country');
+    if(ns.length||cs.length){
+      const pairs=[];
+      for(let i=0;i<Math.max(ns.length,cs.length);i++){
+        const n=ns[i]||'', ct=cs[i]||'';
+        if(n&&ct) pairs.push(n+':'+ct);
+        else if(n) pairs.push(n);
+        else if(ct) pairs.push(':'+ct);
+      }
+      return pairs;
+    }
+    const n=nested('name'), ct=nested('country');
+    if(n&&ct) return [n+':'+ct];
+    if(n) return [n];
+    if(ct) return [':'+ct];
+    return [];
+  })();
           const tags=list('tags'); tags.forEach(t=>allTags.add(t));
           const coffeeLocations=list('coffee_locations');
           const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
           newIndex.push({date,text:body,tags:tags.join(' '),
-            locations:[...list('location'),...list('country')].join(' '),
+            locations:locParts.join(' '),
             people:list('people').join(' '),sport:list('sport').join(' '),
             coffeeLocations:coffeeLocations.join(' '),hasContent,
             _size:file.size,_modified:file.lastModified,
@@ -2076,8 +2133,8 @@ function computeTopChips(){
     return result;
   }
 
-  const allLocs     = searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).filter(v=>!v.match(/^[A-Z]{2}$/)));
-  const allCountries= searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(v=>v.match(/^[A-Z]{2}$/)));
+  const allLocs     = searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).map(t=>t.split(':')[0]).filter(Boolean));
+  const allCountries= searchIndex.flatMap(e=>(e.locations||'').split(' ').filter(Boolean).map(t=>t.split(':')[1]).filter(v=>v&&/^[A-Z]{2}$/.test(v)));
   const allCoffee   = searchIndex.flatMap(e=>(e.coffeeLocations||'').split(' ').filter(Boolean));
   const allSport    = searchIndex.flatMap(e=>(e.sport||'').split(' ').filter(Boolean));
   const allPeople   = searchIndex.flatMap(e=>(e.people||'').split(' ').filter(Boolean));
@@ -2137,7 +2194,7 @@ function getAllTerms(){
   if(searchIndexBuilt){
     searchIndex.forEach(e=>{
       e.tags.split(' ').forEach(t=>t&&set.add(t));
-      e.locations.split(' ').forEach(t=>t&&set.add(t));
+      e.locations.split(' ').forEach(t=>{if(!t)return;const[n,ct]=t.split(':');if(n)set.add(n);if(ct&&/^[A-Z]{2}$/.test(ct))set.add(ct);});
       e.people.split(' ').forEach(t=>t&&set.add(t));
       e.sport.split(' ').forEach(t=>t&&set.add(t.replace(/\(.*\)/,'').trim()));
       if(e.coffeeLocations) e.coffeeLocations.split(' ').forEach(t=>t&&set.add(t));
@@ -2152,8 +2209,8 @@ function getAllTerms(){
 // ── Field Prefix System ───────────────────────────────────────
 const FIELD_PREFIXES = {
   'tag':      { label:'Tag',     indexField:'tags',            yamlKey:'tags',             acFn:()=>getKnownTags(),                                          valFilter:null },
-  'ort':      { label:'Ort',     indexField:'locations',       yamlKey:'location',         acFn:()=>TOP.allLocations,                                        valFilter:v=>!v.match(/^[A-Z]{2}$/) },
-  'land':     { label:'Land',    indexField:'locations',       yamlKey:'country',          acFn:()=>[...new Set([...TOP.countries,...(TOP.allCountries||[])])], valFilter:v=>!!v.match(/^[A-Z]{2}$/) },
+  'ort':      { label:'Ort',     indexField:'locations',       yamlKey:'location',         acFn:()=>TOP.allLocations,                                        valFilter:null, matchFn:(tokens,val)=>tokens.some(t=>t.split(':')[0]===val) },
+  'land':     { label:'Land',    indexField:'locations',       yamlKey:'country',          acFn:()=>[...new Set([...TOP.countries,...(TOP.allCountries||[])])], valFilter:null, matchFn:(tokens,val)=>tokens.some(t=>(t.split(':')[1]||'')===val) },
   'kaffee':   { label:'Kaffee',  indexField:'coffeeLocations', yamlKey:'coffee_locations', acFn:()=>TOP.allCoffee,                                           valFilter:null },
   'sport':    { label:'Sport',   indexField:'sport',           yamlKey:'sport',            acFn:()=>TOP.allSport||TOP.sport,                                 valFilter:null },
   'person':   { label:'Person',  indexField:'people',          yamlKey:'people',           acFn:()=>TOP.allPeople,                                           valFilter:null },
@@ -2343,14 +2400,18 @@ function runSearch(){
       const p = parsePrefixQuery(f);
       if(p){
         // Prefixed chip: match only the specific field
-        const raw = (e[p.cfg.indexField]||'').toLowerCase().split(' ').filter(Boolean);
-        const vals = p.cfg.valFilter ? raw.filter(v=>p.cfg.valFilter(v)) : raw;
-        if(!vals.includes(p.value.toLowerCase())) return false;
+        const tokens = (e[p.cfg.indexField]||'').toLowerCase().split(' ').filter(Boolean);
+        if(p.cfg.matchFn){
+          if(!p.cfg.matchFn(tokens, p.value.toLowerCase())) return false;
+        } else {
+          const vals = p.cfg.valFilter ? tokens.filter(v=>p.cfg.valFilter(v)) : tokens;
+          if(!vals.includes(p.value.toLowerCase())) return false;
+        }
       } else {
         // Plain chip: match any field
         const fl = f.toLowerCase();
         if(!(e.tags.toLowerCase().split(' ').includes(fl) ||
-             e.locations.toLowerCase().split(' ').includes(fl) ||
+             e.locations.toLowerCase().split(' ').some(t=>{const[n,ct]=t.split(':');return n===fl||ct===fl;}) ||
              e.people.toLowerCase().split(' ').includes(fl) ||
              e.sport.toLowerCase().split(' ').includes(fl) ||
              (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl))) return false;
@@ -2424,7 +2485,7 @@ function renderResults(hits, q, hasText){
     const metaParts = [];
     if(hasText){
       if(e.tags.toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.tags), q));
-      if(e.locations.toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.locations), q));
+      if(e.locations.toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.locations.replace(/:[A-Z]{2}/g, m=>m.replace(':','​ '))), q));
       if(e.people.toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.people), q));
       if(e.sport.toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.sport), q));
       if((e.coffeeLocations||'').toLowerCase().includes(q.toLowerCase())) metaParts.push(highlight(escapeHtml(e.coffeeLocations), q));
