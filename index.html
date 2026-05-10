@@ -1293,7 +1293,7 @@ function renderCountryChips(){
     }:null;
     el.appendChild(makeChip(opt,count>0,()=>toggleCountry(opt),count>1?count:null,removeFn));
   });
-  el.appendChild(makeACInput('Weiteres Land...',[...new Set([...(TOP.allCountries||[]),...TOP.countries])],val=>{
+  el.appendChild(makeACInput('Weiteres Land...',()=>[...new Set([...(TOP.allCountries||[]),...TOP.countries])],val=>{
     saveCustomValue('countries', val.toUpperCase());
     sel.countriesOrdered.push(val.toUpperCase()); renderCountryChips();
   }));
@@ -1330,7 +1330,7 @@ function renderCoffeeChips(){
     const removeFn=count>0?()=>{ sel.coffeeOrdered=sel.coffeeOrdered.filter(x=>x!==opt); renderCoffeeChips(); }:null;
     el.appendChild(makeChip(opt,count>0,()=>toggleCoffee(opt),count>1?count:null,removeFn));
   });
-  el.appendChild(makeACInput('Anderer Ort...',TOP.allCoffee,val=>{
+  el.appendChild(makeACInput('Anderer Ort...',()=>TOP.allCoffee,val=>{
     saveCustomValue('allCoffee', val);
     sel.coffeeOrdered.push(val); renderCoffeeChips();
   }));
@@ -1351,7 +1351,7 @@ function renderSportChips(){
   custom.forEach(s=>el.appendChild(makeChip(s,true,()=>toggleSport(s),null,()=>{ sel.sport=sel.sport.filter(x=>x!==s); renderSportChips(); })));
   veloKm.className='velo-km'+(sel.sport.includes('Velo')?' show':'');
   el.appendChild(veloKm);
-  el.appendChild(makeACInput('Weitere Sportart...',TOP.allSport||TOP.sport,val=>{
+  el.appendChild(makeACInput('Weitere Sportart...',()=>TOP.allSport||TOP.sport,val=>{
     saveCustomValue('sport', val);
     if(!sel.sport.includes(val)){ sel.sport.push(val); renderSportChips(); }
   }));
@@ -1361,7 +1361,7 @@ function renderPeopleChips(){
   const el=document.getElementById('peopleChips'); el.innerHTML='';
   const all=[...TOP.people,...sel.people.filter(p=>!TOP.people.includes(p))];
   all.forEach(p=>el.appendChild(makeChip(p,sel.people.includes(p),()=>togglePerson(p))));
-  el.appendChild(makeACInput('Person...',TOP.allPeople,val=>{
+  el.appendChild(makeACInput('Person...',()=>TOP.allPeople,val=>{
     saveCustomValue('allPeople', val);
     if(!sel.people.includes(val)){ sel.people.push(val); renderPeopleChips(); }
   }));
@@ -1391,7 +1391,8 @@ function makeACInput(placeholder,source,onSelect){
     acHighlight=-1;
     const q=input.value.trim().toLowerCase();
     if(!q){ drop.classList.remove('open'); return; }
-    const matches=source.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
+    const list = typeof source === 'function' ? source() : source;
+    const matches=list.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
     if(!matches.length){ drop.classList.remove('open'); return; }
     drop.innerHTML=matches.map(m=>`<div class="ac-item">${m}</div>`).join('');
     drop.querySelectorAll('.ac-item').forEach((item,i)=>{ item.onclick=()=>{ onSelect(matches[i]); input.value=''; drop.classList.remove('open'); acHighlight=-1; }; });

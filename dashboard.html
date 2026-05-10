@@ -65,32 +65,57 @@
     }
     .hdr-icon.ok .gh-dot { background: #60a5fa; }
 
-    /* ── Dropdown buttons (period selectors) ────────────────── */
-    .dropdown-anchor { position: relative; }
+    /* ── Period picker (adapted from capture.html datepicker) ── */
+    .pp-overlay { position:fixed;inset:0;z-index:200;display:none; }
+    .pp-overlay.open { display:block; }
+    .pp-backdrop { position:fixed;inset:0; }
+    .pp-panel {
+      position:absolute;top:64px;left:50%;transform:translateX(-50%);
+      background:var(--surface);border:1px solid var(--border-2);
+      border-radius:13px;box-shadow:0 13px 44px rgba(0,0,0,.6);
+      padding:18px;width:308px;user-select:none;z-index:201;
+    }
+    .pp-head { display:flex;align-items:center;justify-content:space-between;margin-bottom:15px; }
+    .pp-title { font-size:15px;font-weight:600;color:var(--text);cursor:pointer;transition:color .15s; }
+    .pp-title:hover { color:var(--accent); }
+    .pp-nav {
+      width:31px;height:31px;border-radius:7px;border:1px solid var(--border);
+      background:transparent;color:var(--text-3);display:flex;align-items:center;
+      justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0;
+    }
+    .pp-nav:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .pp-nav svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5; }
+    /* Year grid: 3 columns like capture.html */
+    .pp-years { display:grid;grid-template-columns:repeat(3,1fr);gap:7px; }
+    .pp-year-btn {
+      padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;
+      font-size:14px;color:var(--text-2);cursor:pointer;transition:all .15s;text-align:center;font-family:inherit;
+    }
+    .pp-year-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .pp-year-btn.selected { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
+    .pp-year-btn.all { color:var(--text-3);border-style:dashed; }
+    .pp-year-btn.all.selected { color:var(--accent);border-style:solid; }
+    /* Month grid: 3 columns */
+    .pp-months { display:grid;grid-template-columns:repeat(3,1fr);gap:7px; }
+    .pp-month-btn {
+      padding:9px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;
+      font-size:14px;color:var(--text-2);cursor:pointer;transition:all .15s;text-align:center;font-family:inherit;
+    }
+    .pp-month-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .pp-month-btn.selected { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
+    .pp-month-btn.all { color:var(--text-3);border-style:dashed;grid-column:1/-1;margin-top:4px; }
+    .pp-month-btn.all.selected { color:var(--accent);border-style:solid; }
+    .pp-month-btn.empty { visibility:hidden;pointer-events:none; }
+    /* Single period button in header */
     .period-btn {
-      height: 37px; padding: 0 13px; border-radius: 9px;
-      border: 1px solid var(--border); background: var(--surface);
-      font-size: 14px; color: var(--text-2); cursor: pointer;
-      display: inline-flex; align-items: center; gap: 7px;
-      transition: all .15s; font-family: inherit; white-space: nowrap;
+      height:37px;padding:0 13px;border-radius:9px;
+      border:1px solid var(--border);background:var(--surface);
+      font-size:14px;color:var(--text-2);cursor:pointer;
+      display:inline-flex;align-items:center;gap:7px;
+      transition:all .15s;font-family:inherit;white-space:nowrap;
     }
-    .period-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
-    .period-btn.active { background: var(--accent-bg); color: var(--accent); border-color: rgba(253,147,159,.4); }
-    .period-btn:disabled { opacity: .35; pointer-events: none; }
-    .chevron { font-size: 9px; opacity: .5; transition: transform .15s; }
-    .period-btn.open .chevron { transform: rotate(180deg); }
-
-    .dropdown {
-      position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%);
-      background: var(--surface); border: 1px solid var(--border-2);
-      border-radius: var(--radius); box-shadow: 0 9px 26px rgba(0,0,0,.4);
-      z-index: 200; min-width: 150px; max-height: 280px; overflow-y: auto; display: none;
-    }
-    .dropdown.open { display: block; }
-    .dropdown-item { padding: 9px 14px; font-size: 14px; color: var(--text-2); cursor: pointer; transition: background .1s; white-space: nowrap; }
-    .dropdown-item:hover { background: var(--surface-2); color: var(--text); }
-    .dropdown-item.active { color: var(--accent); }
-    .dropdown-divider { height: 1px; background: var(--border); margin: 3px 0; }
+    .period-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .period-btn.active { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
 
     /* ── Layout ─────────────────────────────────────────────── */
     /* Single column up to 580px; two-col for lower cards 580+;
@@ -238,6 +263,11 @@
     .btn-secondary { height: 37px; padding: 0 15px; border-radius: 9px; border: 1px solid var(--border); background: transparent; font-size: 14px; color: var(--text-3); cursor: pointer; transition: all .15s; font-family: inherit; }
     .btn-secondary:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
     .hdr-icon.refreshing svg { animation: spin .7s linear infinite; }
+    /* nav-btn: identical to capture.html */
+    .nav-btn { width:31px;height:31px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--text-3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;flex-shrink:0; }
+    .nav-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
+    .nav-btn svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5; }
+    .nav-btn:disabled { opacity:.25;pointer-events:none; }
   </style>
 </head>
 <body>
@@ -246,19 +276,33 @@
   <div class="header-inner">
     <div class="header-left"><!-- reserved --></div>
 
+    <!-- Period picker overlay (adapted from capture.html datepicker) -->
+    <div class="pp-overlay" id="ppOverlay">
+      <div class="pp-backdrop" onclick="closePicker()"></div>
+      <div class="pp-panel" id="ppPanel">
+        <div class="pp-head">
+          <button class="pp-nav" onclick="ppShift(-1)">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <span class="pp-title" id="ppTitle" onclick="ppToggleMode()"></span>
+          <button class="pp-nav" onclick="ppShift(1)">
+            <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+        <div id="ppBody"></div>
+      </div>
+    </div>
+
     <div class="header-center">
-      <div class="dropdown-anchor">
-        <button class="period-btn" id="yearBtn" onclick="toggleDropdown('yearDrop')">
-          <span id="yearLabel">Jahr</span><span class="chevron">▾</span>
-        </button>
-        <div class="dropdown" id="yearDrop"></div>
-      </div>
-      <div class="dropdown-anchor">
-        <button class="period-btn" id="monthBtn" onclick="toggleDropdown('monthDrop')">
-          <span id="monthLabel">Ganzes Jahr</span><span class="chevron">▾</span>
-        </button>
-        <div class="dropdown" id="monthDrop"></div>
-      </div>
+      <button class="nav-btn" id="navPrev" onclick="navigatePeriod(-1)" title="Zurück">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <button class="period-btn" id="periodBtn" onclick="togglePicker()">
+        <span id="periodLabel">Jahr wählen</span>
+      </button>
+      <button class="nav-btn" id="navNext" onclick="navigatePeriod(1)" title="Vor">
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
     </div>
 
     <div class="header-right">
@@ -384,43 +428,164 @@ async function saveSettings() {
   } catch(e) { status.textContent=e.message; status.className='settings-status err'; }
 }
 
-// ── Dropdown ─────────────────────────────────────────────────
-function toggleDropdown(id) {
-  const drop=document.getElementById(id), isOpen=drop.classList.contains('open');
-  closeAllDropdowns();
-  if (!isOpen) { drop.classList.add('open'); drop.closest('.dropdown-anchor').querySelector('.period-btn').classList.add('open'); }
-}
-function closeAllDropdowns() {
-  document.querySelectorAll('.dropdown').forEach(d=>d.classList.remove('open'));
-  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('open'));
-}
-document.addEventListener('click',e=>{ if(!e.target.closest('.dropdown-anchor')) closeAllDropdowns(); });
+// ── Period picker (adapted from capture.html datepicker) ─────
+let ppMode = 'year'; // 'year' | 'month'
+let ppViewYear = new Date().getFullYear();
 
-function renderDropdowns() {
-  const years=getYears();
-  document.getElementById('yearLabel').textContent = selYear ? String(selYear) : 'Alle Jahre';
-  document.getElementById('yearBtn').classList.toggle('active', selYear!==null);
-  document.getElementById('yearDrop').innerHTML =
-    `<div class="dropdown-item ${selYear===null?'active':''}" onclick="pickYear(null)">Alle Jahre</div><div class="dropdown-divider"></div>`+
-    years.map(y=>`<div class="dropdown-item ${selYear===y?'active':''}" onclick="pickYear(${y})">${y}</div>`).join('');
-
-  const monthBtn=document.getElementById('monthBtn');
-  if (!selYear) {
-    document.getElementById('monthLabel').textContent='–';
-    monthBtn.classList.remove('active'); monthBtn.disabled=true;
-    document.getElementById('monthDrop').innerHTML='';
+function togglePicker() {
+  const ov = document.getElementById('ppOverlay');
+  if (ov.classList.contains('open')) { closePicker(); return; }
+  // Open: default to year mode, scroll to current selYear if set
+  ppMode = selYear ? 'month' : 'year';
+  ppViewYear = selYear || new Date().getFullYear();
+  renderPicker();
+  ov.classList.add('open');
+  document.getElementById('periodBtn').classList.add('open');
+}
+function closePicker() {
+  document.getElementById('ppOverlay').classList.remove('open');
+  document.getElementById('periodBtn').classList.remove('open');
+}
+function ppToggleMode() {
+  ppMode = ppMode === 'year' ? 'month' : 'year';
+  renderPicker();
+}
+function ppShift(delta) {
+  if (ppMode === 'year') {
+    // Shift visible year range (same as capture.html: ±9 years)
+    ppViewYear += delta * 9;
   } else {
-    monthBtn.disabled=false;
-    const months=getMonthsInYear(selYear);
-    document.getElementById('monthLabel').textContent = selMonth ? MONTHS_FULL[selMonth-1] : 'Ganzes Jahr';
-    monthBtn.classList.toggle('active', selMonth!==null);
-    document.getElementById('monthDrop').innerHTML =
-      `<div class="dropdown-item ${selMonth===null?'active':''}" onclick="pickMonth(null)">Ganzes Jahr</div><div class="dropdown-divider"></div>`+
-      months.map(m=>`<div class="dropdown-item ${selMonth===m?'active':''}" onclick="pickMonth(${m})">${MONTHS_FULL[m-1]}</div>`).join('');
+    // In month mode, shift year
+    ppViewYear += delta;
+  }
+  renderPicker();
+}
+
+function renderPicker() {
+  const title = document.getElementById('ppTitle');
+  const body  = document.getElementById('ppBody');
+  const years = getYears();
+
+  if (ppMode === 'year') {
+    title.textContent = 'Jahr wählen';
+    // Show all available years + "Alle Jahre"
+    const allSel = selYear === null;
+    let html = '<div class="pp-years">';
+    years.forEach(y => {
+      const sel = y === selYear ? ' selected' : '';
+      html += `<button class="pp-year-btn${sel}" onclick="ppPickYear(${y})">${y}</button>`;
+    });
+    html += '</div>';
+    // "Alle Jahre" below the grid
+    html += `<button class="pp-year-btn all${allSel?' selected':''}" style="width:100%;margin-top:11px" onclick="ppPickYear(null)">Alle Jahre</button>`;
+    body.innerHTML = html;
+  } else {
+    // Month mode
+    title.textContent = String(ppViewYear);
+    const monthsShort = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const available = new Set(getMonthsInYear(ppViewYear));
+    let html = '<div class="pp-months">';
+    monthsShort.forEach((lbl, i) => {
+      const m   = i + 1;
+      const sel = (selYear === ppViewYear && selMonth === m) ? ' selected' : '';
+      const dim = available.size > 0 && !available.has(m) ? 'opacity:.3;pointer-events:none' : '';
+      html += `<button class="pp-month-btn${sel}" style="${dim}" onclick="ppPickMonth(${m})">${lbl}</button>`;
+    });
+    html += '</div>';
+    // "Ganzes Jahr" — full width, same gap below grid
+    const yearSel = selYear === ppViewYear && selMonth === null;
+    html += `<div style="margin-top:7px"><button class="pp-month-btn all${yearSel?' selected':''}" style="width:100%" onclick="ppPickYear(${ppViewYear})">Ganzes Jahr</button></div>`;
+    body.innerHTML = html;
   }
 }
-function pickYear(y)  { selYear=y; selMonth=null; closeAllDropdowns(); renderAll(); }
-function pickMonth(m) { selMonth=m; closeAllDropdowns(); renderAll(); }
+
+function ppPickYear(y) {
+  if (y === null) {
+    selYear = null; selMonth = null;
+    closePicker(); renderAll(); return;
+  }
+  // Select the year immediately and re-render dashboard
+  selYear = y; selMonth = null;
+  renderAll();
+  // Then show month picker for this year
+  ppViewYear = y; ppMode = 'month';
+  renderPicker();
+}
+function ppPickMonth(m) {
+  if (m === 0) { selMonth = null; closePicker(); renderAll(); return; }
+  selYear  = ppViewYear;
+  selMonth = (selMonth === m && selYear === ppViewYear) ? null : m;
+  closePicker(); renderAll();
+}
+
+function renderDropdowns() {
+  // Update the single period button label
+  const btn = document.getElementById('periodBtn');
+  let label = 'Alle Jahre';
+  let active = false;
+  if (selYear) {
+    active = true;
+    label  = selMonth ? `${MONTHS_FULL[selMonth-1]} ${selYear}` : String(selYear);
+  }
+  document.getElementById('periodLabel').textContent = label;
+  btn.classList.toggle('active', active);
+
+  // Disable nav arrows at the edges
+  const years = getYears();
+  const firstYear = years[0], lastYear = years[years.length-1];
+  const prevBtn = document.getElementById('navPrev');
+  const nextBtn = document.getElementById('navNext');
+  if (!prevBtn) return;
+  if (!selYear) {
+    prevBtn.disabled = true; nextBtn.disabled = true;
+  } else if (selMonth) {
+    // At first month of first year → disable prev
+    prevBtn.disabled = (selYear === firstYear && selMonth === getMonthsInYear(firstYear)[0]);
+    const lastMonths = getMonthsInYear(lastYear);
+    nextBtn.disabled = (selYear === lastYear && selMonth === lastMonths[lastMonths.length-1]);
+  } else {
+    prevBtn.disabled = (selYear === firstYear);
+    nextBtn.disabled = (selYear === lastYear);
+  }
+}
+
+// Navigate prev/next period (year or month)
+function navigatePeriod(delta) {
+  const years = getYears();
+  if (!selYear) return;
+
+  if (selMonth) {
+    // Move month, wrap across years
+    const months = getMonthsInYear(selYear);
+    const idx    = months.indexOf(selMonth);
+    const newIdx = idx + delta;
+    if (newIdx >= 0 && newIdx < months.length) {
+      selMonth = months[newIdx];
+    } else if (delta < 0) {
+      // Go to prev year, last available month
+      const prevYear = years[years.indexOf(selYear) - 1];
+      if (prevYear) { selYear = prevYear; selMonth = getMonthsInYear(prevYear).at(-1); }
+    } else {
+      // Go to next year, first available month
+      const nextYear = years[years.indexOf(selYear) + 1];
+      if (nextYear) { selYear = nextYear; selMonth = getMonthsInYear(nextYear)[0]; }
+    }
+  } else {
+    // Move year
+    const newYear = years[years.indexOf(selYear) + delta];
+    if (newYear) selYear = newYear;
+  }
+  renderAll();
+}
+
+// Arrow key navigation (only when picker is closed and no input is focused)
+document.addEventListener('keydown', e => {
+  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+  if (document.activeElement && ['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
+  if (document.getElementById('ppOverlay').classList.contains('open')) return;
+  e.preventDefault();
+  navigatePeriod(e.key === 'ArrowLeft' ? -1 : 1);
+});
 
 // ── GitHub ───────────────────────────────────────────────────
 async function ghGet(path) {
@@ -550,7 +715,7 @@ function renderTrend(E) {
     const sharedMax=Math.max(...data.flatMap(v=>v),1);
     gap='14px';
     cols=years.map((y,i)=>`
-      <div class="bc-col" onclick="pickYear(${y})" title="${y}">
+      <div class="bc-col" onclick="ppPickYear(${y})" title="${y}">
         <div class="bc-bar-wrap">
           ${METRICS.map((m,mi)=>{
             const h=data[mi][i]/sharedMax*100;
@@ -569,7 +734,7 @@ function renderTrend(E) {
     cols=Array.from({length:12},(_,i)=>{
       const active=selMonth===i+1;
       return `
-      <div class="bc-col" onclick="pickMonth(${active?'null':i+1})" title="${MONTHS_FULL[i]}">
+      <div class="bc-col" onclick="ppPickMonth(${active?0:i+1})" title="${MONTHS_FULL[i]}">
         <div class="bc-bar-wrap">
           ${METRICS.map((m,mi)=>{
             const h=data[mi][i]/sharedMax*100;
