@@ -237,6 +237,7 @@
     .btn-primary:hover { background: rgba(253,147,159,.2); }
     .btn-secondary { height: 37px; padding: 0 15px; border-radius: 9px; border: 1px solid var(--border); background: transparent; font-size: 14px; color: var(--text-3); cursor: pointer; transition: all .15s; font-family: inherit; }
     .btn-secondary:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+    .hdr-icon.refreshing svg { animation: spin .7s linear infinite; }
   </style>
 </head>
 <body>
@@ -261,6 +262,9 @@
     </div>
 
     <div class="header-right">
+      <button class="hdr-icon" id="refreshBtn" onclick="refreshIndex()" title="Index neu laden">
+        <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
       <button class="hdr-icon" id="connectBtn" onclick="openSettings()" title="Verbindung">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
         <span class="gh-dot" id="connDot"></span>
@@ -427,18 +431,34 @@ async function ghGet(path) {
   if(!res.ok) throw new Error(`GitHub ${res.status}: ${path}`);
   return res.json();
 }
+let indexBuiltAt = null; // ISO string from search-index.json
+
 async function fetchIndex() {
   if(mode!=='github'||!ghCfg.token||!ghCfg.privateRepo) return null;
-  const raw=await ghGet('search-index.json');
-  if(!raw) return null;
-  return JSON.parse(decodeURIComponent(escape(atob(raw.content.replace(/\n/g,'')))));
+  // Cache-bust with timestamp so GitHub CDN can't serve a stale response
+  const bust = Date.now();
+  const {token,privateRepo,branch}=ghCfg;
+  const res=await fetch(
+    `https://api.github.com/repos/${privateRepo}/contents/search-index.json?ref=${branch}&_=${bust}`,
+    {headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'}
+  );
+  if(res.status===404) return null;
+  if(!res.ok) throw new Error(`GitHub ${res.status}: search-index.json`);
+  const data=await res.json();
+  const parsed=JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))));
+  indexBuiltAt = parsed.built || null;
+  return parsed;
 }
 
 // ── Data helpers ─────────────────────────────────────────────
 function getFiltered() {
+  const todayStr = new Date().toISOString().slice(0,10);
+  const thisYear = new Date().getFullYear();
   return INDEX.filter(e=>{
     if(selYear  && e.date.slice(0,4)!==String(selYear))    return false;
     if(selMonth && parseInt(e.date.slice(5,7))!==selMonth) return false;
+    // Current year, no month selected: only include days up to today
+    if(selYear===thisYear && !selMonth && e.date > todayStr) return false;
     return true;
   });
 }
@@ -501,6 +521,12 @@ function renderOverview(E) {
   const avgMood=E.length?(sum(E,'mood')/E.length).toFixed(1):'–';
   const dateRange=E.length?`${E[E.length-1].date} – ${E[0].date}`:'–';
   const note=(selYear===new Date().getFullYear()&&!selMonth)?' <span style="opacity:.5">bisher</span>':'';
+  // Index age
+  let ageStr='';
+  if(indexBuiltAt){
+    const mins=Math.round((Date.now()-new Date(indexBuiltAt))/60000);
+    ageStr=mins<2?'· Index: gerade eben':mins<60?`· Index: vor ${mins} Min.`:`· Index: vor ${Math.round(mins/60)} Std.`;
+  }
   document.getElementById('cardOverview').innerHTML=`
     <div class="ov-strip">
       <div class="ov-item"><div class="ov-val" style="color:var(--c-coffee)">${fmt(cc)}</div><div class="ov-label">Kaffee</div><div class="ov-avg">⌀ ${fmtD(cc/n)}/Tag${note}</div></div>
@@ -508,7 +534,7 @@ function renderOverview(E) {
       <div class="ov-item"><div class="ov-val" style="color:var(--c-banana)">${fmt(bc)}</div><div class="ov-label">Bananen</div><div class="ov-avg">⌀ ${fmtD(bc/n)}/Tag${note}</div></div>
       <div class="ov-item"><div class="ov-val" style="color:var(--c-km)">${fmt(km)}</div><div class="ov-label">Velo km</div><div class="ov-avg">⌀ ${fmtD(km/n)}/Tag${note}</div></div>
     </div>
-    <div class="ov-footer"><span>${E.length} Einträge · ${dateRange}</span><span>⌀ Stimmung <strong>${avgMood}</strong></span></div>`;
+    <div class="ov-footer"><span>${E.length} Einträge · ${dateRange}</span><span>⌀ Stimmung <strong>${avgMood}</strong></span><span style="margin-left:auto;opacity:.7">${ageStr}</span></div>`;
 }
 
 // ── Trend card: grouped vertical bars with larger gaps ────────
@@ -534,9 +560,11 @@ function renderTrend(E) {
         <div class="bc-lbl">${y}</div>
       </div>`).join('');
   } else {
-    // Year view: per-metric normalization to show seasonal variation
-    const data=METRICS.map(m=>monthlyTotals(E,m.key));
-    const maxes=data.map(vals=>Math.max(...vals,1));
+    // Year view: always use full year regardless of selMonth,
+    // and shared max so relative sizes between metrics are correct
+    const yearEntries=INDEX.filter(e=>e.date.slice(0,4)===String(selYear));
+    const data=METRICS.map(m=>monthlyTotals(yearEntries,m.key));
+    const sharedMax=Math.max(...data.flatMap(v=>v),1);
     gap='8px';
     cols=Array.from({length:12},(_,i)=>{
       const active=selMonth===i+1;
@@ -544,7 +572,7 @@ function renderTrend(E) {
       <div class="bc-col" onclick="pickMonth(${active?'null':i+1})" title="${MONTHS_FULL[i]}">
         <div class="bc-bar-wrap">
           ${METRICS.map((m,mi)=>{
-            const h=data[mi][i]/maxes[mi]*100;
+            const h=data[mi][i]/sharedMax*100;
             return `<div class="bc-bar" data-h="${h}" style="height:0%;background:${m.hex};opacity:${active?1:.6};transition:none${active?';outline:1px solid '+m.hex+'55':''}"></div>`;
           }).join('')}
         </div>
@@ -587,18 +615,12 @@ function renderMood(E) {
         <div class="mood-half mood-half-neg"><div class="mood-half-bar mood-half-bar-neg" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>
         <div class="mood-center"></div>
         <div class="mood-half mood-half-pos"></div>`;
-    } else if (v>0) {
+    } else {
+      // Zero and positive: bar grows to the right
       barHtml=`
         <div class="mood-half mood-half-neg"></div>
         <div class="mood-center"></div>
         <div class="mood-half mood-half-pos"><div class="mood-half-bar mood-half-bar-pos" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>`;
-    } else {
-      // Zero: small dot at center on both sides equally
-      const halfPct=Math.round(barPct/2);
-      barHtml=`
-        <div class="mood-half mood-half-neg"><div class="mood-half-bar mood-half-bar-neg" data-w="${halfPct}" style="width:0%;background:${col};opacity:.6;transition:none"></div></div>
-        <div class="mood-center" style="background:var(--text-3)"></div>
-        <div class="mood-half mood-half-pos"><div class="mood-half-bar mood-half-bar-pos" data-w="${halfPct}" style="width:0%;background:${col};opacity:.6;transition:none"></div></div>`;
     }
     return `<div class="mood-row-item">
       <div class="mood-lbl" style="color:${c>0&&isInt?col:'var(--text-3)'}">${lbl}</div>
@@ -642,16 +664,29 @@ function renderCoffee(E) {
 }
 
 // ── Locations ─────────────────────────────────────────────────
+// locations field: space-separated "Zurich:CH Milan:IT" tokens
 function renderLocations(E) {
-  const counts={};
-  E.forEach(e=>parseList(e.locations).forEach(v=>{if(v.length>2) counts[v]=(counts[v]||0)+1;}));
-  const locs=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,8), maxC=locs[0]?.[1]||1;
-  const rows=locs.map(([name,c])=>`
+  const counts = {}; // key: "Zurich:CH"
+  E.forEach(e => {
+    (e.locations || '').split(' ').filter(Boolean).forEach(token => {
+      counts[token] = (counts[token] || 0) + 1;
+    });
+  });
+  const locs = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const maxC = locs[0]?.[1] || 1;
+
+  const rows = locs.map(([token, c]) => {
+    const [city, country] = token.split(':');
+    const label  = city || token;
+    const suffix = country ? ` <span style="opacity:.45">(${country})</span>` : '';
+    return `
     <div class="bar-row">
-      <div class="bar-name" title="${name}">${name}</div>
+      <div class="bar-name" title="${label}${country?' ('+country+')':''}">${label}${suffix}</div>
       <div class="bar-track">${hBar(c/maxC*100,'var(--good)')}</div>
       <div class="bar-count">${c}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
   document.getElementById('cardLocations').innerHTML=`
     <div class="card-head"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="card-title">Orte</span></div>
     <div class="card-body">${rows?`<div class="bar-list">${rows}</div>`:'<div class="empty-card">Keine Ortsdaten</div>'}</div>`;
@@ -700,6 +735,23 @@ function updateConnectBtn() {
   const btn=document.getElementById('connectBtn');
   if(mode==='github'&&ghCfg.token&&ghCfg.privateRepo) btn.classList.add('ok');
   else btn.classList.remove('ok');
+}
+
+async function refreshIndex() {
+  const btn=document.getElementById('refreshBtn');
+  btn.classList.add('refreshing');
+  try {
+    const result=await fetchIndex();
+    if(result?.index?.length) {
+      // Remember current selection
+      const prevYear=selYear, prevMonth=selMonth;
+      INDEX=result.index;
+      // Restore selection if still valid, otherwise keep as-is
+      selYear=prevYear; selMonth=prevMonth;
+      renderAll();
+    }
+  } catch(e) { console.warn('Refresh failed:', e.message); }
+  btn.classList.remove('refreshing');
 }
 
 async function startLoad() {
