@@ -810,6 +810,28 @@
       </div>
     </div>
 
+    <div class="settings-section">
+      <div class="settings-section-title">Dropbox Backup</div>
+      <div class="settings-field">
+        <label class="settings-label">Access Token</label>
+        <input class="settings-input" type="password" id="dbxToken" placeholder="sl.…" autocomplete="off">
+        <p class="settings-hint">Langlebiges Token aus der <a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox App Console →</a> Beim Speichern wird nach jedem GitHub-Write gespiegelt.</p>
+      </div>
+      <div class="settings-field">
+        <label class="settings-label">Zugriffstyp</label>
+        <div class="settings-mode-row">
+          <button class="settings-mode-btn active" id="dbxAppFolderBtn" onclick="setDbxMode('app')">App Folder</button>
+          <button class="settings-mode-btn" id="dbxFullBtn" onclick="setDbxMode('full')">Full Dropbox</button>
+        </div>
+      </div>
+      <div class="settings-field" id="dbxPathField" style="display:none">
+        <label class="settings-label">Backup-Ordner</label>
+        <input class="settings-input" type="text" id="dbxPath" placeholder="/Tagebuch" autocomplete="off">
+        <p class="settings-hint">Pfad beginnt mit /. Ordner wird automatisch erstellt.</p>
+      </div>
+      <p class="settings-hint" id="dbxAppFolderHint">Dateien landen in <code>/Apps/tagebuch-backup/</code> in deiner Dropbox.</p>
+    </div>
+
     <div class="settings-status" id="settingsStatus"></div>
     <div class="settings-actions">
       <button class="settings-cancel" onclick="closeSettings()">Abbrechen</button>
@@ -2917,6 +2939,15 @@ function isConnected(){
   return !!vaultHandle;
 }
 let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'' };
+let dbxConfig = { token:'', path:'/Tagebuch', mode:'app' };
+function loadDbxConfig(){ const s=JSON.parse(localStorage.getItem('dbxConfig')||'null'); if(s) dbxConfig={...dbxConfig,...s}; }
+function setDbxMode(mode){
+  dbxConfig.mode = mode;
+  document.getElementById('dbxAppFolderBtn').classList.toggle('active', mode==='app');
+  document.getElementById('dbxFullBtn').classList.toggle('active', mode==='full');
+  document.getElementById('dbxPathField').style.display = mode==='full' ? '' : 'none';
+  document.getElementById('dbxAppFolderHint').style.display = mode==='app' ? '' : 'none';
+}
 
 function loadGhConfig(){
   const saved = JSON.parse(localStorage.getItem('ghConfig')||'null');
@@ -2932,6 +2963,10 @@ function openSettings(){
   document.getElementById('ghPublicRepo').value  = ghConfig.publicRepo;
   document.getElementById('ghBranch').value      = ghConfig.branch||'main';
   document.getElementById('ghDiaryPath').value   = ghConfig.diaryPath||'';
+  loadDbxConfig();
+  document.getElementById('dbxToken').value = dbxConfig.token||'';
+  document.getElementById('dbxPath').value  = dbxConfig.path||'/Tagebuch';
+  setDbxMode(dbxConfig.mode||'app');
   document.getElementById('settingsStatus').className='settings-status';
   document.getElementById('settingsStatus').textContent='';
   document.getElementById('settingsOverlay').classList.remove('hidden');
@@ -2979,6 +3014,9 @@ async function saveSettings(){
     localStorage.setItem('ghConfig', JSON.stringify(ghConfig));
     ghConnectionVerified = true;
   }
+  // Save Dropbox config (independent of connection mode)
+  dbxConfig = { token: document.getElementById('dbxToken').value.trim(), path: document.getElementById('dbxPath').value.trim()||'/Tagebuch', mode: dbxConfig.mode||'app' };
+  localStorage.setItem('dbxConfig', JSON.stringify(dbxConfig));
   localStorage.setItem('connectionMode', connectionMode);
   updateGhSettingsBtn();
   updateExportFolderBtn();
@@ -3041,7 +3079,28 @@ async function ghPublishFile(path, content){
   if(sha) body.sha = sha;
   const res = await fetch(url, { method:'PUT', headers, cache:'no-store', body:JSON.stringify(body) });
   if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
-  return res.json();
+  const result = res.json();
+  // Mirror to Dropbox (fire-and-forget)
+  dbxBackup(path, content);
+  return result;
+}
+
+async function dbxBackup(filename, content){
+  if(!dbxConfig.token) return;
+  const isApp = (dbxConfig.mode||'app') === 'app';
+  const folder = isApp ? '' : (dbxConfig.path||'/Tagebuch').replace(/\/+$/, '');
+  const destPath = folder + '/data/' + filename;
+  try{
+    await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + dbxConfig.token,
+        'Dropbox-API-Arg': JSON.stringify({ path: destPath, mode: 'overwrite', autorename: false, mute: true }),
+        'Content-Type': 'application/octet-stream'
+      },
+      body: content
+    });
+  } catch(_){}
 }
 
 async function ghPut(path, content, message, sha){
@@ -3051,6 +3110,8 @@ async function ghPut(path, content, message, sha){
   if(sha) body.sha = sha;
   const res = await fetch(url, { method:'PUT', headers:{ Authorization:`token ${token}`, Accept:'application/vnd.github.v3+json', 'Content-Type':'application/json' }, cache:'no-store', body:JSON.stringify(body)});
   if(!res.ok){ const e=await res.json(); throw new Error(e.message||res.status); }
+  // Mirror raw diary file to Dropbox (fire-and-forget)
+  dbxBackup(path, content);
   return res.json();
 }
 
