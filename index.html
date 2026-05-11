@@ -459,6 +459,10 @@
     }
     .settings-mode-btn:hover { background:var(--surface-2);color:var(--text);border-color:var(--border-2); }
     .settings-mode-btn.active { background:var(--accent-bg);color:var(--accent);border-color:rgba(253,147,159,.4); }
+    .settings-tabs { display:flex;border-bottom:1px solid var(--border); }
+    .settings-tab { flex:1;height:40px;border:none;background:transparent;font-size:13px;font-weight:500;color:var(--text-3);cursor:pointer;transition:all .15s;font-family:inherit;border-bottom:2px solid transparent;margin-bottom:-1px; }
+    .settings-tab:hover { color:var(--text); }
+    .settings-tab.active { color:var(--accent);border-bottom-color:var(--accent); }
     .settings-field { margin-bottom:11px; }
     .settings-field:last-child { margin-bottom:0; }
     .settings-label { font-size:12px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:4px; }
@@ -764,72 +768,69 @@
   <div class="settings-panel" onclick="event.stopPropagation()">
     <div class="settings-head">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
-      <span class="settings-head-title">Verbindung</span>
+      <span class="settings-head-title">Einstellungen</span>
       <button class="export-close" onclick="closeSettings()">✕</button>
     </div>
 
-    <div class="settings-section">
-      <div class="settings-mode-row">
-        <button class="settings-mode-btn active" id="modeLocalBtn" onclick="setMode('local')">
-          Lokaler Ordner
-        </button>
-        <button class="settings-mode-btn" id="modeGithubBtn" onclick="setMode('github')">
-          GitHub API
-        </button>
-      </div>
+    <div class="settings-tabs">
+      <button class="settings-tab active" id="stTabConn" onclick="setSettingsTab('conn')">Verbindung</button>
+      <button class="settings-tab" id="stTabDbx" onclick="setSettingsTab('dbx')">Dropbox</button>
+    </div>
 
-      <!-- Local mode info -->
-      <div id="modeLocalPanel">
-        <p class="settings-hint">Zugriff via File System Access API — funktioniert in Chrome/Edge auf Desktop. Ordner wird über den «Wählen»-Button im Header gesetzt.</p>
-      </div>
+    <!-- Tab: Verbindung -->
+    <div id="stPanelConn">
+      <div class="settings-section">
+        <div class="settings-mode-row">
+          <button class="settings-mode-btn active" id="modeLocalBtn" onclick="setMode('local')">
+            Lokaler Ordner
+          </button>
+          <button class="settings-mode-btn" id="modeGithubBtn" onclick="setMode('github')">
+            GitHub API
+          </button>
+        </div>
 
-      <!-- GitHub mode fields -->
-      <div id="modeGithubPanel" style="display:none">
-        <div class="settings-field">
-          <label class="settings-label">Personal Access Token</label>
-          <input class="settings-input" type="password" id="ghToken" placeholder="ghp_…" autocomplete="off">
-          <p class="settings-hint">Token mit <code>repo</code>-Berechtigung. <a href="https://github.com/settings/tokens/new" target="_blank">Erstellen auf github.com →</a></p>
+        <!-- Local mode info -->
+        <div id="modeLocalPanel">
+          <p class="settings-hint">Zugriff via File System Access API — funktioniert in Chrome/Edge auf Desktop. Ordner wird über den «Wählen»-Button im Header gesetzt.</p>
         </div>
-        <div class="settings-field">
-          <label class="settings-label">Privates Repo (Rohdaten)</label>
-          <input class="settings-input" type="text" id="ghPrivateRepo" autocomplete="off" placeholder="username/diary-private">
-        </div>
-        <div class="settings-field">
-          <label class="settings-label">Öffentliches Repo (Webseite)</label>
-          <input class="settings-input" type="text" id="ghPublicRepo" autocomplete="off" placeholder="username/username.github.io">
-          <p class="settings-hint">Export-Button schreibt JSON-Dateien direkt in <code>data/</code> dieses Repos.</p>
-        </div>
-        <div class="settings-field">
-          <label class="settings-label">Branch</label>
-          <input class="settings-input" type="text" id="ghBranch" autocomplete="off" placeholder="main" value="main">
-        </div>
-        <div class="settings-field">
-          <label class="settings-label">Tagebuch-Ordner im privaten Repo</label>
-          <input class="settings-input" type="text" id="ghDiaryPath" autocomplete="off" placeholder="Leer = Root des Repos">
+
+        <!-- GitHub mode fields -->
+        <div id="modeGithubPanel" style="display:none">
+          <div class="settings-field">
+            <label class="settings-label">Personal Access Token</label>
+            <input class="settings-input" type="password" id="ghToken" placeholder="ghp_…" autocomplete="off">
+            <p class="settings-hint">Token mit <code>repo</code>-Berechtigung. <a href="https://github.com/settings/tokens/new" target="_blank">Erstellen auf github.com →</a></p>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Privates Repo (Rohdaten)</label>
+            <input class="settings-input" type="text" id="ghPrivateRepo" autocomplete="off" placeholder="username/diary-private">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Öffentliches Repo (Webseite)</label>
+            <input class="settings-input" type="text" id="ghPublicRepo" autocomplete="off" placeholder="username/username.github.io">
+            <p class="settings-hint">Export-Button schreibt JSON-Dateien direkt in <code>data/</code> dieses Repos.</p>
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Branch</label>
+            <input class="settings-input" type="text" id="ghBranch" autocomplete="off" placeholder="main" value="main">
+          </div>
+          <div class="settings-field">
+            <label class="settings-label">Tagebuch-Ordner im privaten Repo</label>
+            <input class="settings-input" type="text" id="ghDiaryPath" autocomplete="off" placeholder="Leer = Root des Repos">
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="settings-section">
-      <div class="settings-section-title">Dropbox Backup</div>
-      <div class="settings-field">
-        <label class="settings-label">Access Token</label>
-        <input class="settings-input" type="password" id="dbxToken" placeholder="sl.…" autocomplete="off">
-        <p class="settings-hint">Langlebiges Token aus der <a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox App Console →</a> Beim Speichern wird nach jedem GitHub-Write gespiegelt.</p>
-      </div>
-      <div class="settings-field">
-        <label class="settings-label">Zugriffstyp</label>
-        <div class="settings-mode-row">
-          <button class="settings-mode-btn active" id="dbxAppFolderBtn" onclick="setDbxMode('app')">App Folder</button>
-          <button class="settings-mode-btn" id="dbxFullBtn" onclick="setDbxMode('full')">Full Dropbox</button>
+    <!-- Tab: Dropbox -->
+    <div id="stPanelDbx" style="display:none">
+      <div class="settings-section">
+        <div class="settings-field">
+          <label class="settings-label">Access Token</label>
+          <input class="settings-input" type="password" id="dbxToken" placeholder="sl.…" autocomplete="off">
+          <p class="settings-hint">Langlebiges Token aus der <a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox App Console →</a> Dateien werden nach jedem Speichern in <code>/Apps/ABK_Backup/</code> gespiegelt.</p>
         </div>
       </div>
-      <div class="settings-field" id="dbxPathField" style="display:none">
-        <label class="settings-label">Backup-Ordner</label>
-        <input class="settings-input" type="text" id="dbxPath" placeholder="/Tagebuch" autocomplete="off">
-        <p class="settings-hint">Pfad beginnt mit /. Ordner wird automatisch erstellt.</p>
-      </div>
-      <p class="settings-hint" id="dbxAppFolderHint">Dateien landen in <code>/Apps/tagebuch-backup/</code> in deiner Dropbox.</p>
     </div>
 
     <div class="settings-status" id="settingsStatus"></div>
@@ -2939,14 +2940,15 @@ function isConnected(){
   return !!vaultHandle;
 }
 let ghConfig = { token:'', privateRepo:'', publicRepo:'', branch:'main', diaryPath:'' };
-let dbxConfig = { token:'', path:'/Tagebuch', mode:'app' };
+let dbxConfig = { token:'' };
 function loadDbxConfig(){ const s=JSON.parse(localStorage.getItem('dbxConfig')||'null'); if(s) dbxConfig={...dbxConfig,...s}; }
-function setDbxMode(mode){
-  dbxConfig.mode = mode;
-  document.getElementById('dbxAppFolderBtn').classList.toggle('active', mode==='app');
-  document.getElementById('dbxFullBtn').classList.toggle('active', mode==='full');
-  document.getElementById('dbxPathField').style.display = mode==='full' ? '' : 'none';
-  document.getElementById('dbxAppFolderHint').style.display = mode==='app' ? '' : 'none';
+function setSettingsTab(tab){
+  document.getElementById('stTabConn').classList.toggle('active', tab==='conn');
+  document.getElementById('stTabDbx').classList.toggle('active', tab==='dbx');
+  document.getElementById('stPanelConn').style.display = tab==='conn' ? '' : 'none';
+  document.getElementById('stPanelDbx').style.display  = tab==='dbx'  ? '' : 'none';
+  document.getElementById('settingsStatus').textContent = '';
+  document.getElementById('settingsStatus').className  = 'settings-status';
 }
 
 function loadGhConfig(){
@@ -2965,8 +2967,7 @@ function openSettings(){
   document.getElementById('ghDiaryPath').value   = ghConfig.diaryPath||'';
   loadDbxConfig();
   document.getElementById('dbxToken').value = dbxConfig.token||'';
-  document.getElementById('dbxPath').value  = dbxConfig.path||'/Tagebuch';
-  setDbxMode(dbxConfig.mode||'app');
+  setSettingsTab('conn');
   document.getElementById('settingsStatus').className='settings-status';
   document.getElementById('settingsStatus').textContent='';
   document.getElementById('settingsOverlay').classList.remove('hidden');
@@ -3015,7 +3016,7 @@ async function saveSettings(){
     ghConnectionVerified = true;
   }
   // Save Dropbox config (independent of connection mode)
-  dbxConfig = { token: document.getElementById('dbxToken').value.trim(), path: document.getElementById('dbxPath').value.trim()||'/Tagebuch', mode: dbxConfig.mode||'app' };
+  dbxConfig = { token: document.getElementById('dbxToken').value.trim() };
   localStorage.setItem('dbxConfig', JSON.stringify(dbxConfig));
   localStorage.setItem('connectionMode', connectionMode);
   updateGhSettingsBtn();
@@ -3087,9 +3088,7 @@ async function ghPublishFile(path, content){
 
 async function dbxBackup(filename, content){
   if(!dbxConfig.token) return;
-  const isApp = (dbxConfig.mode||'app') === 'app';
-  const folder = isApp ? '' : (dbxConfig.path||'/Tagebuch').replace(/\/+$/, '');
-  const destPath = folder + '/data/' + filename;
+  const destPath = '/data/' + filename;
   try{
     await fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
