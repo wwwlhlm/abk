@@ -3099,7 +3099,7 @@ async function dbxBackup(filename, content){
       },
       body: content
     });
-  } catch(_){}
+  } catch(e){ console.warn('Dropbox backup failed:', e.message); }
 }
 
 async function ghPut(path, content, message, sha){
@@ -3129,6 +3129,7 @@ async function ghListYears(){
 // Initialise on load
 document.addEventListener('DOMContentLoaded',()=>{
   loadGhConfig();
+  loadDbxConfig();
   setMode(connectionMode,false);
   updateGhSettingsBtn();
   updateExportFolderBtn();
