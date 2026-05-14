@@ -780,7 +780,7 @@ function buildMoodLine(points, xLabels) {
   const STACK_COLORS = {'-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98','0':'#e6e6e6','0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'};
   const font = 'font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"';
 
-  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" xmlns="http://www.w3.org/2000/svg">`;
+  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="min-height:130px" xmlns="http://www.w3.org/2000/svg">`;
 
   // Zone fills
   const y0=yOf(0), yTop=yOf(2), yBot=yOf(-2);
@@ -792,6 +792,7 @@ function buildMoodLine(points, xLabels) {
     const y = yOf(v);
     const isZero = v===0;
     s += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${isZero?'#555':'#383838'}" stroke-width="${isZero?1:.5}"/>`;
+    if (v === -1 || v === 1) return; // skip ±1 labels
     const lbl = v>0?`+${v}`:String(v);
     s += `<text x="${PL-5}" y="${y+3.5}" text-anchor="end" font-size="12" fill="#666" ${font}>${lbl}</text>`;
   });
