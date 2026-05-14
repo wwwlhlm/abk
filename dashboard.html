@@ -778,7 +778,7 @@ function buildMoodLine(points, xLabels) {
   const xOf = i => PL + (N<=1 ? CW/2 : i/(N-1)*CW);
   const yOf = v => PT + (1-(v+2)/4)*CH;
   const STACK_COLORS = {'-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98','0':'#e6e6e6','0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'};
-  const lbl_css = 'font-size:12px;color:#666;line-height:1;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif';
+  const lbl_css = 'font-size:9px;color:#666;line-height:1;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif';
 
   // Y-labels: absolutely positioned at % of SVG height
   const yLbls = [{v:2,lbl:'+2'},{v:0,lbl:'0'},{v:-2,lbl:'-2'}];
@@ -805,7 +805,7 @@ function buildMoodLine(points, xLabels) {
 
   [-2,-1,0,1,2].forEach(v => {
     const y=yOf(v);
-    svg += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${v===0?'#555':'#383838'}" stroke-width="${v===0?1:.5}"/>`;
+    svg += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="#444444" stroke-width="1"/>`;
   });
 
   xLabels.forEach((_,i) => {
