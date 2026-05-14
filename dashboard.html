@@ -200,6 +200,16 @@
     .mood-below-pct  { font-size: 10px; color: var(--text-3); white-space: nowrap; position: absolute; left: 50%; transform: translateX(-50%); top: 16px; }
     .mood-above-cell { text-align: center; position: relative; overflow: visible; }
     .mood-above-lbl  { font-size: 11px; color: var(--text-2); white-space: nowrap; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; }
+    /* Mood toggle */
+    .mood-toggle { display:flex; gap:0; margin-left:auto; background:var(--surface); border-radius:999px; padding:2px; border:1px solid var(--border); }
+    .mood-toggle-btn {
+      height:20px; padding:0 9px; border-radius:999px;
+      border:none; background:transparent;
+      font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.4px;
+      color:var(--text-3); cursor:pointer; transition:all .15s; font-family:inherit;
+    }
+    .mood-toggle-btn:hover { color:var(--text); }
+    .mood-toggle-btn.active { background:var(--surface-2); color:var(--text); }
 
     /* ── Weekday ────────────────────────────────────────────── */
     .wd-chart   { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
@@ -376,7 +386,7 @@ const METRICS = [
   { key:'bananas', hex:'#ffd54f', label:'Bananen' },
 ];
 
-let INDEX = [], selYear = null, selMonth = null;
+let INDEX = [], selYear = null, selMonth = null, moodView = 'dist';
 let ghCfg = { token:'', privateRepo:'', branch:'main' };
 let mode  = 'local';
 
@@ -611,13 +621,14 @@ async function fetchIndex() {
 
 // ── Data helpers ─────────────────────────────────────────────
 function getFiltered() {
-  const todayStr = new Date().toISOString().slice(0,10);
-  const thisYear = new Date().getFullYear();
+  const todayStr  = new Date().toISOString().slice(0,10);
+  const thisYear  = new Date().getFullYear();
+  const thisMonth = new Date().getMonth() + 1;
   return INDEX.filter(e=>{
     if(selYear  && e.date.slice(0,4)!==String(selYear))    return false;
     if(selMonth && parseInt(e.date.slice(5,7))!==selMonth) return false;
-    // Current year, no month selected: only include days up to today
-    if(selYear===thisYear && !selMonth && e.date > todayStr) return false;
+    if(selYear===thisYear && !selMonth               && e.date > todayStr) return false;
+    if(selYear===thisYear && selMonth===thisMonth    && e.date > todayStr) return false;
     return true;
   });
 }
@@ -757,8 +768,76 @@ function renderTrend(E) {
 // ── Mood: diverging bars from center ─────────────────────────
 // Negative values → bar extends LEFT; positive → RIGHT; 0 → neutral dot
 // Labels only for full integers (-2, -1, 0, +1, +2)
+function toggleMoodView(v) { moodView = v; renderMood(getFiltered()); }
+
+// SVG mood line chart — fixed y range -2..+2, full width
+function buildMoodLine(points, xLabels) {
+  const VW=560, VH=150, PL=28, PR=10, PT=12, PB=22;
+  const CW=VW-PL-PR, CH=VH-PT-PB;
+  const N = points.length;
+  const xOf = i => PL + (N<=1 ? CW/2 : i/(N-1)*CW);
+  const yOf = v => PT + (1-(v+2)/4)*CH; // -2..+2 → CH..0
+  const STACK_COLORS = {'-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98','0':'#e6e6e6','0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'};
+  const font = 'font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"';
+
+  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" xmlns="http://www.w3.org/2000/svg">`;
+
+  // Zone fills
+  const y0=yOf(0), yTop=yOf(2), yBot=yOf(-2);
+  s += `<rect x="${PL}" y="${yTop}" width="${CW}" height="${y0-yTop}" fill="#25742b" opacity=".05"/>`;
+  s += `<rect x="${PL}" y="${y0}"   width="${CW}" height="${yBot-y0}" fill="#c91d1d" opacity=".05"/>`;
+
+  // Grid lines + Y labels (only integers)
+  [-2,-1,0,1,2].forEach(v => {
+    const y = yOf(v);
+    const isZero = v===0;
+    s += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${isZero?'#555':'#383838'}" stroke-width="${isZero?1:.5}"/>`;
+    const lbl = v>0?`+${v}`:String(v);
+    s += `<text x="${PL-5}" y="${y+3.5}" text-anchor="end" font-size="9" fill="#666" ${font}>${lbl}</text>`;
+  });
+
+  // X labels — strategy: all for ≤12 points; every 5th for month view
+  // For month view: show 1, 5, 10, 15, 20, 25, last day
+  const showLabel = i => {
+    if (N<=12) return true;
+    return i===0 || i===N-1 || (i+1)%5===0;
+  };
+  xLabels.forEach((lbl,i) => {
+    if (!showLabel(i)) return;
+    s += `<text x="${xOf(i)}" y="${VH-5}" text-anchor="middle" font-size="9" fill="#666" ${font}>${lbl}</text>`;
+  });
+
+  // Vertical tick for each x position (subtle)
+  points.forEach((_,i) => {
+    if (!showLabel(i)) return;
+    s += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+3}" stroke="#444" stroke-width=".5"/>`;
+  });
+
+  // Line segments (skip null gaps)
+  let seg=[];
+  const flush=()=>{
+    if(seg.length>1){
+      const pts=seg.map(p=>`${xOf(p.i)},${yOf(p.y)}`).join(' ');
+      s+=`<polyline points="${pts}" fill="none" stroke="#888" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    seg=[];
+  };
+  points.forEach((p,i)=>{ p.y===null?flush():seg.push({i,y:p.y}); });
+  flush();
+
+  // Dots colored by mood value
+  points.forEach((p,i)=>{
+    if(p.y===null) return;
+    const nearest=MOOD_VALUES.reduce((a,b)=>Math.abs(b-p.y)<Math.abs(a-p.y)?b:a,MOOD_VALUES[0]);
+    const col=STACK_COLORS[String(nearest)]||'#888';
+    s+=`<circle cx="${xOf(i)}" cy="${yOf(p.y)}" r="3.5" fill="${col}" stroke="#262626" stroke-width="1.2"/>`;
+  });
+
+  s += '</svg>';
+  return s;
+}
+
 function renderMood(E) {
-  // Colors: 0=near-white, negatives→reds, positives→greens
   const STACK_COLORS = {
     '-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98',
     '0':'#e6e6e6',
@@ -766,35 +845,71 @@ function renderMood(E) {
   };
   const INTEGERS = new Set([-2,-1,0,1,2]);
 
+  const toggle = `
+    <div class="mood-toggle">
+      <button class="mood-toggle-btn ${moodView==='dist'?'active':''}" onclick="toggleMoodView('dist')">Verteilung</button>
+      <button class="mood-toggle-btn ${moodView==='trend'?'active':''}" onclick="toggleMoodView('trend')">Verlauf</button>
+    </div>`;
+  const head = `<div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span>${toggle}</div>`;
+
+  if (!E.length) {
+    document.getElementById('cardMood').innerHTML=`${head}<div class="card-body"><div class="empty-card">Keine Daten</div></div>`;
+    return;
+  }
+
+  if (moodView === 'trend') {
+    // ── Verlauf: line chart ───────────────────────────────────
+    let points, xLabels;
+
+    if (!selMonth) {
+      // Year view: monthly averages
+      points = MONTHS_SHORT.map((lbl, i) => {
+        const me = E.filter(e => parseInt(e.date.slice(5,7)) === i+1);
+        const y  = me.length ? +(me.reduce((s,e)=>s+(parseFloat(e.mood)||0),0)/me.length).toFixed(2) : null;
+        return { y };
+      });
+      xLabels = MONTHS_SHORT;
+    } else {
+      // Month view: daily values
+      const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+      points = Array.from({length: daysInMonth}, (_, i) => {
+        const day  = String(i+1).padStart(2,'0');
+        const mon  = String(selMonth).padStart(2,'0');
+        const date = `${selYear}-${mon}-${day}`;
+        const entry = E.find(e => e.date === date);
+        return { y: entry ? (parseFloat(entry.mood)||0) : null };
+      });
+      xLabels = Array.from({length: daysInMonth}, (_, i) => String(i+1));
+    }
+
+    const chart = buildMoodLine(points, xLabels);
+    document.getElementById('cardMood').innerHTML=`${head}<div class="card-body">${chart}</div>`;
+    return;
+  }
+
+  // ── Verteilung: stacked bar ───────────────────────────────
   const dist  = moodDist(E);
   const total = Object.values(dist).reduce((s,v)=>s+v,0) || 1;
-
-  // Only segments with at least one entry
-  const segs = MOOD_VALUES
+  const segs  = MOOD_VALUES
     .map(v => ({ v, c: dist[v]||0, pct: (dist[v]||0)/total*100 }))
     .filter(s => s.c > 0);
 
   if (!segs.length) {
-    document.getElementById('cardMood').innerHTML=`
-      <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span></div>
-      <div class="card-body"><div class="empty-card">Keine Daten</div></div>`;
+    document.getElementById('cardMood').innerHTML=`${head}<div class="card-body"><div class="empty-card">Keine Einträge</div></div>`;
     return;
   }
 
-  // Labels above: only integers, centered over their segment, overflow visible
   const labelsAbove = segs.map(s => {
     const isInt = INTEGERS.has(s.v);
     const lbl   = s.v > 0 ? `+${s.v}` : String(s.v);
     return `<div class="mood-above-cell" style="flex:${s.pct}"><span class="mood-above-lbl">${isInt ? lbl : ''}</span></div>`;
   }).join('');
 
-  // Bar segments
   const barSegs = segs.map(s => {
     const col = STACK_COLORS[String(s.v)] || '#888';
     return `<div class="mood-seg" style="flex:${s.pct};background:${col}" title="${s.v>0?'+'+s.v:s.v}: ${s.c}×"></div>`;
   }).join('');
 
-  // Labels below: count + %, overflow visible via absolute positioning
   const labelsBelow = segs.map(s => {
     const pct = Math.round(s.pct);
     return `<div class="mood-below-cell" style="flex:${s.pct}">
@@ -804,7 +919,7 @@ function renderMood(E) {
   }).join('');
 
   document.getElementById('cardMood').innerHTML=`
-    <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span></div>
+    ${head}
     <div class="card-body">
       <div class="mood-stack-wrap">
         <div class="mood-labels-row">${labelsAbove}</div>
