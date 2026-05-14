@@ -770,72 +770,69 @@ function renderTrend(E) {
 function toggleMoodView(v)   { moodView = v;   renderMood(getFiltered());   animateCharts(); }
 function toggleCoffeeView(v) { coffeeView = v; renderCoffee(getFiltered()); animateCharts(); }
 
-// SVG mood line chart — fixed y range -2..+2, full width
+// SVG mood line chart — HTML labels (CSS font-size reliable on all browsers/iOS)
 function buildMoodLine(points, xLabels) {
-  // font-size="0.8rem" is a CSS absolute length — NOT scaled by SVG viewport transform.
-  // This means labels render at the same px size on mobile and desktop.
-  const FS = '0.8rem';
-  const VW=560, VH=178, PL=46, PR=12, PT=18, PB=30;
+  const VW=500, VH=140, PL=3, PR=3, PT=8, PB=4;
   const CW=VW-PL-PR, CH=VH-PT-PB;
   const N = points.length;
   const xOf = i => PL + (N<=1 ? CW/2 : i/(N-1)*CW);
   const yOf = v => PT + (1-(v+2)/4)*CH;
   const STACK_COLORS = {'-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98','0':'#e6e6e6','0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'};
-  const font = 'font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"';
+  const lbl_css = 'font-size:12px;color:#666;line-height:1;white-space:nowrap;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif';
 
-  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" xmlns="http://www.w3.org/2000/svg">`;
+  // Y-labels: absolutely positioned at % of SVG height
+  const yLbls = [{v:2,lbl:'+2'},{v:0,lbl:'0'},{v:-2,lbl:'-2'}];
+  const yLabelsHtml = yLbls.map(({v,lbl}) => {
+    const pct = (yOf(v)/VH*100).toFixed(1);
+    return `<div style="position:absolute;top:${pct}%;right:4px;transform:translateY(-50%);${lbl_css}">${lbl}</div>`;
+  }).join('');
 
-  // Zone fills
+  // X-labels: absolutely positioned below SVG
+  const showLabel = i => N<=12 ? true : i===0||i===N-1||(i+1)%5===0;
+  const xLabelsHtml = xLabels.map((lbl,i) => {
+    if (!showLabel(i)) return '';
+    const lp = (xOf(i)/VW*100).toFixed(2);
+    const xform = i===0 ? '' : i===N-1 ? 'transform:translateX(-100%)' : 'transform:translateX(-50%)';
+    return `<div style="position:absolute;left:${lp}%;${xform};${lbl_css}">${lbl}</div>`;
+  }).join('');
+
+  // SVG: visual elements only, no text
+  let svg = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;overflow:visible" xmlns="http://www.w3.org/2000/svg">`;
+
   const y0=yOf(0), yTop=yOf(2), yBot=yOf(-2);
-  s += `<rect x="${PL}" y="${yTop}" width="${CW}" height="${y0-yTop}" fill="#25742b" opacity=".05"/>`;
-  s += `<rect x="${PL}" y="${y0}"   width="${CW}" height="${yBot-y0}" fill="#c91d1d" opacity=".05"/>`;
+  svg += `<rect x="${PL}" y="${yTop}" width="${CW}" height="${y0-yTop}" fill="#25742b" opacity=".05"/>`;
+  svg += `<rect x="${PL}" y="${y0}"   width="${CW}" height="${yBot-y0}" fill="#c91d1d" opacity=".05"/>`;
 
-  // Grid lines + Y labels (-2, 0, +2 only; rem font stays same size at all viewports)
   [-2,-1,0,1,2].forEach(v => {
-    const y = yOf(v);
-    const isZero = v===0;
-    s += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${isZero?'#555':'#383838'}" stroke-width="${isZero?1:.5}"/>`;
-    if (v === -1 || v === 1) return;
-    const lbl = v>0?`+${v}`:String(v);
-    s += `<text x="${PL-8}" y="${y}" dominant-baseline="middle" text-anchor="end" style="font-size:${FS}" fill="#666" ${font}>${lbl}</text>`;
+    const y=yOf(v);
+    svg += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${v===0?'#555':'#383838'}" stroke-width="${v===0?1:.5}"/>`;
   });
 
-  // X labels
-  const showLabel = i => N<=12 ? true : i===0 || i===N-1 || (i+1)%5===0;
-  xLabels.forEach((lbl,i) => {
-    if (!showLabel(i)) return;
-    const anchor = i===0 ? 'start' : i===N-1 ? 'end' : 'middle';
-    s += `<text x="${xOf(i)}" y="${VH-4}" dominant-baseline="auto" text-anchor="${anchor}" style="font-size:${FS}" fill="#666" ${font}>${lbl}</text>`;
-  });
-
-  // Tick marks
   xLabels.forEach((_,i) => {
     if (!showLabel(i)) return;
-    s += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+4}" stroke="#444" stroke-width=".5"/>`;
+    svg += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+4}" stroke="#444" stroke-width=".5"/>`;
   });
 
-  // Line segments (gaps at null)
   let seg=[];
   const flush=()=>{
-    if(seg.length>1){
-      const pts=seg.map(p=>`${xOf(p.i)},${yOf(p.y)}`).join(' ');
-      s+=`<polyline points="${pts}" fill="none" stroke="#888" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    }
+    if(seg.length>1) svg+=`<polyline points="${seg.map(p=>`${xOf(p.i)},${yOf(p.y)}`).join(' ')}" fill="none" stroke="#888" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>`;
     seg=[];
   };
   points.forEach((p,i)=>{ p.y===null?flush():seg.push({i,y:p.y}); });
   flush();
 
-  // Dots
   points.forEach((p,i)=>{
     if(p.y===null) return;
     const nearest=MOOD_VALUES.reduce((a,b)=>Math.abs(b-p.y)<Math.abs(a-p.y)?b:a,MOOD_VALUES[0]);
-    const col=STACK_COLORS[String(nearest)]||'#888';
-    s+=`<circle cx="${xOf(i)}" cy="${yOf(p.y)}" r="3.5" fill="${col}" stroke="#262626" stroke-width="1.5"/>`;
+    svg+=`<circle cx="${xOf(i)}" cy="${yOf(p.y)}" r="3.5" fill="${STACK_COLORS[String(nearest)]||'#888'}" stroke="#262626" stroke-width="1.5"/>`;
   });
+  svg += '</svg>';
 
-  s += '</svg>';
-  return s;
+  return `<div style="display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto">
+    <div style="grid-column:1;grid-row:1;position:relative">${yLabelsHtml}</div>
+    <div style="grid-column:2;grid-row:1">${svg}</div>
+    <div style="grid-column:2;grid-row:2;position:relative;height:18px;margin-top:3px;overflow:visible">${xLabelsHtml}</div>
+  </div>`;
 }
 
 function renderMood(E) {
