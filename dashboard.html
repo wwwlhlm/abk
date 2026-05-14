@@ -810,7 +810,7 @@ function buildMoodLine(points, xLabels) {
 
   xLabels.forEach((_,i) => {
     if (!showLabel(i)) return;
-    svg += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+4}" stroke="#444" stroke-width=".5"/>`;
+    svg += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+4}" stroke="#444444" stroke-width="1"/>`;
   });
 
   let seg=[];
