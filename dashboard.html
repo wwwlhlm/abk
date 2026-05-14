@@ -189,23 +189,16 @@
     .bar-fill  { height: 100%; border-radius: 4px; }
     .bar-count { min-width: 28px; text-align: right; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
-    /* ── Mood — diverging bars from center ──────────────────── */
-    .mood-bars { display: flex; flex-direction: column; gap: 6px; }
-    .mood-row-item { display: flex; align-items: center; gap: 9px; }
-    .mood-lbl   { width: 28px; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; flex-shrink: 0; }
-    .mood-area  { flex: 1; display: flex; align-items: center; height: 7px; }
-    /* Each half is a 7px tall track, the bar grows from the center line */
-    .mood-half {
-      flex: 1; height: 7px; background: var(--surface-2); overflow: hidden;
-    }
-    .mood-half-neg { border-radius: 4px 0 0 4px; display: flex; justify-content: flex-end; }
-    .mood-half-pos { border-radius: 0 4px 4px 0; display: flex; justify-content: flex-start; }
-    .mood-half-bar { height: 100%; }
-    .mood-half-bar-neg { border-radius: 4px 0 0 4px; }
-    .mood-half-bar-pos { border-radius: 0 4px 4px 0; }
-    /* Thin center divider between halves */
-    .mood-center { width: 1px; height: 11px; background: var(--border-2); flex-shrink: 0; }
-    .mood-count { width: 44px; text-align: right; font-size: 11px; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    /* ── Mood stacked bar ───────────────────────────────────── */
+    .mood-stack-wrap { display: flex; flex-direction: column; gap: 5px; }
+    .mood-labels-row { display: flex; }
+    .mood-bar-row    { display: flex; gap: 2px; height: 26px; }
+    .mood-seg        { border-radius: 3px; transition: opacity .15s; }
+    .mood-seg:hover  { opacity: .8; }
+    .mood-below-row  { display: flex; }
+    .mood-below-cell { text-align: center; }
+    .mood-below-val  { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+    .mood-below-pct  { font-size: 10px; color: var(--text-3); }
 
     /* ── Weekday ────────────────────────────────────────────── */
     .wd-chart   { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
@@ -652,8 +645,11 @@ function monthlyTotals(entries,field) {
 function getYears() { return [...new Set(INDEX.map(e=>parseInt(e.date.slice(0,4))))].sort((a,b)=>a-b); }
 function getMonthsInYear(y) { return [...new Set(INDEX.filter(e=>e.date.slice(0,4)===String(y)).map(e=>parseInt(e.date.slice(5,7))))].sort((a,b)=>a-b); }
 function getAvgDivisor(E) {
-  const today=new Date(),ty=today.getFullYear();
-  if(selYear===ty&&!selMonth) return Math.floor((today-new Date(ty,0,1))/86400000)+1;
+  const today=new Date(), ty=today.getFullYear(), tm=today.getMonth()+1;
+  if (selYear===ty && !selMonth)
+    return Math.floor((today-new Date(ty,0,1))/86400000)+1;
+  if (selYear===ty && selMonth===tm)
+    return today.getDate();
   return E.length||1;
 }
 const fmt=n=>Math.round(n).toLocaleString('de-CH');
@@ -761,42 +757,60 @@ function renderTrend(E) {
 // Negative values → bar extends LEFT; positive → RIGHT; 0 → neutral dot
 // Labels only for full integers (-2, -1, 0, +1, +2)
 function renderMood(E) {
-  const dist=moodDist(E);
-  const maxC=Math.max(...Object.values(dist),1);
-  const total=Object.values(dist).reduce((s,v)=>s+v,0)||1;
+  // Colors: 0=near-white, negatives→reds, positives→greens
+  const STACK_COLORS = {
+    '-2':'#c62828','-1.5':'#e53935','-1':'#ef9a9a','-0.5':'#ffcdd2',
+    '0':'#e0e0e0',
+    '0.5':'#c8e6c9','1':'#81c784','1.5':'#43a047','2':'#2e7d32'
+  };
+  const INTEGERS = new Set([-2,-1,0,1,2]);
 
-  const rows=[...MOOD_VALUES].reverse().map(v=>{
-    const c=dist[v]||0;
-    const pct=Math.round(c/total*100);
-    const barPct=Math.round(c/maxC*100);
-    const col=MOOD_COLORS[String(v)];
-    // Only label full integers
-    const isInt=(v===Math.floor(v));
-    const lbl=!isInt?'':(v>0?`+${v}`:String(v));
+  const dist  = moodDist(E);
+  const total = Object.values(dist).reduce((s,v)=>s+v,0) || 1;
 
-    let barHtml;
-    if (v<0) {
-      barHtml=`
-        <div class="mood-half mood-half-neg"><div class="mood-half-bar mood-half-bar-neg" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>
-        <div class="mood-center"></div>
-        <div class="mood-half mood-half-pos"></div>`;
-    } else {
-      // Zero and positive: bar grows to the right
-      barHtml=`
-        <div class="mood-half mood-half-neg"></div>
-        <div class="mood-center"></div>
-        <div class="mood-half mood-half-pos"><div class="mood-half-bar mood-half-bar-pos" data-w="${barPct}" style="width:0%;background:${col};transition:none"></div></div>`;
-    }
-    return `<div class="mood-row-item">
-      <div class="mood-lbl" style="color:${c>0&&isInt?col:'var(--text-3)'}">${lbl}</div>
-      <div class="mood-area">${barHtml}</div>
-      <div class="mood-count">${c>0?c:''} <span style="opacity:.5">${c>0?pct+'%':''}</span></div>
+  // Only segments with at least one entry
+  const segs = MOOD_VALUES
+    .map(v => ({ v, c: dist[v]||0, pct: (dist[v]||0)/total*100 }))
+    .filter(s => s.c > 0);
+
+  if (!segs.length) {
+    document.getElementById('cardMood').innerHTML=`
+      <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span></div>
+      <div class="card-body"><div class="empty-card">Keine Daten</div></div>`;
+    return;
+  }
+
+  // Labels above: only integers, centered over their segment
+  const labelsAbove = segs.map(s => {
+    const isInt = INTEGERS.has(s.v);
+    const lbl   = s.v > 0 ? `+${s.v}` : String(s.v);
+    return `<div style="flex:${s.pct};text-align:center;font-size:11px;color:${isInt?'var(--text-2)':'transparent'};overflow:hidden">${isInt?lbl:'\u200b'}</div>`;
+  }).join('');
+
+  // Bar segments
+  const barSegs = segs.map(s => {
+    const col = STACK_COLORS[String(s.v)] || '#888';
+    return `<div class="mood-seg" style="flex:${s.pct};background:${col}" title="${s.v>0?'+'+s.v:s.v}: ${s.c}×"></div>`;
+  }).join('');
+
+  // Labels below: count + %
+  const labelsBelow = segs.map(s => {
+    const pct = Math.round(s.pct);
+    return `<div class="mood-below-cell" style="flex:${s.pct};overflow:hidden">
+      <div class="mood-below-val">${s.c}</div>
+      <div class="mood-below-pct">${pct}%</div>
     </div>`;
   }).join('');
 
   document.getElementById('cardMood').innerHTML=`
     <div class="card-head"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg><span class="card-title">Stimmung</span></div>
-    <div class="card-body"><div class="mood-bars">${rows}</div></div>`;
+    <div class="card-body">
+      <div class="mood-stack-wrap">
+        <div class="mood-labels-row">${labelsAbove}</div>
+        <div class="mood-bar-row">${barSegs}</div>
+        <div class="mood-below-row">${labelsBelow}</div>
+      </div>
+    </div>`;
 }
 
 // ── Weekday ───────────────────────────────────────────────────
