@@ -192,7 +192,7 @@
     /* ── Mood stacked bar ───────────────────────────────────── */
     .mood-stack-wrap { display: flex; flex-direction: column; gap: 5px; }
     .mood-labels-row { display: flex; }
-    .mood-bar-row    { display: flex; gap: 2px; height: 26px; }
+    .mood-bar-row    { display: flex; gap: 2px; height: 40px; }
     .mood-seg        { border-radius: 3px; transition: opacity .15s; }
     .mood-seg:hover  { opacity: .8; }
     .mood-below-row  { display: flex; }
@@ -759,9 +759,9 @@ function renderTrend(E) {
 function renderMood(E) {
   // Colors: 0=near-white, negatives→reds, positives→greens
   const STACK_COLORS = {
-    '-2':'#c62828','-1.5':'#e53935','-1':'#ef9a9a','-0.5':'#ffcdd2',
-    '0':'#e0e0e0',
-    '0.5':'#c8e6c9','1':'#81c784','1.5':'#43a047','2':'#2e7d32'
+    '-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98',
+    '0':'#e6e6e6',
+    '0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'
   };
   const INTEGERS = new Set([-2,-1,0,1,2]);
 
