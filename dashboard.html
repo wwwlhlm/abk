@@ -190,15 +190,16 @@
     .bar-count { min-width: 28px; text-align: right; font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
 
     /* ── Mood stacked bar ───────────────────────────────────── */
-    .mood-stack-wrap { display: flex; flex-direction: column; gap: 5px; }
-    .mood-labels-row { display: flex; }
+    .mood-labels-row { display: flex; height: 16px; position: relative; }
     .mood-bar-row    { display: flex; gap: 2px; height: 40px; }
     .mood-seg        { border-radius: 3px; transition: opacity .15s; }
     .mood-seg:hover  { opacity: .8; }
-    .mood-below-row  { display: flex; }
-    .mood-below-cell { text-align: center; }
-    .mood-below-val  { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-    .mood-below-pct  { font-size: 10px; color: var(--text-3); }
+    .mood-below-row  { display: flex; height: 30px; position: relative; }
+    .mood-below-cell { text-align: center; position: relative; overflow: visible; }
+    .mood-below-val  { font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; white-space: nowrap; position: absolute; left: 50%; transform: translateX(-50%); }
+    .mood-below-pct  { font-size: 10px; color: var(--text-3); white-space: nowrap; position: absolute; left: 50%; transform: translateX(-50%); top: 16px; }
+    .mood-above-cell { text-align: center; position: relative; overflow: visible; }
+    .mood-above-lbl  { font-size: 11px; color: var(--text-2); white-space: nowrap; position: absolute; left: 50%; transform: translateX(-50%); bottom: 0; }
 
     /* ── Weekday ────────────────────────────────────────────── */
     .wd-chart   { display: flex; align-items: flex-end; gap: 5px; height: 72px; }
@@ -780,11 +781,11 @@ function renderMood(E) {
     return;
   }
 
-  // Labels above: only integers, centered over their segment
+  // Labels above: only integers, centered over their segment, overflow visible
   const labelsAbove = segs.map(s => {
     const isInt = INTEGERS.has(s.v);
     const lbl   = s.v > 0 ? `+${s.v}` : String(s.v);
-    return `<div style="flex:${s.pct};text-align:center;font-size:11px;color:${isInt?'var(--text-2)':'transparent'};overflow:hidden">${isInt?lbl:'\u200b'}</div>`;
+    return `<div class="mood-above-cell" style="flex:${s.pct}"><span class="mood-above-lbl">${isInt ? lbl : ''}</span></div>`;
   }).join('');
 
   // Bar segments
@@ -793,12 +794,12 @@ function renderMood(E) {
     return `<div class="mood-seg" style="flex:${s.pct};background:${col}" title="${s.v>0?'+'+s.v:s.v}: ${s.c}×"></div>`;
   }).join('');
 
-  // Labels below: count + %
+  // Labels below: count + %, overflow visible via absolute positioning
   const labelsBelow = segs.map(s => {
     const pct = Math.round(s.pct);
-    return `<div class="mood-below-cell" style="flex:${s.pct};overflow:hidden">
-      <div class="mood-below-val">${s.c}</div>
-      <div class="mood-below-pct">${pct}%</div>
+    return `<div class="mood-below-cell" style="flex:${s.pct}">
+      <span class="mood-below-val">${s.c}</span>
+      <span class="mood-below-pct">${pct}%</span>
     </div>`;
   }).join('');
 
