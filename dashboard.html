@@ -772,51 +772,49 @@ function toggleCoffeeView(v) { coffeeView = v; renderCoffee(getFiltered()); anim
 
 // SVG mood line chart — fixed y range -2..+2, full width
 function buildMoodLine(points, xLabels) {
-  const VW=560, VH=170, PL=42, PR=10, PT=14, PB=30;
+  // font-size="0.8rem" is a CSS absolute length — NOT scaled by SVG viewport transform.
+  // This means labels render at the same px size on mobile and desktop.
+  const FS = '0.8rem';
+  const VW=560, VH=178, PL=46, PR=12, PT=18, PB=30;
   const CW=VW-PL-PR, CH=VH-PT-PB;
   const N = points.length;
   const xOf = i => PL + (N<=1 ? CW/2 : i/(N-1)*CW);
   const yOf = v => PT + (1-(v+2)/4)*CH;
   const STACK_COLORS = {'-2':'#c91d1d','-1.5':'#ec3f3c','-1':'#e66060','-0.5':'#f08f98','0':'#e6e6e6','0.5':'#b3eab5','1':'#69c96e','1.5':'#43a047','2':'#25742b'};
   const font = 'font-family="ui-sans-serif,system-ui,-apple-system,sans-serif"';
-  // Font size is in viewBox units. Mobile card ~350px wide → scale ≈ 350/560 = 0.625.
-  // fs=19 → ~12px on mobile, ~19px on desktop. Both readable.
-  const fs = 19;
-  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="min-height:130px" xmlns="http://www.w3.org/2000/svg">`;
+
+  let s = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="min-height:140px" xmlns="http://www.w3.org/2000/svg">`;
 
   // Zone fills
   const y0=yOf(0), yTop=yOf(2), yBot=yOf(-2);
   s += `<rect x="${PL}" y="${yTop}" width="${CW}" height="${y0-yTop}" fill="#25742b" opacity=".05"/>`;
   s += `<rect x="${PL}" y="${y0}"   width="${CW}" height="${yBot-y0}" fill="#c91d1d" opacity=".05"/>`;
 
-  // Grid lines + Y labels (only integers)
+  // Grid lines + Y labels (-2, 0, +2 only; rem font stays same size at all viewports)
   [-2,-1,0,1,2].forEach(v => {
     const y = yOf(v);
     const isZero = v===0;
     s += `<line x1="${PL}" y1="${y}" x2="${VW-PR}" y2="${y}" stroke="${isZero?'#555':'#383838'}" stroke-width="${isZero?1:.5}"/>`;
     if (v === -1 || v === 1) return;
     const lbl = v>0?`+${v}`:String(v);
-    s += `<text x="${PL-6}" y="${y+fs*0.35}" text-anchor="end" font-size="${fs}" fill="#666" ${font}>${lbl}</text>`;
+    s += `<text x="${PL-8}" y="${y}" dominant-baseline="middle" text-anchor="end" font-size="${FS}" fill="#666" ${font}>${lbl}</text>`;
   });
 
-  // X labels — strategy: all for ≤12 points; every 5th for month view
-  // For month view: show 1, 5, 10, 15, 20, 25, last day
-  const showLabel = i => {
-    if (N<=12) return true;
-    return i===0 || i===N-1 || (i+1)%5===0;
-  };
+  // X labels
+  const showLabel = i => N<=12 ? true : i===0 || i===N-1 || (i+1)%5===0;
   xLabels.forEach((lbl,i) => {
     if (!showLabel(i)) return;
-    s += `<text x="${xOf(i)}" y="${VH-6}" text-anchor="middle" font-size="${fs}" fill="#666" ${font}>${lbl}</text>`;
+    const anchor = i===0 ? 'start' : i===N-1 ? 'end' : 'middle';
+    s += `<text x="${xOf(i)}" y="${VH-4}" dominant-baseline="auto" text-anchor="${anchor}" font-size="${FS}" fill="#666" ${font}>${lbl}</text>`;
   });
 
-  // Vertical tick for each x position (subtle)
-  points.forEach((_,i) => {
+  // Tick marks
+  xLabels.forEach((_,i) => {
     if (!showLabel(i)) return;
-    s += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+3}" stroke="#444" stroke-width=".5"/>`;
+    s += `<line x1="${xOf(i)}" y1="${yBot}" x2="${xOf(i)}" y2="${yBot+4}" stroke="#444" stroke-width=".5"/>`;
   });
 
-  // Line segments (skip null gaps)
+  // Line segments (gaps at null)
   let seg=[];
   const flush=()=>{
     if(seg.length>1){
@@ -828,7 +826,7 @@ function buildMoodLine(points, xLabels) {
   points.forEach((p,i)=>{ p.y===null?flush():seg.push({i,y:p.y}); });
   flush();
 
-  // Dots colored by mood value
+  // Dots
   points.forEach((p,i)=>{
     if(p.y===null) return;
     const nearest=MOOD_VALUES.reduce((a,b)=>Math.abs(b-p.y)<Math.abs(a-p.y)?b:a,MOOD_VALUES[0]);
