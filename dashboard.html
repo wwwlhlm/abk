@@ -784,7 +784,7 @@ function buildMoodLine(points, xLabels) {
   const yLbls = [{v:2,lbl:'+2'},{v:0,lbl:'0'},{v:-2,lbl:'-2'}];
   const yLabelsHtml = yLbls.map(({v,lbl}) => {
     const pct = (yOf(v)/VH*100).toFixed(1);
-    return `<div style="position:absolute;top:${pct}%;right:4px;transform:translateY(-50%);${lbl_css}">${lbl}</div>`;
+    return `<div style="position:absolute;top:${pct}%;right:3px;transform:translateY(-50%);${lbl_css}">${lbl}</div>`;
   }).join('');
 
   // X-labels: absolutely positioned below SVG
@@ -828,7 +828,7 @@ function buildMoodLine(points, xLabels) {
   });
   svg += '</svg>';
 
-  return `<div style="display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto">
+  return `<div style="display:grid;grid-template-columns:20px 1fr;grid-template-rows:auto auto">
     <div style="grid-column:1;grid-row:1;position:relative">${yLabelsHtml}</div>
     <div style="grid-column:2;grid-row:1">${svg}</div>
     <div style="grid-column:2;grid-row:2;position:relative;height:18px;margin-top:3px;overflow:visible">${xLabelsHtml}</div>
