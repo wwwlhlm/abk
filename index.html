@@ -1904,7 +1904,8 @@ async function rebuildIndex(existingIndex){
     const years = await ghListYears();
     const { token, privateRepo, branch, diaryPath } = ghConfig;
     const ghHeaders = {Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'};
-    const BATCH = 10; // parallel requests
+    const BATCH = 5; // parallel requests — stays within GitHub secondary rate limits
+    const BATCH_DELAY = 100; // ms between batches
     let total=0, done=0;
 
     // Collect all file metadata from year listings
@@ -1969,6 +1970,7 @@ async function rebuildIndex(existingIndex){
         if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
       }));
       updateSearchFooter(`Aktualisiert ${Math.min(done,total)}/${total}…`,done/total);
+      if(i+BATCH < allItems.length) await new Promise(r=>setTimeout(r, BATCH_DELAY));
     }
   } else {
     // Local file system
