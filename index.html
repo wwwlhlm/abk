@@ -1904,73 +1904,61 @@ async function rebuildIndex(existingIndex){
     const years = await ghListYears();
     const { token, privateRepo, branch, diaryPath } = ghConfig;
     const ghHeaders = {Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'};
-    const BATCH = 5; // parallel requests — stays within GitHub secondary rate limits
-    const BATCH_DELAY = 100; // ms between batches
     let total=0, done=0;
-
-    // Collect all file metadata from year listings
-    const allItems = []; // {date, size, base}
     for(const year of years){
       const base=(diaryPath?`${diaryPath}/`:'')+year;
       try{
         const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
           {headers:ghHeaders,cache:'no-store'});
-        if(res.ok){
-          const items=await res.json();
-          items.filter(i=>i.name.endsWith('.md')).forEach(i=>{
-            allItems.push({date:i.name.replace('.md',''),size:i.size,base});
-          });
-        }
+        if(res.ok){ const items=await res.json(); total+=items.filter(i=>i.name.endsWith('.md')).length; }
       }catch{}
     }
-    total = allItems.length;
-
-    // Helper: parse one file's text into an index entry
-    const parseFile = (date, size, text) => {
-      const fm=text.match(/^---\n([\s\S]*?)\n---/);
-      if(!fm) return null;
-      const yaml=fm[1], body=text.slice(fm[0].length).trim();
-      const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
-      const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
-      const tags=list('tags'); tags.forEach(t=>allTags.add(t));
-      const coffeeLocations=list('coffee_locations');
-      const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
-      return {date,text:body,tags:tags.join(' '),
-        locations:[...list('location'),...list('country')].join(' '),
-        people:list('people').join(' '),sport:list('sport').join(' '),
-        coffeeLocations:coffeeLocations.join(' '),hasContent,_size:size,
-        apples:parseFloat(scalar('apples')||0)||0,
-        bananas:parseFloat(scalar('bananas')||0)||0,
-        coffee:parseFloat(scalar('coffee')||0)||0,
-        mood:parseFloat(scalar('mood')||0)||0,
-        cycling_km:parseFloat(scalar('cycling_km')||0)||0,
-        weekday_index:scalar('weekday_index')!==null?parseFloat(scalar('weekday_index')):undefined};
-    };
-
-    // Process in parallel batches
-    for(let i=0; i<allItems.length; i+=BATCH){
-      const batch = allItems.slice(i, i+BATCH);
-      await Promise.all(batch.map(async ({date, size, base})=>{
+    for(const year of years){
+      const base=(diaryPath?`${diaryPath}/`:'')+year;
+      let items=[];
+      try{
+        const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}?ref=${branch}`,
+          {headers:ghHeaders,cache:'no-store'});
+        if(res.ok) items=await res.json();
+      }catch{ continue; }
+      for(const item of items.filter(i=>i.name.endsWith('.md'))){
+        const date=item.name.replace('.md','');
         const cached=existing[date];
-        if(cached && cached._size===size && cached.hasContent!==undefined){
-          newIndex.push(cached);
-        } else {
-          try{
-            const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}/${date}.md?ref=${branch}`,
-              {headers:ghHeaders,cache:'no-store'});
-            if(res.ok){
-              const fdata=await res.json();
-              const text=decodeURIComponent(escape(atob(fdata.content.replace(/\n/g,''))));
-              const entry=parseFile(date,size,text);
-              if(entry) newIndex.push(entry);
-            }
-          }catch{}
+        if(cached && cached._size===item.size && cached.hasContent!==undefined){
+          newIndex.push(cached); done++;
+          if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
+          continue;
         }
+        try{
+          const res=await fetch(`https://api.github.com/repos/${privateRepo}/contents/${base}/${date}.md?ref=${branch}`,
+            {headers:ghHeaders,cache:'no-store'});
+          if(res.ok){
+            const fdata=await res.json();
+            const text=decodeURIComponent(escape(atob(fdata.content.replace(/\n/g,''))));
+            const fm=text.match(/^---\n([\s\S]*?)\n---/);
+            if(fm){
+              const yaml=fm[1], body=text.slice(fm[0].length).trim();
+              const list=k=>{const s=yaml.match(new RegExp('^'+k+':\\s*\n((?:  - .+\n*)*)','m'));if(!s)return[];return(s[1].match(/  - (.+)/g)||[]).map(l=>l.replace('  - ','').trim());};
+              const scalar=k=>{const m=yaml.match(new RegExp('^'+k+':\\s*(.+)$','m'));return m?m[1].trim():null;};
+              const tags=list('tags'); tags.forEach(t=>allTags.add(t));
+              const coffeeLocations=list('coffee_locations');
+              const hasContent=!(parseFloat(scalar('coffee')||0)===0&&coffeeLocations.includes('Home'));
+              newIndex.push({date,text:body,tags:tags.join(' '),
+                locations:[...list('location'),...list('country')].join(' '),
+                people:list('people').join(' '),sport:list('sport').join(' '),
+                coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size,
+                apples:parseFloat(scalar('apples')||0)||0,
+                bananas:parseFloat(scalar('bananas')||0)||0,
+                coffee:parseFloat(scalar('coffee')||0)||0,
+                mood:parseFloat(scalar('mood')||0)||0,
+                cycling_km:parseFloat(scalar('cycling_km')||0)||0,
+                weekday_index:scalar('weekday_index')!==null?parseFloat(scalar('weekday_index')):undefined});
+            }
+          }
+        }catch{}
         done++;
         if(done%30===0) updateSearchFooter(`Aktualisiert ${done}/${total}…`,done/total);
-      }));
-      updateSearchFooter(`Aktualisiert ${Math.min(done,total)}/${total}…`,done/total);
-      if(i+BATCH < allItems.length) await new Promise(r=>setTimeout(r, BATCH_DELAY));
+      }
     }
   } else {
     // Local file system
