@@ -673,6 +673,16 @@
       </div>
     </div>
 
+    <div class="card" data-card="places">
+      <div class="card-head">
+        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span class="card-head-title">Orte</span>
+      </div>
+      <div class="card-body">
+        <div class="chip-row" id="placesChips"></div>
+      </div>
+    </div>
+
     <div class="card" data-card="people">
       <div class="card-head">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -875,6 +885,7 @@ const TOP = {
   if(custom.allPeople) TOP.allPeople=[...new Set([...TOP.allPeople,...custom.allPeople])];
   if(custom.countries) TOP.allCountries=[...new Set([...(TOP.allCountries||[]),...custom.countries])];
   if(custom.sport) TOP.allSport=[...new Set([...(TOP.allSport||[]),...custom.sport])];
+  if(custom.allPlaces) TOP.allPlaces=[...new Set([...(TOP.allPlaces||[]),...custom.allPlaces])];
 })();
 
 function saveCustomValue(field, value){
@@ -892,7 +903,7 @@ function saveCustomValue(field, value){
 
 let vaultHandle=null, fileHandle=null;
 let currentDate=todayISO(), originalBodyText='';
-let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport:[], people:[] };
+let sel={ locations:['Zurich'], countriesOrdered:['CH'], coffeeOrdered:[], sport:[], people:[], places:[] };
 
 let isDirty=false;
 let inactivityTimer;
@@ -1038,6 +1049,7 @@ async function autoSave(){
       coffeeOrdered: [...new Set(sel.coffeeOrdered)],
       sport: sel.sport,
       people: sel.people,
+      places: sel.places,
     }));
     updateIndexEntry(currentDate, content);
     showSaveNotif(currentDate);
@@ -1074,6 +1086,7 @@ function updateIndexEntry(date, content){
     people: list('people').join(' '),
     sport: list('sport').join(' '),
     coffeeLocations: coffeeLocations.join(' '),
+    places: list('places').join(' '),
     hasContent,
     apples:    parseFloat(scalar('apples')  ||0)||0,
     bananas:   parseFloat(scalar('bananas') ||0)||0,
@@ -1231,6 +1244,7 @@ function populate(raw){
   sel.sport=rawSport.map(s=>s.startsWith('Velo')?'Velo':s);
   const cyclingKm=scalar('cycling_km')||'';
   sel.people=list('people');
+  sel.places=list('places');
   document.getElementById('tags').value=list('tags').join(', ');
   document.getElementById('coords').value=list('coordinates').join(', ');
   document.getElementById('entryText').value=body;
@@ -1255,7 +1269,7 @@ function resetDefaults(){
 function renderAll(){
   renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location');
   renderCountryChips();
-  renderCoffeeChips(); renderSportChips(); renderPeopleChips();
+  renderCoffeeChips(); renderSportChips(); renderPeopleChips(); renderPlacesChips();
 }
 
 function renderCountryChips(){
@@ -1414,6 +1428,18 @@ function toggleCoffee(c){
 function adj(id,d){ const el=document.getElementById(id); el.value=Math.max(0,(parseFloat(el.value)||0)+d); markDirty(); if(id==='coffee'){ refreshCalendar(); updateCoffeeMismatch(); } }
 function toggleSport(s){ sel.sport=sel.sport.includes(s)?sel.sport.filter(x=>x!==s):[...sel.sport,s]; markDirty(); renderSportChips(); }
 function togglePerson(p){ sel.people=sel.people.includes(p)?sel.people.filter(x=>x!==p):[...sel.people,p]; markDirty(); renderPeopleChips(); }
+
+function renderPlacesChips(){
+  const el=document.getElementById('placesChips'); if(!el) return; el.innerHTML='';
+  const allPlaces=TOP.allPlaces||[];
+  sel.places.forEach(p=>el.appendChild(makeChip(p,true,()=>togglePlace(p),null,()=>{ sel.places=sel.places.filter(x=>x!==p); markDirty(); renderPlacesChips(); })));
+  allPlaces.filter(p=>!sel.places.includes(p)).slice(0,6).forEach(p=>el.appendChild(makeChip(p,false,()=>togglePlace(p))));
+  el.appendChild(makeACInput('Ort hinzufügen...',allPlaces,val=>{
+    saveCustomValue('allPlaces', val);
+    if(!sel.places.includes(val)){ sel.places.push(val); markDirty(); renderPlacesChips(); }
+  }));
+}
+function togglePlace(p){ sel.places=sel.places.includes(p)?sel.places.filter(x=>x!==p):[...sel.places,p]; markDirty(); renderPlacesChips(); }
 function setMood(v){
   v=parseFloat(v);
   const el=document.getElementById('moodVal');
@@ -1528,7 +1554,7 @@ function buildContent(){
   const L=items=>items.length?'\n'+items.map(i=>`  - ${i}`).join('\n'):'';
   const now=new Date();
   const updatedTs=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-  const yaml=['---',`date: ${currentDate}`,`apples: ${apples}`,`bananas: ${bananas}`,`coffee: ${coffee}`,`mood: ${mood}`,`tags:${L(tags)}`,`location:${L(sel.locations)}`,`country:${L(sel.countriesOrdered)}`,`coordinates:${L(coords)}`,`coffee_locations:${L(sel.coffeeOrdered)}`,`sport:${L(sportList)}`,cyclingKm?`cycling_km: ${cyclingKm}`:'',`people:${L(sel.people)}`,`weekday_index: ${wi}`,'visibility: public',`updated: ${updatedTs}`,'---'].filter(l=>l!=='').join('\n');
+  const yaml=['---',`date: ${currentDate}`,`apples: ${apples}`,`bananas: ${bananas}`,`coffee: ${coffee}`,`mood: ${mood}`,`tags:${L(tags)}`,`location:${L(sel.locations)}`,`country:${L(sel.countriesOrdered)}`,`coordinates:${L(coords)}`,sel.places.length?`places:${L(sel.places)}`:'',`coffee_locations:${L(sel.coffeeOrdered)}`,`sport:${L(sportList)}`,cyclingKm?`cycling_km: ${cyclingKm}`:'',`people:${L(sel.people)}`,`weekday_index: ${wi}`,'visibility: public',`updated: ${updatedTs}`,'---'].filter(l=>l!=='').join('\n');
   const body=entryText||originalBodyText;
   return yaml+(body?'\n'+body:'');
 }
@@ -1757,6 +1783,7 @@ function pasteDay(){
   sel.sport=[...d.sport];
   document.getElementById('veloKm').value=d.veloKm;
   sel.people=[...d.people];
+  if(d.places) sel.places=[...d.places];
   document.getElementById('tags').value=d.tags;
   document.getElementById('coords').value=d.coords;
   renderAll(); markDirty();
@@ -1828,7 +1855,7 @@ let searchIndexBuilt = false;
 let searchIndexing = false;
 
 async function saveIndexFile(index, tags){
-  const payload = JSON.stringify({v:9, built: new Date().toISOString(), index, tags});
+  const payload = JSON.stringify({v:10, built: new Date().toISOString(), index, tags});
   if(connectionMode==='github'){
     try{ await ghPut(INDEX_FILE, payload, 'Update search index', await ghGetSha(INDEX_FILE)); }
     catch(e){ console.warn('Index speichern (GitHub) fehlgeschlagen:', e); }
@@ -1874,7 +1901,7 @@ async function buildSearchIndex(){
   searchIndexBuilt = false;
 
   const saved = await loadIndexFile();
-  if(saved?.v===9 && Array.isArray(saved.index)){
+  if(saved?.v===10 && Array.isArray(saved.index)){
     searchIndex = saved.index;
     if(Array.isArray(saved.tags) && saved.tags.length){
       localStorage.setItem('knownTags', JSON.stringify(saved.tags));
@@ -1946,7 +1973,7 @@ async function rebuildIndex(existingIndex){
               newIndex.push({date,text:body,tags:tags.join(' '),
                 locations:[...list('location'),...list('country')].join(' '),
                 people:list('people').join(' '),sport:list('sport').join(' '),
-                coffeeLocations:coffeeLocations.join(' '),hasContent,_size:item.size,
+                coffeeLocations:coffeeLocations.join(' '),places:list('places').join(' '),hasContent,_size:item.size,
                 apples:parseFloat(scalar('apples')||0)||0,
                 bananas:parseFloat(scalar('bananas')||0)||0,
                 coffee:parseFloat(scalar('coffee')||0)||0,
@@ -2105,6 +2132,7 @@ function computeTopChips(){
   if(document.getElementById('coffeeChips')) renderCoffeeChips();
   if(document.getElementById('sportChips'))  renderSportChips();
   if(document.getElementById('peopleChips')) renderPeopleChips();
+  if(document.getElementById('placesChips')) renderPlacesChips();
   if(document.getElementById('locationChips')) renderChips('locationChips',TOP.locations,sel.locations,toggleLoc,TOP.allLocations,'location');
   if(document.getElementById('countryChips')) renderCountryChips();
 }
@@ -2157,9 +2185,11 @@ const FIELD_PREFIXES = {
   'land':     { label:'Land',    indexField:'locations',       yamlKey:'country',          acFn:()=>[...new Set([...TOP.countries,...(TOP.allCountries||[])])], valFilter:v=>!!v.match(/^[A-Z]{2}$/) },
   'kaffee':   { label:'Kaffee',  indexField:'coffeeLocations', yamlKey:'coffee_locations', acFn:()=>TOP.allCoffee,                                           valFilter:null },
   'sport':    { label:'Sport',   indexField:'sport',           yamlKey:'sport',            acFn:()=>TOP.allSport||TOP.sport,                                 valFilter:null },
+  'place':    { label:'Ort',         indexField:'places',          yamlKey:'places',           acFn:()=>TOP.allPlaces||[],                                      valFilter:null },
   'person':   { label:'Person',  indexField:'people',          yamlKey:'people',           acFn:()=>TOP.allPeople,                                           valFilter:null },
 };
 FIELD_PREFIXES['people']    = FIELD_PREFIXES['person'];
+FIELD_PREFIXES['ort2']      = FIELD_PREFIXES['place'];
 FIELD_PREFIXES['kaffeeort'] = FIELD_PREFIXES['kaffee'];
 FIELD_PREFIXES['location']  = FIELD_PREFIXES['ort'];
 FIELD_PREFIXES['country']   = FIELD_PREFIXES['land'];
