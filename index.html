@@ -2109,10 +2109,12 @@ function computeTopChips(){
   const allCoffee   = searchIndex.flatMap(e=>(e.coffeeLocations||'').split(' ').filter(Boolean));
   const allSport    = searchIndex.flatMap(e=>(e.sport||'').split(' ').filter(Boolean));
   const allPeople   = searchIndex.flatMap(e=>(e.people||'').split(' ').filter(Boolean));
+  const allPlaces   = searchIndex.flatMap(e=>(e.places||'').split(' ').filter(Boolean));
 
   const curCoffee   = sel.coffeeOrdered||[];
   const curSport    = sel.sport||[];
   const curPeople   = sel.people||[];
+  const curPlaces   = sel.places||[];
   const curLocs     = sel.locations||[];
   const curCountries= [...new Set(sel.countriesOrdered||[])];
 
@@ -2121,12 +2123,14 @@ function computeTopChips(){
   TOP.coffee    = build(curCoffee,     [...last14N('coffeeLocations',6), ...recentN('coffeeLocations',2)], topN(allCoffee,9),  9);
   TOP.sport     = build(curSport,      [...last14N('sport',6),           ...recentN('sport',2)],           topN(allSport,8),   8);
   TOP.people    = build(curPeople,     recentN('people',2),                                                topN(allPeople,6),  6);
+  TOP.places    = build(curPlaces,     [...last14N('places',6),          ...recentN('places',2)],          topN(allPlaces,8),  8);
 
   // Autocomplete lists (larger, for input suggestions)
   TOP.allCoffee    = [...new Set([...topN(allCoffee,100)])];
   TOP.allLocations = [...new Set([...topN(allLocs,100)])];
   TOP.allPeople    = [...new Set([...topN(allPeople,100)])];
   TOP.allSport     = [...new Set([...topN(allSport,100)])];
+  TOP.allPlaces    = [...new Set([...topN(allPlaces,100)])];
 
   // Only re-render chip rows, not the whole page
   if(document.getElementById('coffeeChips')) renderCoffeeChips();
@@ -2170,6 +2174,7 @@ function getAllTerms(){
       e.people.split(' ').forEach(t=>t&&set.add(t));
       e.sport.split(' ').forEach(t=>t&&set.add(t.replace(/\(.*\)/,'').trim()));
       if(e.coffeeLocations) e.coffeeLocations.split(' ').forEach(t=>t&&set.add(t));
+      if(e.places) e.places.split(' ').forEach(t=>t&&set.add(t));
       const y = e.date.slice(0,4);
       set.add(y);
     });
@@ -2381,7 +2386,8 @@ function runSearch(){
              e.locations.toLowerCase().split(' ').includes(fl) ||
              e.people.toLowerCase().split(' ').includes(fl) ||
              e.sport.toLowerCase().includes(fl) ||
-             (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl))) return false;
+             (e.coffeeLocations||'').toLowerCase().split(' ').includes(fl) ||
+             (e.places||'').toLowerCase().split(' ').includes(fl))) return false;
       }
     }
 
