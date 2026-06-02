@@ -1326,7 +1326,7 @@ function renderCoffeeChips(){
     const removeFn=count>0?()=>{ sel.coffeeOrdered=sel.coffeeOrdered.filter(x=>x!==opt); renderCoffeeChips(); }:null;
     el.appendChild(makeChip(opt,count>0,()=>toggleCoffee(opt),count>1?count:null,removeFn));
   });
-  el.appendChild(makeACInput('Anderer Ort...',TOP.allCoffee,val=>{
+  el.appendChild(makeACInput('Anderer Ort...',()=>TOP.allCoffee,val=>{
     saveCustomValue('allCoffee', val);
     sel.coffeeOrdered.push(val); renderCoffeeChips();
   }));
@@ -1347,7 +1347,7 @@ function renderSportChips(){
   custom.forEach(s=>el.appendChild(makeChip(s,true,()=>toggleSport(s),null,()=>{ sel.sport=sel.sport.filter(x=>x!==s); renderSportChips(); })));
   veloKm.className='velo-km'+(sel.sport.includes('Velo')?' show':'');
   el.appendChild(veloKm);
-  el.appendChild(makeACInput('Weitere Sportart...',TOP.allSport||TOP.sport,val=>{
+  el.appendChild(makeACInput('Weitere Sportart...',()=>TOP.allSport||TOP.sport,val=>{
     saveCustomValue('sport', val);
     if(!sel.sport.includes(val)){ sel.sport.push(val); renderSportChips(); }
   }));
@@ -1357,7 +1357,7 @@ function renderPeopleChips(){
   const el=document.getElementById('peopleChips'); el.innerHTML='';
   const all=[...TOP.people,...sel.people.filter(p=>!TOP.people.includes(p))];
   all.forEach(p=>el.appendChild(makeChip(p,sel.people.includes(p),()=>togglePerson(p))));
-  el.appendChild(makeACInput('Person...',TOP.allPeople,val=>{
+  el.appendChild(makeACInput('Person...',()=>TOP.allPeople,val=>{
     saveCustomValue('allPeople', val);
     if(!sel.people.includes(val)){ sel.people.push(val); renderPeopleChips(); }
   }));
@@ -1369,12 +1369,28 @@ function makeACInput(placeholder,source,onSelect){
   const drop=document.createElement('div'); drop.className='ac-dropdown';
   document.body.appendChild(drop); // attach to body so it's not clipped
 
+  // source can be an array or a function returning an array
+  const getSource = typeof source === 'function' ? source : ()=>source;
+
   function positionDrop(){
     const r=input.getBoundingClientRect();
     const zoom=parseFloat(getComputedStyle(document.body).zoom)||1;
-    drop.style.top=(r.bottom+4)/zoom+'px';
+    const dropH=drop.offsetHeight||160;
+    const spaceBelow=window.innerHeight-r.bottom;
+    const spaceAbove=r.top;
+    // Prefer below; flip above if not enough space below
+    if(spaceBelow<dropH+8 && spaceAbove>spaceBelow){
+      drop.style.top=(r.top-dropH-4)/zoom+'px';
+    } else {
+      drop.style.top=(r.bottom+4)/zoom+'px';
+    }
     drop.style.left=r.left/zoom+'px';
     drop.style.minWidth=r.width/zoom+'px';
+    // Clamp to viewport horizontally
+    const maxRight=window.innerWidth-8;
+    const dropLeft=parseFloat(drop.style.left);
+    const dropW=Math.max(r.width, 160);
+    if(dropLeft+dropW>maxRight) drop.style.left=Math.max(8, maxRight-dropW)/zoom+'px';
   }
 
   let acHighlight = -1;
@@ -1387,7 +1403,7 @@ function makeACInput(placeholder,source,onSelect){
     acHighlight=-1;
     const q=input.value.trim().toLowerCase();
     if(!q){ drop.classList.remove('open'); return; }
-    const matches=source.filter(s=>s.toLowerCase().includes(q)).slice(0,8);
+    const matches=getSource().filter(s=>s.toLowerCase().includes(q)).slice(0,8);
     if(!matches.length){ drop.classList.remove('open'); return; }
     drop.innerHTML=matches.map(m=>`<div class="ac-item">${m}</div>`).join('');
     drop.querySelectorAll('.ac-item').forEach((item,i)=>{ item.onclick=()=>{ onSelect(matches[i]); input.value=''; drop.classList.remove('open'); acHighlight=-1; }; });
@@ -1434,7 +1450,7 @@ function renderPlacesChips(){
   const allPlaces=TOP.allPlaces||[];
   sel.places.forEach(p=>el.appendChild(makeChip(p,true,()=>togglePlace(p),null,()=>{ sel.places=sel.places.filter(x=>x!==p); markDirty(); renderPlacesChips(); })));
   allPlaces.filter(p=>!sel.places.includes(p)).slice(0,6).forEach(p=>el.appendChild(makeChip(p,false,()=>togglePlace(p))));
-  el.appendChild(makeACInput('Ort hinzufügen...',allPlaces,val=>{
+  el.appendChild(makeACInput('Ort hinzufügen...',()=>TOP.allPlaces||[],val=>{
     saveCustomValue('allPlaces', val);
     if(!sel.places.includes(val)){ sel.places.push(val); markDirty(); renderPlacesChips(); }
   }));
