@@ -1128,7 +1128,10 @@ async function navigateToDate(dateStr){
   await loadFile(currentDate);
 }
 
-window.addEventListener('beforeunload',()=>{ if(fileHandle) autoSave(); });
+// Save on tab close / navigation (desktop)
+window.addEventListener('beforeunload',()=>{ if(isDirty) autoSave(); });
+// Save when app goes to background on iOS (visibilitychange is reliable on Safari)
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden' && isDirty) autoSave(); });
 // Default template for new diary entries (Day.md)
 function buildNewFileContent(date){
   const d = new Date(date+'T12:00:00');
