@@ -223,7 +223,12 @@ svg{display:block}
 .dash-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 4px 2px}
 .period{flex:1;min-width:0}
 @media (max-width:699px){.period{flex-basis:100%;margin-bottom:6px}.dash-head .seg{margin-left:auto}}
-.period-label{font-size:28px;font-weight:500;letter-spacing:-.4px;line-height:1.15;white-space:nowrap;overflow:hidden}
+.period-label{font-size:28px;font-weight:500;letter-spacing:-.4px;line-height:1.15;white-space:nowrap;overflow:hidden;display:flex;align-items:center;gap:6px}
+.period{cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.period-label .ico{width:18px;height:18px;color:var(--text-3);margin-top:4px;flex-shrink:0;transition:transform .3s var(--spring)}
+.period:hover .period-label .ico{color:var(--text-2);transform:translateY(2px)}
+.dp-d.wk{background:var(--accent-bg);color:var(--accent);border-radius:0}
+.dp-d.wk.ws{border-radius:13px 0 0 13px}.dp-d.wk.we{border-radius:0 13px 13px 0}
 .period-label>span{display:inline-block}
 .stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 @media (min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
@@ -502,7 +507,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
   <!-- ═══════════════ DASHBOARD ═══════════════ -->
   <section class="view" id="v-dash" aria-label="Dashboard" hidden>
     <header class="dash-head">
-      <div class="period"><div class="period-label"><span id="periodLabel"></span></div></div>
+      <div class="period" id="periodBtn" role="button" tabindex="0" aria-label="Zeitraum wählen"><div class="period-label"><span id="periodLabel"></span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div>
       <button class="icon-btn press" id="prevPer" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="icon-btn press" id="nextPer" aria-label="Weiter"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
       <div class="seg" id="perSeg" role="tablist"><span class="thumb"></span>
@@ -992,9 +997,11 @@ $('#todayBtn').onclick=()=>setDay(TODAY);
 addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); return; }
   if(e.key==='Escape'){ closeSheet(); if(view==='write') closeWriter(); if(view==='search') $('#q').blur(); return; }
-  if(view!=='entry'||e.target.closest('input,textarea,[role=slider],[role=spinbutton]')) return;
-  if(e.key==='ArrowLeft') setDay(addDays(cur,-1));
-  if(e.key==='ArrowRight') setDay(addDays(cur,1));
+  if(e.target.closest('input,textarea,[role=slider],[role=spinbutton],[role=tab]')||e.metaKey||e.ctrlKey||e.altKey) return;
+  if($('#sheet').classList.contains('open')){ if(DP_OPEN&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){ e.preventDefault(); dpShift(e.key==='ArrowLeft'?-1:1); } return; }
+  const d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0; if(!d) return;
+  if(view==='entry'){ e.preventDefault(); setDay(addDays(cur,d)); }
+  if(view==='dash'){ e.preventDefault(); if(d>0&&$('#nextPer').disabled) return; shiftPeriod(d); }
 });
 
 /* Wischen über den Kopf = Tag wechseln, Tippen = Datumswähler */
@@ -1216,27 +1223,30 @@ addEventListener('scroll',()=>{ if(view==='write') $('#wBar').classList.toggle('
 /* ═══════════════════════════════════════════════════════════
    DATUMSWÄHLER – Tage → Monate → Jahre, wischen wechselt Monat
    ═══════════════════════════════════════════════════════════ */
-let dpY, dpM, dpMode='days';
-function openDatePicker(){
-  const d=parse(cur); dpY=d.getFullYear(); dpM=d.getMonth(); dpMode='days';
+let dpY, dpM, dpMode='days', DP_DASH=false, DP_OPEN=false;
+const dpRef=()=>DP_DASH?anchor:cur;
+function openDatePicker(forDash=false){
+  DP_DASH=forDash; const d=parse(dpRef()); dpY=d.getFullYear(); dpM=d.getMonth();
+  dpMode=!forDash||per==='week'?'days':per==='month'?'months':'years';
   openSheet(`<div class="sheet-head"><button class="dp-title" id="dpTitle"><span id="dpLabel"></span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
     <div class="dp-nav"><button class="icon-btn press" id="dpPrev" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
     <button class="icon-btn press" id="dpNext" aria-label="Weiter"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button></div></div>
     <div class="dp-stage" id="dpStage"><div id="dpBody"></div></div>
-    <div class="dp-foot"><button class="pill pill-accent press" id="dpToday">Heute</button><button class="pill press" style="background:var(--surface-2)" id="dpLast">Letzter Eintrag</button></div>`);
-  renderDp(0);
+    <div class="dp-foot"><button class="pill pill-accent press" id="dpToday">${forDash?{week:'Diese Woche',month:'Dieser Monat',year:'Dieses Jahr'}[per]:'Heute'}</button>${forDash?'':'<button class="pill press" style="background:var(--surface-2)" id="dpLast">Letzter Eintrag</button>'}</div>`);
+  DP_OPEN=true; renderDp(0);
   $('#dpTitle').onclick=()=>{ dpMode=dpMode==='days'?'months':dpMode==='months'?'years':'days'; renderDp(0,true); };
   $('#dpPrev').onclick=()=>dpShift(-1); $('#dpNext').onclick=()=>dpShift(1);
-  $('#dpToday').onclick=()=>pickDay(TODAY);
-  $('#dpLast').onclick=()=>{ const last=[...DATA.keys()].filter(d=>d<=TODAY).sort().pop(); if(last) pickDay(last); };
+  $('#dpToday').onclick=()=>forDash?pickPeriod(TODAY):pickDay(TODAY);
+  if(!forDash) $('#dpLast').onclick=()=>{ const last=[...DATA.keys()].filter(d=>d<=TODAY).sort().pop(); if(last) pickDay(last); };
   $('#dpBody').onclick=e=>{ const b=e.target.closest('[data-pick]'); if(!b) return; const [kind,val]=b.dataset.pick.split(':');
-    if(kind==='d') pickDay(val);
-    if(kind==='m'){ dpM=+val; dpMode='days'; renderDp(0,true); }
-    if(kind==='y'){ dpY=+val; dpMode='months'; renderDp(0,true); } };
+    if(kind==='d') return forDash?pickPeriod(val):pickDay(val);
+    if(kind==='m'){ dpM=+val; if(forDash&&per==='month') return pickPeriod(`${dpY}-${pad(dpM+1)}-01`); dpMode='days'; renderDp(0,true); }
+    if(kind==='y'){ dpY=+val; if(forDash&&per==='year') return pickPeriod(`${dpY}-01-01`); dpMode='months'; renderDp(0,true); } };
   let x0=null; const st=$('#dpStage');
   st.onpointerdown=e=>{ x0=e.clientX; }; st.onpointerup=e=>{ if(x0===null) return; const dx=e.clientX-x0; x0=null; if(Math.abs(dx)>40) dpShift(dx<0?1:-1); };
 }
 function pickDay(d){ closeSheet(); setTimeout(()=>{ if(view!=='entry') go('entry'); setDay(d); }, 120); }
+function pickPeriod(d){ const dir=d>anchor?1:d<anchor?-1:0; closeSheet(); anchor=d>TODAY?TODAY:d; setTimeout(()=>renderDash(true,dir),120); }
 function dpShift(n){
   if(dpMode==='days'){ dpM+=n; if(dpM<0){dpM=11;dpY--;} if(dpM>11){dpM=0;dpY++;} }
   else if(dpMode==='months') dpY+=n; else dpY+=12*n;
@@ -1252,18 +1262,19 @@ function renderDp(dir=0, zoom=false){
       ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(w=>h+=`<div class="dp-wd">${w}</div>`);
       for(let i=0;i<off;i++) h+='<div class="dp-d out"></div>';
       for(let i=1;i<=n;i++){ const d=`${dpY}-${pad(dpM+1)}-${pad(i)}`, e=DATA.get(d);
-        h+=`<button class="dp-d${d===cur?' sel':''}${d===TODAY?' today':''}${d>TODAY?' fut':''}" data-pick="d:${d}">${i}<i style="background:${e?MOOD_COL[moodKey(e.mood)]:'transparent'}"></i></button>`; }
+        const R=DP_DASH&&per==='week'?range():null, inWk=R&&d>=R.from&&d<=R.to, wd=(parse(d).getDay()+6)%7;
+        h+=`<button class="dp-d${!DP_DASH&&d===cur?' sel':''}${inWk?' wk':''}${inWk&&(wd===0||i===1)?' ws':''}${inWk&&(wd===6||i===n)?' we':''}${d===TODAY?' today':''}${d>TODAY?' fut':''}" data-pick="d:${d}">${i}<i style="background:${e?MOOD_COL[moodKey(e.mood)]:'transparent'}"></i></button>`; }
       body.innerHTML=`<div class="dp-grid">${h}</div>`;
     } else if(dpMode==='months'){
       $('#dpLabel').textContent=String(dpY);
       body.innerHTML=`<div class="dp-cells">${MON3.map((m,i)=>{ const pre=`${dpY}-${pad(i+1)}`; let c=0; DATA.forEach((_,d)=>{ if(d.startsWith(pre)) c++; });
-        const days=new Date(dpY,i+1,0).getDate(), fut=`${pre}-01`>TODAY, sel=dpY===parse(cur).getFullYear()&&i===parse(cur).getMonth();
+        const days=new Date(dpY,i+1,0).getDate(), fut=`${pre}-01`>TODAY, sel=dpY===parse(dpRef()).getFullYear()&&i===parse(dpRef()).getMonth();
         return `<button class="dp-c${sel?' sel':''}${fut?' fut':''}" data-pick="m:${i}">${m}<span class="bar"><b style="width:${c/days*100}%"></b></span></button>`; }).join('')}</div>`;
     } else {
       const start=Math.floor(dpY/12)*12, ty=+TODAY.slice(0,4);
       $('#dpLabel').textContent=`${start}–${start+11}`;
       body.innerHTML=`<div class="dp-cells">${Array.from({length:12},(_,i)=>{ const y=start+i; let c=0; DATA.forEach((_,d)=>{ if(d.startsWith(y+'-')) c++; });
-        return `<button class="dp-c${y===parse(cur).getFullYear()?' sel':''}${y>ty?' fut':''}" data-pick="y:${y}">${y}<span class="bar"><b style="width:${Math.min(100,c/365*100)}%"></b></span></button>`; }).join('')}</div>`;
+        return `<button class="dp-c${y===parse(dpRef()).getFullYear()?' sel':''}${y>ty?' fut':''}" data-pick="y:${y}">${y}<span class="bar"><b style="width:${Math.min(100,c/365*100)}%"></b></span></button>`; }).join('')}</div>`;
     }
   };
   if(zoom&&!REDUCED&&body.animate){ draw(); body.animate([{opacity:0,transform:'scale(.94)'},{opacity:1,transform:'none'}],{duration:420,easing:SPRING}); }
@@ -1277,7 +1288,9 @@ let per='month', anchor=TODAY, meterKind='sport', dashDirty=true;
 function kw(d){ const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())); const n=t.getUTCDay()||7; t.setUTCDate(t.getUTCDate()+4-n); const y=new Date(Date.UTC(t.getUTCFullYear(),0,1)); return Math.ceil(((t-y)/864e5+1)/7); }
 function range(){
   const d=parse(anchor);
-  if(per==='week'){ const s=addDays(anchor,-((d.getDay()+6)%7)), e=addDays(s,6); return {from:s,to:e,label:`KW ${kw(parse(s))} · ${parse(s).getDate()}.–${parse(e).getDate()}. ${MON3[parse(e).getMonth()]}`}; }
+  if(per==='week'){ const s=addDays(anchor,-((d.getDay()+6)%7)), e=addDays(s,6), S=parse(s), E=parse(e);
+    const span=S.getMonth()===E.getMonth()?`${S.getDate()}.–${E.getDate()}. ${MON3[E.getMonth()]}`:`${S.getDate()}. ${MON3[S.getMonth()]} – ${E.getDate()}. ${MON3[E.getMonth()]}`;
+    return {from:s,to:e,label:`KW ${kw(S)} · ${span}`}; }
   if(per==='month') return {from:iso(new Date(d.getFullYear(),d.getMonth(),1)),to:iso(new Date(d.getFullYear(),d.getMonth()+1,0)),label:`${MON[d.getMonth()]} ${d.getFullYear()}`};
   return {from:`${d.getFullYear()}-01-01`,to:`${d.getFullYear()}-12-31`,label:String(d.getFullYear())};
 }
@@ -1288,7 +1301,19 @@ function shiftPeriod(n){ const d=parse(anchor);
   if(per==='week') d.setDate(d.getDate()+7*n); if(per==='month') d.setMonth(d.getMonth()+n,1); if(per==='year') d.setFullYear(d.getFullYear()+n,0,1);
   anchor=iso(d); renderDash(true,n); }
 $('#prevPer').onclick=()=>shiftPeriod(-1); $('#nextPer').onclick=()=>shiftPeriod(1);
-const setPerSeg=segInit($('#perSeg'),per,v=>{ per=v; anchor=cur; renderDash(true); });
+(function periodGestures(){   // Tippen = Picker, Wischen = Zeitraum wechseln
+  const el=$('#periodBtn'), t=$('#periodLabel'); let x0=null,y0=0,dx=0,lock=null;
+  el.addEventListener('pointerdown',e=>{ x0=e.clientX; y0=e.clientY; dx=0; lock=null; });
+  el.addEventListener('pointermove',e=>{ if(x0===null) return; dx=e.clientX-x0; const dy=e.clientY-y0;
+    if(lock===null&&Math.hypot(dx,dy)>6) lock=Math.abs(dx)>Math.abs(dy)?'x':'y';
+    if(lock==='x'){ el.setPointerCapture(e.pointerId); t.style.transition='none'; t.style.transform=`translateX(${dx*.6}px)`; t.style.opacity=1-Math.min(.6,Math.abs(dx)/300); } });
+  el.addEventListener('pointerup',()=>{ if(x0===null) return; x0=null; t.style.transition='transform .5s var(--spring), opacity .3s'; t.style.transform=''; t.style.opacity='';
+    if(lock==='x'&&Math.abs(dx)>50){ const n=dx<0?1:-1; if(!(n>0&&$('#nextPer').disabled)) setTimeout(()=>shiftPeriod(n)); }
+    else if(lock===null) openDatePicker(true); });
+  el.addEventListener('pointercancel',()=>{ x0=null; t.style.transform=''; t.style.opacity=''; });
+  el.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openDatePicker(true); } });
+})();
+const setPerSeg=segInit($('#perSeg'),per,v=>{ per=v; renderDash(true); });   // Zeitraum bleibt, nur die Auflösung wechselt
 segInit($('#meterSeg'),meterKind,v=>{ meterKind=v; renderMeter(); });
 
 let COLS=[];
@@ -1382,8 +1407,8 @@ function openDay(d){ const dir=d>cur?1:-1; cur=d; go('entry'); setTimeout(()=>{ 
 /* ═══════════════════════════════════════════════════════════
    SHEET (Datum, Einstellungen) – auf Mobile nach unten ziehen
    ═══════════════════════════════════════════════════════════ */
-function openSheet(html){ $('#sheetContent').innerHTML=html; $('#scrim').classList.add('open'); $('#sheet').classList.add('open'); lockScroll(true); }
-function closeSheet(){ if(!$('#sheet').classList.contains('open')) return; $('#scrim').classList.remove('open'); $('#sheet').classList.remove('open'); $('#sheet').style.transform=''; lockScroll(false); }
+function openSheet(html){ DP_OPEN=false; $('#sheetContent').innerHTML=html; $('#scrim').classList.add('open'); $('#sheet').classList.add('open'); lockScroll(true); }
+function closeSheet(){ DP_OPEN=false; if(!$('#sheet').classList.contains('open')) return; $('#scrim').classList.remove('open'); $('#sheet').classList.remove('open'); $('#sheet').style.transform=''; lockScroll(false); }
 $('#scrim').onclick=closeSheet;
 (function dragSheet(){
   const g=$('#grab'), sh=$('#sheet'); let y0=null,dy=0,t0=0;
