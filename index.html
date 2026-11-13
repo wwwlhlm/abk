@@ -158,7 +158,8 @@ svg{display:block}
 .slider.snap .knob{transition:left .55s var(--spring),transform .25s var(--spring)}
 .slider.drag .knob{transform:scale(1.18)}
 .slider:focus-visible .knob{box-shadow:0 0 0 3px var(--accent),0 2px 10px rgba(0,0,0,.5)}
-.ticks{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-top:2px;padding:0 6px}
+.ticks{position:relative;height:16px;font-size:11px;color:var(--text-3);margin-top:2px;font-variant-numeric:tabular-nums}
+.ticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
 
 /* Chips */
 .chip-group+.chip-group{margin-top:16px}
@@ -173,6 +174,13 @@ svg{display:block}
 .chip.on{background:var(--accent-bg);color:var(--accent)}
 .chip.on .cd{transform:scale(1);margin-left:0}
 .chip:active{transform:scale(.93);transition-duration:.08s}
+.chip .cc{font-size:11px;font-weight:600;letter-spacing:.3px;padding:2px 6px;border-radius:6px;background:rgba(253,147,159,.16);margin-right:-5px;font-variant-numeric:tabular-nums}
+.chip .cc.miss{background:var(--accent);color:#111}
+.cc-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 6px 0 9px;border-radius:999px;background:var(--bg);color:var(--text-2);font-size:12px;font-weight:500;letter-spacing:.3px;text-transform:none}
+.cc-toggle .ico{width:13px;height:13px;transition:transform .4s var(--spring)}
+.cc-toggle[aria-expanded="true"] .ico{transform:rotate(180deg)}
+.cc-toggle.warn{background:var(--accent-bg);color:var(--accent)}
+.cc-row{padding-top:14px}
 .chip .badge{font-size:12px;opacity:.75;font-variant-numeric:tabular-nums}
 .chip .x{font-size:11px;opacity:.55;margin-right:-3px;padding:6px 0 6px 2px}
 .chip .x:hover{opacity:1}
@@ -440,11 +448,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <div class="mood-top"><span class="mood-val" id="moodVal"><span class="roll"></span></span><span class="mood-word" id="moodWord"></span>
             <span class="label" style="margin-left:auto">Stimmung</span></div>
           <div class="slider" id="mood" role="slider" tabindex="0" aria-label="Stimmung" aria-valuemin="-2" aria-valuemax="2"><div class="track"></div><div class="knob"></div></div>
-          <div class="ticks"><span>−2</span><span>−1</span><span>0</span><span>+1</span><span>+2</span></div>
+          <div class="ticks"><span style="left:0">−2</span><span style="left:25%">−1</span><span style="left:50%">0</span><span style="left:75%">+1</span><span style="left:100%">+2</span></div>
         </div>
         <div class="card">
-          <div class="chip-group"><span class="label">Ort</span><div data-g="locations"></div></div>
-          <div class="chip-group"><span class="label">Land <span class="hint">mehrfach tippen für Reihenfolge</span></span><div data-g="countries"></div></div>
+          <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div>
+            <div class="expand" id="ccWrap"><div><div class="cc-row"><span class="label">Land <span class="hint" id="ccHint">mehrfach tippen, Reihenfolge wie die Orte</span></span><div data-g="countries"></div></div></div></div></div>
           <div class="chip-group"><span class="label">Kaffee <span class="hint" id="coffeeHint"></span></span><div data-g="coffeeLocations"></div></div>
         </div>
         <div class="card">
@@ -940,7 +948,7 @@ function renderEntry(dir=0){
   $('#kmWrap').classList.toggle('open', e.sport.includes('Velo')); $('#km').value=e.kmRaw??(e.cycling_km||'');
   $('#coords').value=e.coords||'';
   $('#entry').value=e.text||''; autosize($('#entry')); wordCount(); renderPrev();
-  coffeeHint(e); foldSummary(e);
+  ccOpen=false; ccState(e); coffeeHint(e); foldSummary(e);
 }
 function buildCounters(){
   $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="counter">
@@ -1023,37 +1031,61 @@ function setMood(v,commit=true){
    Land und Kaffee), ✕ entfernt, nach max wieder auf 0.          */
 const GROUPS={
   locations:{mode:'toggle', top:()=>TOP.locations, ph:'+ Ort'},
-  countries:{mode:'multi', max:5, top:()=>TOP.countries, ph:'+ Land', upper:true},
+  countries:{mode:'multi', max:5, top:()=>TOP.countries, ph:'+ Land', upper:true},   // wie bisher: mehrfach tippen, je Ort ein Land
   coffeeLocations:{mode:'multi', max:6, top:()=>TOP.coffeeLocations, ph:'+ Ort'},
   sport:{mode:'toggle', top:()=>TOP.sport, ph:'+ Sport'},
   places:{mode:'toggle', top:()=>usage('places').slice(0,6), ph:'+ Ort'},
   people:{mode:'toggle', top:()=>TOP.people, ph:'+ Person'},
   tags:{mode:'toggle', top:()=>usage('tags').slice(0,8), ph:'+ Tag'},
 };
-function chipInner(o,n,g){ return `<span class="cd"></span>${esc(o)}${g.mode==='multi'&&n>1?`<span class="badge">×${n}</span>`:''}${g.mode==='multi'&&n?'<span class="x" data-x aria-label="entfernen">✕</span>':''}`; }
+function chipInner(o,n,g,vals=[],e=null){
+  const uniq=[...new Set(vals)], pos=uniq.indexOf(o)+1;
+  const cc=g===GROUPS.locations&&n&&e?(e.countries[e.locations.indexOf(o)]||null):undefined;
+  return `<span class="cd"></span>${esc(o)}${cc!==undefined?`<span class="cc${cc?'':' miss'}">${cc?esc(cc):'?'}</span>`:''}${g.mode==='multi'&&n>1?`<span class="badge">×${n}</span>`:''}${g.mode==='order'&&n&&uniq.length>1?`<span class="badge">${pos}</span>`:''}${g.mode==='multi'&&n?'<span class="x" data-x aria-label="entfernen">✕</span>':''}`; }
 function renderGroup(k,e){
   const g=GROUPS[k], vals=e[k]||[], opts=[...new Set([...g.top(),...vals])];
   document.querySelector(`[data-g="${k}"]`).innerHTML=`<div class="chips" data-k="${k}">${opts.map(o=>{ const n=vals.filter(x=>x===o).length;
-    return `<button class="chip${n?' on':''}" data-v="${esc(o)}">${chipInner(o,n,g)}</button>`; }).join('')}
+    return `<button class="chip${n?' on':''}" data-v="${esc(o)}">${chipInner(o,n,g,vals,e)}</button>`; }).join('')}
     <input class="chip-add" data-k="${k}" placeholder="${g.ph}" list="dl-${k}" enterkeyhint="done" autocomplete="off" autocapitalize="${g.upper?'characters':'off'}"></div>`;
 }
-function buildDatalists(){ $('#datalists').innerHTML=LIST_KEYS.map(k=>`<datalist id="dl-${k}">${[...new Set([...(TOP[k]||[]),...usage(k)])].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join(''); }
+let LOC_CC={};
+function buildLocCC(){ const c={}; DATA.forEach(e=>{ if(e.locations.length===e.countries.length) e.locations.forEach((l,i)=>{ const k=l+'\u0000'+e.countries[i]; c[k]=(c[k]||0)+1; }); });
+  const best={}; Object.entries(c).forEach(([k,n])=>{ const [l,cc]=k.split('\u0000'); if(!best[l]||n>best[l][1]) best[l]=[cc,n]; }); LOC_CC=Object.fromEntries(Object.entries(best).map(([l,[cc]])=>[l,cc])); }
+let ccOpen=false;
+function ccState(e,forceOpen=false){
+  const ok=e.countries.length===e.locations.length, t=$('#ccToggle');
+  $('#ccSum').textContent=ok?'Land':`${e.locations.length} ${e.locations.length===1?'Ort':'Orte'} · ${e.countries.length} ${e.countries.length===1?'Land':'Länder'}`;
+  t.classList.toggle('warn',!ok);
+  if(!ok||forceOpen) ccOpen=true;
+  $('#ccWrap').classList.toggle('open',ccOpen); t.setAttribute('aria-expanded',ccOpen);
+}
+$('#ccToggle').onclick=()=>{ ccOpen=!ccOpen; ccState(entryFor(cur)); };
+function buildDatalists(){ buildLocCC(); $('#datalists').innerHTML=LIST_KEYS.map(k=>`<datalist id="dl-${k}">${[...new Set([...(TOP[k]||[]),...usage(k)])].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join(''); }
 $('#v-entry').addEventListener('click',ev=>{
   const b=ev.target.closest('.chip'); if(!b) return;
   const k=b.parentElement.dataset.k, g=GROUPS[k], v=b.dataset.v, e={...entryFor(cur)}; let vals=[...(e[k]||[])];
   const n=vals.filter(x=>x===v).length;
-  if(ev.target.closest('[data-x]')||(g.mode==='multi'&&n>=g.max)||(g.mode==='toggle'&&n)) vals=vals.filter(x=>x!==v); else vals.push(v);
+  if(k==='locations'){ // Ort an/aus, Land paarweise mitführen
+    const paired=e.countries.length===e.locations.length, i=e.locations.indexOf(v), cs=[...e.countries];
+    if(n){ vals=vals.filter(x=>x!==v); if(paired&&i>=0) cs.splice(i,1); }
+    else { vals.push(v); if(paired&&LOC_CC[v]) cs.push(LOC_CC[v]); }
+    e.locations=vals; e.countries=cs; touch(e); renderGroup('locations',e); renderGroup('countries',e); ccState(e,!LOC_CC[v]&&!n); return;
+  }
+  if(ev.target.closest('[data-x]')||(g.mode==='multi'&&n>=g.max)||(g.mode!=='multi'&&n)) vals=vals.filter(x=>x!==v); else vals.push(v);
   e[k]=vals; const n2=vals.filter(x=>x===v).length;
-  b.classList.toggle('on',n2>0); b.innerHTML=chipInner(v,n2,g);
+  if(g.mode==='order') b.parentElement.querySelectorAll('.chip').forEach(c=>{ const cv=c.dataset.v, cn=vals.filter(x=>x===cv).length; c.classList.toggle('on',cn>0); c.innerHTML=chipInner(cv,cn,g,vals); });
+  else { b.classList.toggle('on',n2>0); b.innerHTML=chipInner(v,n2,g); }
   if(k==='sport'){ $('#kmWrap').classList.toggle('open',vals.includes('Velo')); if(!vals.includes('Velo')){ e.cycling_km=0; e.kmRaw=''; } }
   touch(e); coffeeHint(e); foldSummary(e);
+  if(k==='countries'){ renderGroup('locations',e); ccState(e); }
 });
 $('#v-entry').addEventListener('keydown',ev=>{
   const inp=ev.target.closest('.chip-add'); if(!inp||ev.key!=='Enter') return; ev.preventDefault();
   const k=inp.dataset.k; let v=inp.value.trim().replace(/\s+/g,'_'); if(!v) return; if(GROUPS[k].upper) v=v.toUpperCase();
-  const e={...entryFor(cur)}; e[k]=[...e[k],v]; if(GROUPS[k].mode==='toggle') e[k]=[...new Set(e[k])];
+  const e={...entryFor(cur)}; e[k]=[...e[k],v]; if(GROUPS[k].mode!=='multi') e[k]=[...new Set(e[k])];
   if(TOP[k]&&!TOP[k].includes(v)) TOP[k].push(v);
-  touch(e); renderGroup(k,e); buildDatalists(); coffeeHint(e); foldSummary(e);
+  if(k==='locations'&&e.countries.length===e.locations.length-1&&LOC_CC[v]) e.countries=[...e.countries,LOC_CC[v]];
+  touch(e); renderGroup(k,e); if(k==='locations'||k==='countries'){ renderGroup('locations',e); renderGroup('countries',e); ccState(e,k==='locations'&&!LOC_CC[v]); } buildDatalists(); coffeeHint(e); foldSummary(e);
   document.querySelector(`.chip-add[data-k="${k}"]`).focus({preventScroll:true});
 });
 $('#km').addEventListener('input',ev=>touch({...entryFor(cur),cycling_km:parseFloat(ev.target.value)||0,kmRaw:ev.target.value}));
