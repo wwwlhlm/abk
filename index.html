@@ -89,12 +89,18 @@ svg{display:block}
   display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 10px;border-radius:999px;background:#000;color:var(--text);font-size:13px;
   box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .55s var(--spring-pop);white-space:nowrap}
 .island.show{transform:translate(-50%,0)}
+.src-badge{position:fixed;left:50%;translate:-50% 0;bottom:calc(env(safe-area-inset-bottom) + 92px);z-index:49;white-space:nowrap;height:28px;padding:0 12px 0 10px;border-radius:999px;
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;background:#ffd54f;color:#111;box-shadow:0 4px 16px rgba(0,0,0,.35);animation:pop .45s var(--spring-pop)}
+.src-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.6}
+.src-badge.err{background:var(--bad);color:#fff}
+.src-badge[hidden]{display:none}
 .island .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
 
 /* ─── Dock ───────────────────────────────────────────────── */
 .dock-wrap{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px - 40px);padding:40px 0;display:flex;justify-content:center;z-index:50;pointer-events:none;
   transition:transform .45s var(--spring),opacity .25s}
 .kb .dock-wrap{transform:translateY(160%);opacity:0}
+.kb .src-badge{opacity:0;pointer-events:none}
 .dock{pointer-events:auto;position:relative;display:flex;align-items:flex-end;gap:4px;padding:8px 10px;border-radius:24px;
   background:rgba(38,38,38,.78);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
   box-shadow:0 0 0 1px rgba(255,255,255,.06)}
@@ -185,6 +191,12 @@ svg{display:block}
 .chip .x{font-size:11px;opacity:.55;margin-right:-3px;padding:6px 0 6px 2px}
 .chip .x:hover{opacity:1}
 .chip-add{width:110px;height:34px;padding:0 13px;border-radius:999px;border:1px dashed var(--border-2);background:transparent;font-size:16px;outline:none;transition:border-color .2s,width .4s var(--spring)}
+.ac{display:flex;flex-wrap:wrap;gap:6px;max-height:0;overflow:hidden;opacity:0;transition:max-height .4s var(--spring),opacity .2s,margin .3s var(--spring)}
+.ac.open{max-height:160px;opacity:1;margin-top:8px}
+.acs{height:32px;padding:0 11px;border-radius:999px;background:var(--surface-2);color:var(--text);font-size:14px;display:inline-flex;align-items:center;gap:6px;animation:pop .35s var(--spring-pop) backwards;transition:background-color .15s}
+.acs:hover,.acs.hl{background:var(--surface-3)}
+.acs .c{font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.acs mark{background:none;color:var(--accent);padding:0}
 .chip-add::placeholder{color:var(--text-3);font-size:14px}
 .chip-add:focus{border-style:solid;border-color:var(--accent);width:170px}
 .expand{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s var(--spring),opacity .3s;opacity:0}
@@ -421,6 +433,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 </head>
 <body>
 
+<button class="src-badge" id="srcBadge" hidden></button>
 <div class="island" id="island" role="status" aria-live="polite"><span class="dot"></span><span id="islandText">Demo-Daten</span></div>
 
 <main>
@@ -484,7 +497,6 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         </div>
       </div>
     </div>
-    <div id="datalists" hidden></div>
   </section>
 
   <!-- ═══════════════ DASHBOARD ═══════════════ -->
@@ -710,6 +722,13 @@ function fromIndex(idx){
       coffeeLocations:L(e.coffeeLocations), people:L(e.people), places:L(e.places), tags:L(e.tags), coords:'', text:(e.text||'')==='—'?'':(e.text||'')}); });
   return m;
 }
+function sourceBadge(){
+  const b=$('#srcBadge');
+  if(SOURCE==='github'&&OFFLINE){ b.hidden=false; b.className='src-badge err'; b.textContent='Keine Verbindung · erneut versuchen'; b.onclick=()=>setSource('github');
+    island('GitHub nicht erreichbar: '+OFFLINE,'var(--bad)',5000); }
+  else if(SOURCE==='demo'){ b.hidden=false; b.className='src-badge'; b.textContent='Demo-Daten'; b.onclick=()=>openSettings(); }
+  else b.hidden=true;
+}
 function ghConfig(){ try{ return JSON.parse(localStorage.getItem('ghConfig')||'null'); }catch{ return null; } }
 async function loadGithub(){
   const c=ghConfig(); if(!c?.token||!c?.privateRepo) throw new Error('Keine GitHub-Verbindung auf dieser Domain');
@@ -720,14 +739,21 @@ async function loadGithub(){
   if(Array.isArray(idx.tags)&&idx.tags.length){ try{ const kt=new Set([...JSON.parse(localStorage.getItem('knownTags')||'[]'),...idx.tags]); localStorage.setItem('knownTags',JSON.stringify([...kt])); }catch{} }
   return idx.index;
 }
+let OFFLINE=null;
 async function setSource(src){
+  OFFLINE=null;
   try{
     if(src==='github'){ island('Lade Index …','var(--c-km)',0); DATA=fromIndex(await loadGithub()); TEMPL.clear(); FILES={}; island('Verbunden mit GitHub','var(--c-km)'); }
     else { DATA=demoData(); INDEX_BUILT=new Date().toISOString(); island('Demo-Daten'); }
     SOURCE=src; try{ localStorage.setItem('abkSource',src); }catch{}
-  }catch(e){ DATA=demoData(); SOURCE='demo'; island(e.message,'var(--bad)',3200); }
+  }catch(e){
+    if(src==='github'){ DATA=new Map(); RAW_INDEX=[]; SOURCE='github'; OFFLINE=e.message; }   // nie still auf Demo wechseln
+    else { DATA=demoData(); SOURCE='demo'; }
+  }
+  if(SOURCE==='github'&&!OFFLINE) OFFLINE=null;
+  sourceBadge();
   buildDatalists(); renderEntry(0); renderStrip(true); renderDash(true); searchDirty=true; if(view==='search') renderSearch();
-  if(SOURCE==='github'){ ensureDay(cur); indexRefresh().catch(e=>console.warn('Index-Abgleich:',e)); }
+  if(SOURCE==='github'&&!OFFLINE){ ensureDay(cur); indexRefresh().catch(e=>console.warn('Index-Abgleich:',e)); }
 }
 const TEMPL=new Map();   // noch nicht existierende Tage (Vorlage), landen erst beim Speichern in DATA
 const entryFor = d => DATA.get(d) || TEMPL.get(d) || {date:d,coffee:0,apples:0,bananas:0,mood:0,cycling_km:0,kmRaw:'',sport:[],locations:['Zurich'],countries:['CH'],coffeeLocations:['Home'],people:[],places:[],tags:[],coords:'',text:''};
@@ -835,6 +861,7 @@ async function flushSaves(){
 }
 async function saveDay(d){
   let e=DATA.get(d); if(!e?._dirty) return;
+  if(OFFLINE) throw new Error('keine Verbindung zu GitHub');
   if(!e._file){ e=await ensureDay(d); if(!e?._file) throw new Error('Tag konnte nicht geladen werden'); }
   const content=buildDay(e), strip=x=>x.replace(/^updated:.*$/m,'');
   if(e._file.exists&&strip(content)===strip(e._file.raw)){ if(DATA.get(d)===e){ e._dirty=false; e._edited=new Set(); } return; }
@@ -1046,7 +1073,8 @@ function renderGroup(k,e){
   const g=GROUPS[k], vals=e[k]||[], opts=[...new Set([...g.top(),...vals])];
   document.querySelector(`[data-g="${k}"]`).innerHTML=`<div class="chips" data-k="${k}">${opts.map(o=>{ const n=vals.filter(x=>x===o).length;
     return `<button class="chip${n?' on':''}" data-v="${esc(o)}">${chipInner(o,n,g,vals,e)}</button>`; }).join('')}
-    <input class="chip-add" data-k="${k}" placeholder="${g.ph}" list="dl-${k}" enterkeyhint="done" autocomplete="off" autocapitalize="${g.upper?'characters':'off'}"></div>`;
+    <input class="chip-add" data-k="${k}" placeholder="${g.ph}" enterkeyhint="done" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="${g.upper?'characters':'off'}"></div>
+    <div class="ac" data-ac="${k}" role="listbox"></div>`;
 }
 let LOC_CC={};
 function buildLocCC(){ const c={}; DATA.forEach(e=>{ if(e.locations.length===e.countries.length) e.locations.forEach((l,i)=>{ const k=l+'\u0000'+e.countries[i]; c[k]=(c[k]||0)+1; }); });
@@ -1060,7 +1088,37 @@ function ccState(e,forceOpen=false){
   $('#ccWrap').classList.toggle('open',ccOpen); t.setAttribute('aria-expanded',ccOpen);
 }
 $('#ccToggle').onclick=()=>{ ccOpen=!ccOpen; ccState(entryFor(cur)); };
-function buildDatalists(){ buildLocCC(); $('#datalists').innerHTML=LIST_KEYS.map(k=>`<datalist id="dl-${k}">${[...new Set([...(TOP[k]||[]),...usage(k)])].map(v=>`<option value="${esc(v)}">`).join('')}</datalist>`).join(''); }
+/* Vorschläge aus allen bisherigen Einträgen (wie makeACInput der alten Seite), nach Häufigkeit */
+let SUGG={};
+function buildDatalists(){ buildLocCC();
+  SUGG={}; LIST_KEYS.forEach(k=>{ const c={}; DATA.forEach(e=>new Set(e[k]||[]).forEach(v=>c[v]=(c[v]||0)+1)); (TOP[k]||[]).forEach(v=>c[v]??=0); SUGG[k]=Object.entries(c).sort((a,b)=>b[1]-a[1]); });
+}
+let acSel=-1;
+function acMatches(k,q){
+  const ql=q.toLowerCase().replace(/\s+/g,'_'), e=entryFor(cur), g=GROUPS[k], taken=new Set(g.mode==='multi'?[]:e[k]);
+  return (SUGG[k]||[]).filter(([v])=>!taken.has(v)&&v.toLowerCase().includes(ql))
+    .sort((a,b)=>(b[0].toLowerCase().startsWith(ql)-a[0].toLowerCase().startsWith(ql))||(b[1]-a[1])).slice(0,8);
+}
+function acRender(k,q){
+  const box=document.querySelector(`[data-ac="${k}"]`); if(!box) return; acSel=-1;
+  const m=q.trim()?acMatches(k,q.trim()):[];
+  const ql=q.trim().replace(/\s+/g,'_'), hl=v=>esc(v).replace(new RegExp(reEsc(esc(ql)),'i'),x=>`<mark>${x}</mark>`);
+  box.innerHTML=m.map(([v,n],i)=>`<button class="acs" role="option" data-v="${esc(v)}" style="animation-delay:${i*22}ms"><span>${hl(v)}</span>${n?`<span class="c">${n}</span>`:''}</button>`).join('');
+  box.classList.toggle('open',m.length>0);
+  if(m.length) requestAnimationFrame(()=>{ // nicht hinter der Tastatur verstecken
+    const r=box.getBoundingClientRect(), vh=vv?vv.height+vv.offsetTop:innerHeight; if(r.bottom>vh-8) scrollBy({top:r.bottom-vh+16,behavior:'smooth'}); });
+}
+function acClose(k){ const b=document.querySelector(`[data-ac="${k}"]`); if(b){ b.classList.remove('open'); b.innerHTML=''; } acSel=-1; }
+function addValue(k,v){
+  v=v.trim().replace(/\s+/g,'_'); if(!v) return; if(GROUPS[k].upper) v=v.toUpperCase();
+  const known=(SUGG[k]||[]).find(([x])=>x.toLowerCase()===v.toLowerCase()); if(known) v=known[0];   // Schreibweise vom bestehenden Wert übernehmen
+  const e={...entryFor(cur)}; e[k]=[...e[k],v]; if(GROUPS[k].mode!=='multi') e[k]=[...new Set(e[k])];
+  if(TOP[k]&&!TOP[k].includes(v)) TOP[k].push(v);
+  if(k==='locations'&&e.countries.length===e.locations.length-1&&LOC_CC[v]) e.countries=[...e.countries,LOC_CC[v]];
+  touch(e); renderGroup(k,e); if(k==='locations'||k==='countries'){ renderGroup('locations',e); renderGroup('countries',e); ccState(e,k==='locations'&&!LOC_CC[v]); }
+  buildDatalists(); coffeeHint(e); foldSummary(e);
+  document.querySelector(`.chip-add[data-k="${k}"]`).focus({preventScroll:true});
+}
 $('#v-entry').addEventListener('click',ev=>{
   const b=ev.target.closest('.chip'); if(!b) return;
   const k=b.parentElement.dataset.k, g=GROUPS[k], v=b.dataset.v, e={...entryFor(cur)}; let vals=[...(e[k]||[])];
@@ -1080,14 +1138,16 @@ $('#v-entry').addEventListener('click',ev=>{
   if(k==='countries'){ renderGroup('locations',e); ccState(e); }
 });
 $('#v-entry').addEventListener('keydown',ev=>{
-  const inp=ev.target.closest('.chip-add'); if(!inp||ev.key!=='Enter') return; ev.preventDefault();
-  const k=inp.dataset.k; let v=inp.value.trim().replace(/\s+/g,'_'); if(!v) return; if(GROUPS[k].upper) v=v.toUpperCase();
-  const e={...entryFor(cur)}; e[k]=[...e[k],v]; if(GROUPS[k].mode!=='multi') e[k]=[...new Set(e[k])];
-  if(TOP[k]&&!TOP[k].includes(v)) TOP[k].push(v);
-  if(k==='locations'&&e.countries.length===e.locations.length-1&&LOC_CC[v]) e.countries=[...e.countries,LOC_CC[v]];
-  touch(e); renderGroup(k,e); if(k==='locations'||k==='countries'){ renderGroup('locations',e); renderGroup('countries',e); ccState(e,k==='locations'&&!LOC_CC[v]); } buildDatalists(); coffeeHint(e); foldSummary(e);
-  document.querySelector(`.chip-add[data-k="${k}"]`).focus({preventScroll:true});
+  const inp=ev.target.closest('.chip-add'); if(!inp) return; const k=inp.dataset.k, items=[...document.querySelectorAll(`[data-ac="${k}"] .acs`)];
+  if((ev.key==='ArrowDown'||ev.key==='ArrowUp')&&items.length){ ev.preventDefault(); acSel=(acSel+(ev.key==='ArrowDown'?1:-1)+items.length+1)%(items.length+1)-1; items.forEach((b,i)=>b.classList.toggle('hl',i===acSel)); return; }
+  if(ev.key==='Escape'){ inp.value=''; acClose(k); return; }
+  if(ev.key!=='Enter') return; ev.preventDefault();
+  const v=acSel>=0&&items[acSel]?items[acSel].dataset.v:inp.value; if(!v.trim()) return; acClose(k); addValue(k,v);
 });
+$('#v-entry').addEventListener('input',ev=>{ const inp=ev.target.closest('.chip-add'); if(inp) acRender(inp.dataset.k,inp.value); });
+$('#v-entry').addEventListener('pointerdown',ev=>{ if(ev.target.closest('.acs')) ev.preventDefault(); });   // Fokus/Tastatur behalten
+$('#v-entry').addEventListener('click',ev=>{ const b=ev.target.closest('.acs'); if(!b) return; const k=b.parentElement.dataset.ac; acClose(k); addValue(k,b.dataset.v); });
+$('#v-entry').addEventListener('focusout',ev=>{ const inp=ev.target.closest?.('.chip-add'); if(inp) setTimeout(()=>{ if(document.activeElement!==inp) acClose(inp.dataset.k); },150); });
 $('#km').addEventListener('input',ev=>touch({...entryFor(cur),cycling_km:parseFloat(ev.target.value)||0,kmRaw:ev.target.value}));
 $('#coords').addEventListener('input',ev=>{ const e={...entryFor(cur),coords:ev.target.value}; touch(e); foldSummary(e); });
 function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coffeeHint');
