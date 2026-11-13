@@ -85,13 +85,14 @@ svg{display:block}
 .roll .s{display:inline-block;line-height:1}
 
 /* ─── Status-Insel ───────────────────────────────────────── */
-.fnav{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:55;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;
+.fnav{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 24px);z-index:55;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;
   background:rgba(38,38,38,.82);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:0 0 0 1px rgba(255,255,255,.06),0 10px 30px rgba(0,0,0,.4);
   transform:translate(-50%,calc(-100% - 20px));opacity:0;pointer-events:none;transition:transform .5s var(--spring),opacity .25s}
 .fnav.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
 .kb .fnav{transform:translate(-50%,calc(-100% - 20px));opacity:0;pointer-events:none}
 .fnav>button:not(.fdate){width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2)}
 .fnav>button:not(.fdate):hover{color:var(--text);background:var(--surface-2)}
+.fnav>button:disabled{opacity:.3;pointer-events:none}
 .fnav .ico{width:18px;height:18px}
 .fdate{height:38px;padding:0 12px;min-width:118px;border-radius:999px;font-size:15px;font-weight:500;overflow:hidden;white-space:nowrap}
 .fdate span{display:inline-block}
@@ -522,7 +523,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 
   <!-- ═══════════════ DASHBOARD ═══════════════ -->
   <section class="view" id="v-dash" aria-label="Dashboard" hidden>
-    <header class="dash-head">
+    <header class="dash-head" id="dashHead">
       <div class="period" id="periodBtn" role="button" tabindex="0" aria-label="Zeitraum wählen"><div class="period-label"><span id="periodLabel"></span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div>
       <button class="icon-btn press" id="prevPer" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
       <button class="icon-btn press" id="nextPer" aria-label="Weiter"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -1004,19 +1005,36 @@ function renderEntry(dir=0){
 }
 /* Schwebende Tagesnavigation: erscheint, sobald der Tageskopf aus dem Bild ist */
 function fnavDate(dir=0){
+  if(view!=='entry'&&view!=='write') return;
   const d=parse(cur), y=d.getFullYear()!==+TODAY.slice(0,4)?` ${d.getFullYear()}`:'';
   const txt=cur===TODAY?'<span class="t">Heute</span>':`${WD2[d.getDay()]} ${d.getDate()}. ${MON3[d.getMonth()]}${y}`;
   const el=$('#fDateIn'); if(!$('#fnav').classList.contains('show')||!dir){ el.innerHTML=txt; return; }
   slideSwap(el,dir,()=>el.innerHTML=txt,18);
   $('#fDate').animate?.([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:420,easing:SPRING});
 }
-let headVisible=true;
-function fnavUpdate(){ const on=view==='entry'&&!headVisible&&!root.classList.contains('kb'); $('#fnav').classList.toggle('show',on); $('#fnav').setAttribute('aria-hidden',!on); placeIsland();
-  $('#fnav').querySelectorAll('button').forEach(b=>b.tabIndex=on?0:-1); }
-new IntersectionObserver(([en])=>{ headVisible=en.isIntersecting; fnavUpdate(); },{rootMargin:'-8px 0px 0px 0px'}).observe($('#dayHead'));
-$('#fPrev').onclick=()=>setDay(addDays(cur,-1));
-$('#fNext').onclick=()=>setDay(addDays(cur,1));
-$('#fDate').onclick=()=>openDatePicker();
+/* Im Dashboard zeigt dieselbe Leiste den Zeitraum */
+function fnavPeriod(dir=0){
+  if(view!=='dash') return;
+  const d=parse(anchor), R=range(), y=d.getFullYear();
+  const txt=per==='year'?String(y):per==='month'?`${MON[d.getMonth()]}${y!==+TODAY.slice(0,4)?' '+y:''}`:`KW ${kw(parse(R.from))}${y!==+TODAY.slice(0,4)?' · '+y:''}`;
+  const el=$('#fDateIn'); $('#fNext').disabled=R.to>=TODAY;
+  if(!$('#fnav').classList.contains('show')||!dir){ el.innerHTML=txt; return; }
+  slideSwap(el,dir,()=>el.innerHTML=txt,18);
+  $('#fDate').animate?.([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:420,easing:SPRING});
+}
+const headVis={entry:true,dash:true};
+function fnavUpdate(){
+  const on=(view==='entry'||view==='dash')&&!headVis[view]&&!root.classList.contains('kb'), f=$('#fnav');
+  if(on&&(!f.classList.contains('show')||f.dataset.for!==view)){ f.dataset.for=view; if(view==='dash') fnavPeriod(0); else { $('#fNext').disabled=false; fnavDate(0); } }
+  f.classList.toggle('show',on); f.setAttribute('aria-hidden',!on); placeIsland();
+  f.querySelectorAll('button').forEach(b=>b.tabIndex=on?0:-1);
+  $('#fPrev').setAttribute('aria-label',view==='dash'?'Zurück':'Vorheriger Tag'); $('#fNext').setAttribute('aria-label',view==='dash'?'Weiter':'Nächster Tag');
+}
+const headIO=new IntersectionObserver(es=>{ es.forEach(en=>{ headVis[en.target.id==='dashHead'?'dash':'entry']=en.isIntersecting; }); fnavUpdate(); },{rootMargin:'-8px 0px 0px 0px'});
+headIO.observe($('#dayHead')); headIO.observe($('#dashHead'));
+$('#fPrev').onclick=()=>view==='dash'?shiftPeriod(-1):setDay(addDays(cur,-1));
+$('#fNext').onclick=()=>view==='dash'?shiftPeriod(1):setDay(addDays(cur,1));
+$('#fDate').onclick=()=>view==='dash'?openDatePicker(true):openDatePicker();
 function buildCounters(){
   $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="counter">
       <span class="cl label"><i class="sw" style="background:${c}"></i>${l}</span><span class="val" id="cnt-${k}"><span class="roll"></span></span>
@@ -1355,7 +1373,7 @@ let COLS=[];
 function renderDash(regrow=false,dir=0){
   dashDirty=false;
   const R=range(), E=entriesIn(R.from,R.to), n=daysElapsed(R.from,R.to);
-  slideSwap($('#periodLabel'),dir,()=>$('#periodLabel').textContent=R.label);
+  slideSwap($('#periodLabel'),dir,()=>$('#periodLabel').textContent=R.label); fnavPeriod(dir);
   $('#nextPer').style.opacity=R.to>=TODAY?.35:1; $('#nextPer').disabled=R.to>=TODAY;
   const S=[['coffee','Kaffee','var(--c-coffee)'],['apples','Äpfel','var(--c-apple)'],['bananas','Bananen','var(--c-banana)'],['cycling_km','Velo km','var(--c-km)']];
   if(!$('#stats').children.length) $('#stats').innerHTML=S.map(([k,l,c])=>`<div class="stat"><div class="cl"><i class="sw" style="background:${c}"></i>${l}</div><div class="big" id="st-${k}"><span class="roll"></span></div><div class="avg" id="av-${k}"></div></div>`).join('');
