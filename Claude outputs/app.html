@@ -92,12 +92,15 @@ svg{display:block}
 .island .dot{width:8px;height:8px;border-radius:50%;background:var(--good)}
 
 /* ─── Dock ───────────────────────────────────────────────── */
-.dock-wrap{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px);display:flex;justify-content:center;z-index:50;pointer-events:none;
+.dock-wrap{position:fixed;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 14px - 40px);padding:40px 0;display:flex;justify-content:center;z-index:50;pointer-events:none;
   transition:transform .45s var(--spring),opacity .25s}
 .kb .dock-wrap{transform:translateY(160%);opacity:0}
 .dock{pointer-events:auto;position:relative;display:flex;align-items:flex-end;gap:4px;padding:8px 10px;border-radius:24px;
   background:rgba(38,38,38,.78);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
-  box-shadow:0 0 0 1px rgba(255,255,255,.06),0 12px 40px rgba(0,0,0,.45)}
+  box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+/* weicher Hof, gehört zum Dock selbst und läuft nach aussen aus */
+.dock::before{content:"";position:absolute;inset:-26px -30px -22px;z-index:-1;border-radius:50px;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(10,10,10,.55),rgba(10,10,10,.28) 55%,transparent);filter:blur(4px)}
 .dock-item{position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--text-3);transform-origin:50% 100%;will-change:transform}
 .dock-item .ico{width:22px;height:22px}
 .dock-item:hover,.dock-item[aria-current="page"]{color:var(--text)}
@@ -358,13 +361,15 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .hit .rq{color:inherit}
 @media (hover:none) and (pointer:coarse){ #entryCard .fmt{display:none} }
 
-.writer{z-index:85;background:var(--surface);display:none;flex-direction:column;padding:calc(env(safe-area-inset-top) + 6px) 18px 0}
-.writer.open{display:flex}
-.writer-bar{display:flex;align-items:center;gap:10px;height:48px;flex-shrink:0}
-.writer-bar .t{font-size:15px;font-weight:500}
-.writer-bar .card-sub{margin-right:auto}
-.writer-bar .fmt{margin-left:0}
-.writer textarea{flex:1;width:100%;border:0;outline:0;background:transparent;resize:none;font-size:17px;line-height:1.7;padding:6px 0 28px}
+/* ─── Schreiben als eigene Seite (Mobile) ───────────────── */
+#v-write{padding-top:0;max-width:720px;gap:0}
+.w-bar{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 calc(-1*var(--px));padding:calc(env(safe-area-inset-top) + 10px) var(--px) 10px;display:flex;align-items:center;gap:8px;transition:box-shadow .2s}
+.w-bar.stuck{box-shadow:0 1px 0 var(--border)}
+.w-bar .t{font-size:17px;font-weight:500;line-height:1.25}
+.w-bar .card-sub{font-size:12px}
+.w-bar .fmt{margin-left:auto}
+.w-ta{width:100%;min-height:50vh;border:0;outline:0;background:transparent;resize:none;font-size:17px;line-height:1.7;color:var(--text);padding:10px 2px 45vh;display:block;overflow:hidden;field-sizing:content}
+.w-ta::placeholder{color:var(--text-3)}
 </style>
 </head>
 <body>
@@ -491,6 +496,18 @@ input[type=search]{-webkit-appearance:none;appearance:none}
     <div class="hits" id="hits"></div>
     <div class="s-foot" id="indexInfo"></div>
   </section>
+  <!-- ═══════════════ SCHREIBEN (Mobile, eigene Seite) ═══════════════ -->
+  <section class="view" id="v-write" aria-label="Eintrag schreiben" hidden>
+    <div class="w-bar" id="wBar">
+      <div><div class="t" id="writerDate"></div><div class="card-sub" id="writerCount"></div></div>
+      <div class="fmt">
+            <button class="fmt-btn" data-fmt="name" title="Name markieren [[…]]" aria-label="Name markieren"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
+            <button class="fmt-btn" data-fmt="quote" title="Zitat markieren" aria-label="Zitat markieren"><svg class="ico" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-1.5 5-4 6M15 7h4v4c0 3-1.5 5-4 6"/></svg></button>
+            </div>
+      <button class="pill pill-white press" id="writerDone">Fertig</button>
+    </div>
+    <textarea class="w-ta" id="writerTa" placeholder="Was war heute?"></textarea>
+  </section>
 </main>
 
 <!-- ═══════════════ DOCK ═══════════════ -->
@@ -509,14 +526,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab" id="grab"></div><div id="sheetContent"></div></div>
 
-<!-- ═══════════════ SCHREIBMODUS (Mobile) ═══════════════ -->
-<div class="writer fs" id="writer" role="dialog" aria-label="Eintrag schreiben">
-  <div class="writer-bar"><span class="t" id="writerDate"></span><span class="card-sub" id="writerCount"></span><div class="fmt">
-            <button class="fmt-btn" data-fmt="name" title="Name markieren [[…]]" aria-label="Name markieren"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
-            <button class="fmt-btn" data-fmt="quote" title="Zitat markieren" aria-label="Zitat markieren"><svg class="ico" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-1.5 5-4 6M15 7h4v4c0 3-1.5 5-4 6"/></svg></button>
-            </div><button class="pill pill-white press" id="writerDone">Fertig</button></div>
-  <textarea id="writerTa" placeholder="Was war heute?"></textarea>
-</div>
+
 
 <script>
 /* ═══════════════════════════════════════════════════════════
@@ -678,13 +688,13 @@ function usage(k){ const c={}; DATA.forEach(e=>(e[k]||[]).forEach(v=>c[v]=(c[v]|
    Ansichten + Dock
    ═══════════════════════════════════════════════════════════ */
 let view='entry';
-const scrollMem={entry:0,dash:0,search:0}, ORDER=['entry','dash','search'];
+const scrollMem={entry:0,write:0,dash:0,search:0}, ORDER=['entry','write','dash','search'];
 function go(v, onShown){
   if(v===view){ if(v==='search') $('#q').focus(); else scrollTo({top:0,behavior:'smooth'}); return; }
   const from=$('#v-'+view), to=$('#v-'+v), dir=ORDER.indexOf(v)>ORDER.indexOf(view)?1:-1;
   scrollMem[view]=scrollY; view=v; document.activeElement?.blur();
   if(v==='search'&&searchDirty) renderSearch();
-  document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===v?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  const nav=v==='write'?'entry':v; document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===nav?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(v==='dash' && dashDirty) renderDash(true);
   const swap=()=>{ from.hidden=true; to.hidden=false; scrollTo(0,scrollMem[v]); if(v==='dash') requestAnimationFrame(growBars); onShown&&onShown(); };
   if(REDUCED||!to.animate){ swap(); return; }
@@ -755,7 +765,7 @@ $('#nextDay').onclick=()=>setDay(addDays(cur,1));
 $('#todayBtn').onclick=()=>setDay(TODAY);
 addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); return; }
-  if(e.key==='Escape'){ closeSheet(); closeWriter(); if(view==='search') $('#q').blur(); return; }
+  if(e.key==='Escape'){ closeSheet(); if(view==='write') closeWriter(); if(view==='search') $('#q').blur(); return; }
   if(view!=='entry'||e.target.closest('input,textarea,[role=slider]')) return;
   if(e.key==='ArrowLeft') setDay(addDays(cur,-1));
   if(e.key==='ArrowRight') setDay(addDays(cur,1));
@@ -894,7 +904,7 @@ function wrap(ta,type){
 }
 document.querySelectorAll('.fmt-btn[data-fmt]').forEach(b=>{
   b.addEventListener('pointerdown',e=>e.preventDefault()); // Fokus und Auswahl im Textfeld behalten
-  b.addEventListener('click',()=>{ const inWriter=!!b.closest('#writer'); if(!inWriter&&previewOn) setPreview(false); wrap(inWriter?$('#writerTa'):$('#entry'), b.dataset.fmt); });
+  b.addEventListener('click',()=>{ const inWriter=!!b.closest('#v-write'); if(!inWriter&&previewOn) setPreview(false); wrap(inWriter?$('#writerTa'):$('#entry'), b.dataset.fmt); });
 });
 let previewOn=false; try{ previewOn=localStorage.getItem('previewMode')==='true'; }catch{}
 function renderPrev(){ const v=$('#entry').value; $('#entryPrev').innerHTML=v.trim()?renderRich(v):'<span class="ph">Was war heute?</span>'; }
@@ -908,22 +918,16 @@ function setPreview(on, animate=true){
 $('#prevBtn').onclick=()=>setPreview(!previewOn);
 $('#entryPrev').addEventListener('click',()=>{ if(TOUCH) openWriter(); else { setPreview(false); $('#entry').focus(); } });
 
+function writerCount(){ const n=words(plain($('#writerTa').value)); $('#writerCount').textContent=n?n+' Wörter':'Neuer Eintrag'; }
 function openWriter(){
-  const w=$('#writer'), ta=$('#writerTa'), r=$('#entryCard').getBoundingClientRect();
-  ta.value=$('#entry').value; $('#writerDate').textContent=fmtDay(cur); const wn=words(plain(ta.value)); $('#writerCount').textContent=wn?wn+' Wörter':'';
-  lockScroll(true); w.classList.add('open');
-  ta.focus({preventScroll:true}); ta.setSelectionRange(ta.value.length,ta.value.length); // im selben Tipp, sonst öffnet iOS keine Tastatur
-  if(!REDUCED&&w.animate) w.animate([{clipPath:`inset(${r.top}px ${innerWidth-r.right}px ${Math.max(0,innerHeight-r.bottom)}px ${r.left}px round 20px)`},{clipPath:'inset(0 0 0 0 round 0px)'}],{duration:480,easing:SPRING});
+  const ta=$('#writerTa'); ta.value=$('#entry').value; $('#writerDate').textContent=fmtDay(cur); writerCount();
+  scrollMem.write=0;
+  go('write',()=>{ autosize(ta); ta.focus({preventScroll:true}); ta.setSelectionRange(ta.value.length,ta.value.length); }); // Fokus im selben Tipp → iOS öffnet Tastatur
 }
-function closeWriter(){
-  const w=$('#writer'); if(!w.classList.contains('open')) return;
-  $('#writerTa').blur(); $('#entry').value=$('#writerTa').value; wordCount(); autosize($('#entry')); renderPrev();
-  const done=()=>{ w.classList.remove('open'); lockScroll(false); };
-  if(REDUCED||!w.animate){ done(); return; }
-  w.animate([{opacity:1,transform:'none'},{opacity:0,transform:'translateY(16px) scale(.98)'}],{duration:220,easing:'ease-in'}).onfinish=done;
-}
-$('#writerTa').addEventListener('input',e=>{ const n=words(plain(e.target.value)); $('#writerCount').textContent=n?n+' Wörter':''; touch({...entryFor(cur),text:e.target.value}); });
+function closeWriter(){ if(view!=='write') return; $('#writerTa').blur(); go('entry'); }
+$('#writerTa').addEventListener('input',e=>{ autosize(e.target); writerCount(); $('#entry').value=e.target.value; wordCount(); renderPrev(); touch({...entryFor(cur),text:e.target.value}); });
 $('#writerDone').onclick=closeWriter;
+addEventListener('scroll',()=>{ if(view==='write') $('#wBar').classList.toggle('stuck',scrollY>4); },{passive:true});
 
 /* ═══════════════════════════════════════════════════════════
    DATUMSWÄHLER – Tage → Monate → Jahre, wischen wechselt Monat
