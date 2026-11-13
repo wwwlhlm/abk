@@ -96,7 +96,6 @@ svg{display:block}
 .fdate{height:38px;padding:0 12px;min-width:118px;border-radius:999px;font-size:15px;font-weight:500;overflow:hidden;white-space:nowrap}
 .fdate span{display:inline-block}
 .fdate .t{color:var(--accent)}
-.fnav-on .island{top:calc(env(safe-area-inset-top) + 62px)}
 .island{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:75;transform:translate(-50%,-160%);
   display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 10px;border-radius:999px;background:#000;color:var(--text);font-size:13px;
   box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .55s var(--spring-pop),top .45s var(--spring);white-space:nowrap}
@@ -675,9 +674,12 @@ function slideSwap(el, dir, update, dist=28){
 }
 
 let islandT;
+/* Meldung immer unter der schwebenden Tagesleiste, falls diese sichtbar ist (Position aus dem Layout, nicht aus der Animation) */
+function placeIsland(){ const f=$('#fnav'), i=$('#island'); if(!f||!i) return;
+  i.style.top=f.classList.contains('show')?(f.offsetTop+f.offsetHeight+8)+'px':''; }
 function island(text, color='var(--good)', ms=1800){
   $('#islandText').textContent=text; $('#island .dot').style.background=color;
-  $('#island').classList.add('show'); clearTimeout(islandT);
+  placeIsland(); $('#island').classList.add('show'); clearTimeout(islandT);
   if(ms) islandT=setTimeout(()=>$('#island').classList.remove('show'), ms);
 }
 
@@ -695,8 +697,8 @@ function lockScroll(on){
   else { if(--locks>0) return; locks=0; document.body.style.position=''; document.body.style.top=''; document.body.style.left=''; document.body.style.right=''; scrollTo(0,lockY); }
 }
 let kbT;
-addEventListener('focusin', e => { if(TOUCH && e.target.matches('input:not([type=range]),textarea:not([readonly])')){ clearTimeout(kbT); root.classList.add('kb'); } });
-addEventListener('focusout', () => { kbT=setTimeout(()=>root.classList.remove('kb'),120); });
+addEventListener('focusin', e => { if(TOUCH && e.target.matches('input:not([type=range]),textarea:not([readonly])')){ clearTimeout(kbT); root.classList.add('kb'); fnavUpdate?.(); } });
+addEventListener('focusout', () => { kbT=setTimeout(()=>{ root.classList.remove('kb'); fnavUpdate?.(); },120); });
 
 /* ═══════════════════════════════════════════════════════════
    Daten
@@ -1009,7 +1011,7 @@ function fnavDate(dir=0){
   $('#fDate').animate?.([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:420,easing:SPRING});
 }
 let headVisible=true;
-function fnavUpdate(){ const on=view==='entry'&&!headVisible; $('#fnav').classList.toggle('show',on); $('#fnav').setAttribute('aria-hidden',!on); root.classList.toggle('fnav-on',on);
+function fnavUpdate(){ const on=view==='entry'&&!headVisible&&!root.classList.contains('kb'); $('#fnav').classList.toggle('show',on); $('#fnav').setAttribute('aria-hidden',!on); placeIsland();
   $('#fnav').querySelectorAll('button').forEach(b=>b.tabIndex=on?0:-1); }
 new IntersectionObserver(([en])=>{ headVisible=en.isIntersecting; fnavUpdate(); },{rootMargin:'-8px 0px 0px 0px'}).observe($('#dayHead'));
 $('#fPrev').onclick=()=>setDay(addDays(cur,-1));
