@@ -98,8 +98,10 @@ svg{display:block}
 .dock{pointer-events:auto;position:relative;display:flex;align-items:flex-end;gap:4px;padding:8px 10px;border-radius:24px;
   background:rgba(38,38,38,.78);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);
   box-shadow:0 0 0 1px rgba(255,255,255,.06)}
-/* weicher Hof, gehört zum Dock selbst und läuft nach aussen aus */
-.dock::before{content:"";position:absolute;inset:-26px -30px -22px;z-index:-1;border-radius:50px;pointer-events:none;
+/* weicher Hof hinter dem Dock, läuft nach aussen aus (eigene Hülle, damit er nicht über der Dock-Fläche liegt) */
+.dock-shell{position:relative;pointer-events:none}
+.dock-shell>.dock{z-index:1}
+.dock-shell::before{content:"";position:absolute;inset:-26px -30px -22px;z-index:0;border-radius:50px;pointer-events:none;
   background:radial-gradient(closest-side,rgba(10,10,10,.55),rgba(10,10,10,.28) 55%,transparent);filter:blur(4px)}
 .dock-item{position:relative;width:48px;height:48px;display:grid;place-items:center;color:var(--text-3);transform-origin:50% 100%;will-change:transform}
 .dock-item .ico{width:22px;height:22px}
@@ -124,7 +126,7 @@ svg{display:block}
 .today-pill[hidden]{display:inline-flex;opacity:0;transform:scale(.6);pointer-events:none}
 
 .strip{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:6px 16px 2px;
-  -webkit-mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent);mask-image:linear-gradient(90deg,transparent,#000 16px,#000 calc(100% - 16px),transparent)}
+}
 .strip::-webkit-scrollbar{display:none}
 .sd{flex:0 0 44px;scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0 7px;border-radius:14px;color:var(--text-2)}
 .sd .w{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
@@ -512,14 +514,14 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 
 <!-- ═══════════════ DOCK ═══════════════ -->
 <div class="dock-wrap">
-  <nav class="dock" id="dock" aria-label="Navigation">
+  <div class="dock-shell"><nav class="dock" id="dock" aria-label="Navigation">
     <div class="dock-tip" id="dockTip"></div>
     <button class="dock-item" data-go="entry" data-tip="Erfassen" aria-label="Erfassen" aria-current="page"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
     <button class="dock-item" data-go="dash" data-tip="Dashboard" aria-label="Dashboard"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
     <button class="dock-item" data-go="search" data-tip="Suche  ⌘K" aria-label="Suche"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <span class="dock-sep"></span>
     <button class="dock-item" data-act="settings" data-tip="Einstellungen" aria-label="Einstellungen"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
-  </nav>
+  </nav></div>
 </div>
 
 <!-- ═══════════════ SHEET ═══════════════ -->
