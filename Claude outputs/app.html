@@ -138,14 +138,25 @@ svg{display:block}
 .sd.future{opacity:.35}
 .sd.weekstart{margin-left:8px}
 
-/* Zähler */
-.counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.counter{background:var(--bg);border-radius:16px;padding:12px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:8px}
-.counter .cl{display:flex;align-items:center;gap:6px}
-.counter .val{font-size:30px;font-weight:500;height:30px;display:flex;align-items:center}
-.counter .ctrl{display:flex;gap:6px;width:100%}
-.counter .ctrl button{flex:1;height:36px;border-radius:11px;background:var(--surface);color:var(--text-2);font-size:20px;line-height:1}
-.counter .ctrl button:hover{color:var(--text);background:var(--surface-2)}
+/* Zähler: Rolling counter (Kilometerzähler mit Übertrag) */
+.counters{display:flex;flex-direction:column;gap:4px}
+.crow{display:flex;align-items:center;gap:10px;min-height:52px}
+.crow .cl{display:flex;align-items:center;gap:9px;font-size:15px}
+.crow .cl .sw{width:9px;height:9px;border-radius:50%}
+.stepper{margin-left:auto;display:flex;align-items:center;gap:2px;padding:4px;border-radius:16px;background:var(--bg)}
+.stepper button{width:40px;height:40px;border-radius:12px;background:var(--surface-2);color:var(--text-2);display:grid;place-items:center;font-size:20px;line-height:1;
+  transition:transform .35s var(--spring),background-color .2s,color .2s;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.stepper button:hover{color:var(--text);background:var(--surface-3)}
+.stepper button:active,.stepper button.held{transform:scale(.9);transition-duration:.08s}
+.stepper button:disabled{opacity:.35}
+.odo{min-width:54px;height:40px;display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:500;line-height:1;
+  cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;border-radius:10px;font-variant-numeric:tabular-nums}
+.odo:focus-visible{box-shadow:0 0 0 1.5px var(--accent)}
+.oc{--oh:1.34em;display:inline-block;height:var(--oh);overflow:hidden;width:.6em;transition:width .35s var(--spring),opacity .25s;
+  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.oc.gone{width:0;opacity:0}
+.oc>span{display:flex;flex-direction:column;will-change:transform}
+.oc i{font-style:normal;height:var(--oh);line-height:var(--oh);text-align:center}
 
 /* Stimmung */
 .mood-top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
@@ -256,6 +267,7 @@ svg{display:block}
   transform:translate(-50%,105%);visibility:hidden;transition:transform .5s var(--ease-out),visibility 0s .5s;box-shadow:0 -10px 40px rgba(0,0,0,.4)}
 .sheet.open{transform:translate(-50%,0);visibility:visible;transition:transform .5s var(--ease-out),visibility 0s}
 .sheet.dragging{transition:none}
+#sheetContent{display:flex;flex-direction:column;min-height:0;flex:1 1 auto}
 @media (min-width:700px){
   .sheet{bottom:auto;top:12vh;border-radius:24px;transform:translate(-50%,8px) scale(.97);opacity:0;padding-bottom:18px;transition:transform .45s var(--spring),opacity .25s,visibility 0s .45s}
   .sheet.open{transform:translate(-50%,0) scale(1);opacity:1;transition:transform .45s var(--spring),opacity .25s,visibility 0s}
@@ -266,7 +278,7 @@ svg{display:block}
 .sheet-head{display:flex;align-items:center;gap:6px;margin:10px 0 14px;min-height:36px}
 .sheet-head h2{font-size:17px;font-weight:500;margin:0}
 .sheet-head .close{margin-left:auto;width:32px;height:32px;background:var(--surface-2)}
-.sheet-body{overflow-y:auto;margin:0 -18px;padding:0 18px}
+.sheet-body{overflow-y:auto;margin:0 -18px;padding:0 18px;flex:1 1 auto;min-height:0;overscroll-behavior:contain}
 .opt{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--bg);margin-bottom:8px;width:100%;text-align:left}
 .opt p{margin:0;font-size:13px;color:var(--text-2)}
 .opt strong{font-weight:500;display:block}
@@ -346,6 +358,38 @@ mark{background:var(--accent-bg);color:var(--accent);border-radius:3px;padding:0
 .s-foot{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--text-3);padding:18px 0 4px}
 .s-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--good)}
 
+/* ─── Synchronisieren ──────────────────────────────────── */
+.sync-sub{font-size:13px;color:var(--text-2);margin:-6px 0 14px}
+.sync-sub b{font-weight:500;color:var(--text)}
+.sync-years{display:flex;align-items:baseline;justify-content:space-between;font-size:30px;font-weight:500;letter-spacing:-.4px;margin-bottom:2px}
+.sync-years .to{color:var(--text)} .sync-years .dash{font-size:15px;color:var(--text-3)}
+.rs{position:relative;height:44px;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.rs .tr{position:absolute;left:13px;right:13px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:var(--bg)}
+.rs .fill{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--accent);transition:left .5s var(--spring),right .5s var(--spring)}
+.rs .kn{position:absolute;top:50%;left:13px;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.5);outline:none;transition:left .5s var(--spring),transform .25s var(--spring)}
+.rs .kn:focus-visible{box-shadow:0 0 0 3px var(--accent),0 2px 10px rgba(0,0,0,.5)}
+.rs.drag .kn,.rs.drag .fill{transition:transform .25s var(--spring)}
+.rs .kn.act{transform:scale(1.18)}
+.rs-ticks{position:relative;height:18px;margin:0 13px;font-size:11px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.rs-ticks span{position:absolute;transform:translateX(-50%);transition:color .25s}
+.rs-ticks span.in{color:var(--text-2)}
+.yrs{margin-top:14px}
+.yr{display:flex;align-items:center;gap:10px;height:42px;padding:0 12px;border-radius:12px;background:var(--bg);margin-bottom:6px;font-size:14px;animation:rise .4s var(--spring) backwards}
+.yr .n{color:var(--text-3);font-size:13px;font-variant-numeric:tabular-nums}
+.yr .st{margin-left:auto;font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.yr .st::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.9}
+.yr .st.idle::before{display:none}
+.yr .st.new{color:var(--c-km)} .yr .st.chg{color:var(--accent)} .yr .st.ok{color:var(--good)} .yr .st.err{color:var(--bad)}
+.pbar{height:3px;border-radius:2px;background:var(--bg);overflow:hidden;margin:12px 0 0;opacity:0;transition:opacity .2s}
+.pbar.on{opacity:1}
+.pbar b{display:block;height:100%;width:0;background:var(--accent);transition:width .4s var(--spring)}
+.slog{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:var(--text-3);max-height:110px;overflow:auto;margin-top:8px;white-space:pre-wrap}
+.slog .ok{color:var(--good)} .slog .err{color:var(--bad)}
+.sync-actions{display:flex;gap:8px;margin-top:14px}
+.sync-actions .pill{height:42px;padding:0 18px;font-size:14px}
+.sync-actions .pill[disabled]{opacity:.35;pointer-events:none}
+.pill-dark{background:var(--surface-2);color:var(--text)}
+
 /* ─── Eintrag: Namen, Zitate, Vorschau ───────────────────── */
 .fmt{display:flex;gap:2px;margin-left:auto;align-items:center}
 .fmt-btn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--text-3)}
@@ -396,8 +440,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 
     <div class="grid-2">
       <div class="col">
-        <div class="card">
-          <div class="card-head"><span class="card-title">Konsum</span></div>
+        <div class="card" style="padding:10px 10px 10px 18px">
           <div class="counters" id="counters"></div>
         </div>
         <div class="card">
@@ -520,6 +563,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
     <button class="dock-item" data-go="dash" data-tip="Dashboard" aria-label="Dashboard"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
     <button class="dock-item" data-go="search" data-tip="Suche  ⌘K" aria-label="Suche"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <span class="dock-sep"></span>
+    <button class="dock-item" data-act="sync" data-tip="Synchronisieren" aria-label="Synchronisieren"><svg class="ico" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5"/></svg></button>
     <button class="dock-item" data-act="settings" data-tip="Einstellungen" aria-label="Einstellungen"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
   </nav></div>
 </div>
@@ -630,7 +674,7 @@ const TOP = {
   people:['Nath','Frank','Paul','Mutter','Peter','Barbara'],
 };
 const LIST_KEYS = ['locations','countries','coffeeLocations','sport','places','people','tags'];
-let DATA = new Map(), SOURCE = 'demo', INDEX_BUILT = null;
+let DATA = new Map(), SOURCE = 'demo', INDEX_BUILT = null, RAW_INDEX = null;
 
 function rng(seed){ return () => (seed=(seed*16807)%2147483647)/2147483647; }
 function demoData(){
@@ -671,7 +715,7 @@ async function loadGithub(){
   const res=await fetch(`https://api.github.com/repos/${c.privateRepo}/contents/search-index.json?ref=${c.branch||'main'}&_=${Date.now()}`,
     {headers:{Authorization:`token ${c.token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
   if(!res.ok) throw new Error('GitHub '+res.status);
-  const j=await res.json(); const idx=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))))); INDEX_BUILT=idx.built||null; return idx.index;
+  const j=await res.json(); const idx=JSON.parse(decodeURIComponent(escape(atob(j.content.replace(/\n/g,''))))); INDEX_BUILT=idx.built||null; RAW_INDEX=idx.index; return idx.index;
 }
 async function setSource(src){
   try{
@@ -726,6 +770,7 @@ function go(v, onShown){
     it.addEventListener('click',()=>{
       if(it.dataset.go==='search') openSearch(); else if(it.dataset.go) go(it.dataset.go);
       if(it.dataset.act==='settings') openSettings();
+      if(it.dataset.act==='sync') openSync();
       if(it.animate&&!REDUCED) it.animate([{translate:'0 0'},{translate:'0 -6px'},{translate:'0 0'}],{duration:420,easing:'cubic-bezier(.3,1.6,.5,1)'});
     });
   });
@@ -745,7 +790,7 @@ function renderEntry(dir=0){
     $('#dayWd').textContent=`${rel}${WD[d.getDay()]} · ${d.getFullYear()}`; $('#dayDate').textContent=fmtDay(cur);
   });
   $('#todayBtn').hidden=cur===TODAY;
-  COUNTERS.forEach(([k])=>roll($('#cnt-'+k), e[k]));
+  COUNTERS.forEach(([k])=>odoSet($('#cnt-'+k), e[k]));
   setMood(e.mood,false);
   LIST_KEYS.forEach(k=>renderGroup(k,e));
   $('#kmWrap').classList.toggle('open', e.sport.includes('Velo')); $('#km').value=e.cycling_km||'';
@@ -753,13 +798,62 @@ function renderEntry(dir=0){
   $('#entry').value=e.text||''; autosize($('#entry')); wordCount(); renderPrev();
   coffeeHint(e); foldSummary(e);
 }
+/* ─── Rolling counter ─────────────────────────────────────────
+   Jede Stelle ist ein Streifen 0–9,0–9. Vorwärts über 9 rollt weiter
+   statt zurück (Übertrag), rechte Stelle zuerst, kurze Bewegungsunschärfe.
+   Tippen, gedrückt halten (beschleunigt), Zahl ziehen und schnippen.   */
+const ODO_STAGGER=45;
+function odoCol(){ const c=document.createElement('span'); c.className='oc'; c.innerHTML=`<span>${'01234567890123456789'.split('').map(x=>`<i>${x}</i>`).join('')}</span>`; c._pos=0; return c; }
+function odoSet(el,v,dir){
+  const s=String(Math.max(0,v|0)), prev=el._v??null; el._v=+s;
+  if(dir===undefined) dir=prev===null?0:Math.sign(+s-prev);
+  let cols=[...el.querySelectorAll('.oc:not(.gone)')];
+  while(cols.length<s.length){ const c=odoCol(); el.prepend(c); cols.unshift(c);
+    if(prev!==null&&!REDUCED){ c.classList.add('gone'); c.offsetWidth; c.classList.remove('gone'); } }
+  while(cols.length>s.length){ const c=cols.shift(); c.classList.add('gone'); setTimeout(()=>c.remove(),350); }
+  const n=cols.length;
+  [...s].forEach((ch,i)=>{
+    const c=cols[i], strip=c.firstChild, to=+ch, from=c._pos%10; if(from===to&&c._pos<10) return;
+    if(c._pos>=10){ strip.style.transition='none'; strip.style.transform=`translateY(calc(${-(c._pos-10)} * var(--oh)))`; c._pos-=10; strip.offsetWidth; }
+    let target=to;
+    if(dir>0&&to<c._pos) target=to+10;                       // 9 → 0 rollt vorwärts weiter
+    if(dir<0&&to>c._pos){ strip.style.transition='none'; strip.style.transform=`translateY(calc(${-(c._pos+10)} * var(--oh)))`; strip.offsetWidth; } // 0 → 9 rollt rückwärts
+    const delay=prev===null||REDUCED?0:(n-1-i)*ODO_STAGGER;
+    strip.style.transition=prev===null||REDUCED?'none':`transform .6s var(--spring-pop) ${delay}ms`;
+    strip.style.transform=`translateY(calc(${-target} * var(--oh)))`; c._pos=target;
+    if(prev!==null&&!REDUCED&&c.animate) c.animate([{filter:'blur(0)'},{filter:'blur(1.4px)',offset:.35},{filter:'blur(0)'}],{duration:420,delay});
+  });
+  el.setAttribute('aria-valuenow',s);
+}
 function buildCounters(){
-  $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="counter">
-      <span class="cl label"><i class="sw" style="background:${c}"></i>${l}</span><span class="val" id="cnt-${k}"><span class="roll"></span></span>
-      <div class="ctrl"><button class="press" data-k="${k}" data-d="-1" aria-label="${l} weniger">−</button><button class="press" data-k="${k}" data-d="1" aria-label="${l} mehr">+</button></div></div>`).join('');
-  $('#counters').addEventListener('click',ev=>{ const b=ev.target.closest('button[data-k]'); if(!b) return;
-    const e={...entryFor(cur)}; e[b.dataset.k]=Math.max(0,(e[b.dataset.k]||0)+ +b.dataset.d);
-    roll($('#cnt-'+b.dataset.k), e[b.dataset.k]); touch(e); coffeeHint(e); });
+  $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="crow">
+      <span class="cl"><i class="sw" style="background:${c}"></i>${l}</span>
+      <div class="stepper"><button data-k="${k}" data-d="-1" aria-label="${l} weniger">−</button>
+        <span class="odo" id="cnt-${k}" role="spinbutton" tabindex="0" aria-label="${l}" aria-valuemin="0"></span>
+        <button data-k="${k}" data-d="1" aria-label="${l} mehr">+</button></div></div>`).join('');
+  const step=(k,d)=>{ const e={...entryFor(cur)}, v=Math.max(0,(e[k]||0)+d); if(v===e[k]) return false;
+    e[k]=v; odoSet($('#cnt-'+k),v,d); touch(e); coffeeHint(e); navigator.vibrate?.(3); return true; };
+  // Tippen + Halten mit Beschleunigung
+  $('#counters').querySelectorAll('button[data-k]').forEach(b=>{
+    let t=null, n=0;
+    const stop=()=>{ clearTimeout(t); t=null; b.classList.remove('held'); };
+    b.addEventListener('pointerdown',e=>{ e.preventDefault(); n=0; step(b.dataset.k,+b.dataset.d); b.classList.add('held');
+      const rep=()=>{ n++; if(!step(b.dataset.k,+b.dataset.d)) return stop(); t=setTimeout(rep,Math.max(55,200-n*18)); };
+      t=setTimeout(rep,420); });
+    ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
+    b.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(b.dataset.k,+b.dataset.d); } });
+  });
+  // Zahl ziehen (hoch = mehr) und schnippen
+  $('#counters').querySelectorAll('.odo').forEach(o=>{
+    const k=o.id.slice(4); let y0=null, acc=0, ly=0, lt=0, v=0, fling=null;
+    o.addEventListener('pointerdown',e=>{ clearTimeout(fling); y0=e.clientY; ly=e.clientY; lt=performance.now(); acc=0; v=0; o.setPointerCapture(e.pointerId); });
+    o.addEventListener('pointermove',e=>{ if(y0===null) return; const now=performance.now(); v=(ly-e.clientY)/Math.max(1,now-lt); ly=e.clientY; lt=now;
+      acc+=(y0-e.clientY); y0=e.clientY; while(Math.abs(acc)>=16){ const d=Math.sign(acc); step(k,d); acc-=d*16; } });
+    const up=()=>{ if(y0===null) return; y0=null; let left=Math.min(12,Math.round(Math.abs(v)*6)); const d=Math.sign(v), gap=[60];
+      const go=()=>{ if(left--<=0||!step(k,d)) return; fling=setTimeout(go,gap[0]*=1.25); }; if(Math.abs(v)>.35) go(); };
+    o.addEventListener('pointerup',up); o.addEventListener('pointercancel',up);
+    o.addEventListener('keydown',e=>{ const d=e.key==='ArrowUp'||e.key==='ArrowRight'?1:e.key==='ArrowDown'||e.key==='ArrowLeft'?-1:0; if(d){ e.preventDefault(); step(k,d); } });
+  });
 }
 function setDay(d){ if(d===cur) return; const dir=d>cur?1:-1; cur=d; renderEntry(dir); renderStrip(); centerStrip(); }
 $('#prevDay').onclick=()=>setDay(addDays(cur,-1));
@@ -768,7 +862,7 @@ $('#todayBtn').onclick=()=>setDay(TODAY);
 addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); return; }
   if(e.key==='Escape'){ closeSheet(); if(view==='write') closeWriter(); if(view==='search') $('#q').blur(); return; }
-  if(view!=='entry'||e.target.closest('input,textarea,[role=slider]')) return;
+  if(view!=='entry'||e.target.closest('input,textarea,[role=slider],[role=spinbutton]')) return;
   if(e.key==='ArrowLeft') setDay(addDays(cur,-1));
   if(e.key==='ArrowRight') setDay(addDays(cur,1));
 });
@@ -870,6 +964,7 @@ $('#v-entry').addEventListener('keydown',ev=>{
 $('#km').addEventListener('input',ev=>touch({...entryFor(cur),cycling_km:+ev.target.value||0}));
 $('#coords').addEventListener('input',ev=>{ const e={...entryFor(cur),coords:ev.target.value}; touch(e); foldSummary(e); });
 function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coffeeHint');
+  if(!c&&n===1&&e.coffeeLocations[0]==='Home'){ h.textContent=''; h.classList.remove('warn'); return; } // leere Vorlage
   h.textContent = !c&&!n ? '' : n===c ? `alle ${c} zugeordnet` : `${n} von ${c} zugeordnet`; h.classList.toggle('warn', n!==c); }
 
 /* Details einklappbar */
@@ -1118,7 +1213,7 @@ function openSettings(){
       <span><strong>Demo-Daten</strong><p>500 erfundene Tage zum Ausprobieren. Änderungen bleiben im Browser-Tab.</p></span></button>
     <button class="opt press" style="${has?'':'opacity:.5'}" ${has?'':'disabled'} onclick="setSource('github');closeSheet()"><i class="sw" style="width:10px;height:10px;border-radius:50%;background:${SOURCE==='github'?'var(--c-km)':'var(--surface-3)'}"></i>
       <span><strong>Meine Daten (GitHub, nur lesen)</strong><p>${has?'Liest search-index.json mit der Verbindung aus Erfassen.':'Keine Verbindung gefunden. Funktioniert, wenn diese Seite auf derselben Domain wie Erfassen liegt.'}</p></span></button>
-    <p class="muted">Prototyp: Speichern ins Repo und Export kommen beim Zusammenführen aus der bestehenden Erfassen-Seite dazu.</p></div>`);
+    <p class="muted">Prototyp: Speichern ins Repo kommt beim Zusammenführen dazu. Synchronisieren (Export) funktioniert mit „Meine Daten“.</p></div>`);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1213,6 +1308,132 @@ function drawHits(){
     return `<button class="hit" data-d="${e.date}" style="animation-delay:${Math.min(i,10)*25}ms"><div class="hd">${dl(e.date)}</div>${e.text?`<div class="ht">${hlH(excerpt(e.text))}</div>`:''}<div class="hm">${hlH(esc(meta))}</div></button>`; }).join('')
     +(list.length>shown?`<button class="more press">${fmt0(list.length-shown)} weitere anzeigen</button>`:'')
     :'<p class="muted">Keine Treffer.</p>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SYNCHRONISIEREN – veröffentlicht Jahres-JSON + stats.md
+   Format 1:1 wie der bisherige Export (geprüft gegen data/ im öffentlichen Repo).
+   Ablauf: Prüfen (nur lesen, Vergleich mit dem Repo) → Veröffentlichen (nur geänderte Dateien).
+   ═══════════════════════════════════════════════════════════ */
+const PUB_DIR='data', PUB_BRANCH='main';
+const pubRepo=()=>ghConfig()?.publicRepo||'wwwlhlm/wwwlhlm.github.io';
+let SY={years:[],a:0,b:0,plan:null,busy:false};
+const b64u=s=>btoa(unescape(encodeURIComponent(s))), u64=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,''))));
+function exportSource(){
+  if(SOURCE==='github'&&RAW_INDEX) return RAW_INDEX;
+  return [...DATA.values()].map(e=>({...e,weekday_index:parse(e.date).getDay()}));
+}
+function exportEntries(year,src=exportSource()){
+  return src.filter(e=>e.date.startsWith(year)&&e.date<=TODAY&&e.text!==undefined&&e.text!==null).sort((a,b)=>a.date.localeCompare(b.date)).map(e=>{
+    const o={date:e.date,apples:e.apples||0,bananas:e.bananas||0,coffee:e.coffee||0,mood:e.mood||0,cycling_km:e.cycling_km||0,text:e.text};
+    if(e.weekday_index!==undefined) o.weekday_index=e.weekday_index; return o; });
+}
+const exportJson=(year,src)=>JSON.stringify({entries:exportEntries(year,src)},null,2);
+function statsContent(first,last,src=exportSource()){
+  let d=0,a=0,b=0,c=0; for(let y=+first;y<=+last;y++) exportEntries(String(y),src).forEach(e=>{d++;a+=e.apples;b+=e.bananas;c+=e.coffee;});
+  return ['---',`year_first: ${first}`,`year_last: ${last}`,`total_days: ${d}`,`total_apples: ${Math.round(a)}`,`total_bananas: ${Math.round(b)}`,`total_coffee: ${Math.round(c)}`,'---',''].join('\n');
+}
+async function pubGet(file){
+  const c=ghConfig(); const r=await fetch(`https://api.github.com/repos/${pubRepo()}/contents/${PUB_DIR}/${file}?ref=${PUB_BRANCH}&_=${Date.now()}`,{headers:{Authorization:`token ${c.token}`,Accept:'application/vnd.github.v3+json'},cache:'no-store'});
+  if(r.status===404) return null; if(!r.ok) throw new Error(`GitHub ${r.status}`); const j=await r.json(); return {sha:j.sha,text:u64(j.content)};
+}
+async function pubPut(file,content,sha){
+  const c=ghConfig(); const body={message:`Sync ${file}`,content:b64u(content),branch:PUB_BRANCH}; if(sha) body.sha=sha;
+  const r=await fetch(`https://api.github.com/repos/${pubRepo()}/contents/${PUB_DIR}/${file}`,{method:'PUT',headers:{Authorization:`token ${c.token}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){ let m=r.status; try{ m=(await r.json()).message||m; }catch{} throw new Error(m); }
+}
+
+function openSync(){
+  const src=exportSource(); SY.years=[...new Set(src.map(e=>e.date.slice(0,4)))].sort(); SY.plan=null;
+  const n=SY.years.length; let a=0,b=n-1;
+  try{ const r=JSON.parse(localStorage.getItem('exportRange')||'null'); if(r){ const fi=SY.years.indexOf(String(r.from)), ti=SY.years.indexOf(String(r.to)); if(fi>=0)a=fi; if(ti>=0)b=ti; } }catch{}
+  SY.a=a; SY.b=b;
+  const live=SOURCE==='github';
+  openSheet(`<div class="sheet-head"><h2>Synchronisieren</h2>${closeBtn}</div>
+    <p class="sync-sub">${live?`Veröffentlicht Jahresdaten nach <b>${esc(pubRepo())}/${PUB_DIR}</b>`:'Demo-Daten: Probelauf, es wird nichts veröffentlicht.'}</p>
+    <div class="sheet-body">
+      <div class="sync-years"><span id="syA"><span class="roll"></span></span><span class="dash">bis</span><span class="to" id="syB"><span class="roll"></span></span></div>
+      <div class="rs" id="syRange"></div><div class="rs-ticks" id="syTicks"></div>
+      <div class="yrs" id="syRows"></div>
+      <div class="pbar" id="syBar"><b></b></div><div class="slog" id="syLog"></div>
+    </div>
+    <div class="sync-actions"><button class="pill pill-dark press" id="syCheck">Prüfen</button><button class="pill pill-white press" id="syRun" disabled>Veröffentlichen</button></div>`);
+  $('#syTicks').innerHTML=SY.years.map((y,i)=>`<span style="left:${n>1?i/(n-1)*100:50}%">${n>8&&i%2&&i!==n-1?'':y}</span>`).join('');
+  rangeSlider($('#syRange'),n,a,b,(na,nb)=>{ SY.a=na; SY.b=nb; SY.plan=null; syncRender(); try{ localStorage.setItem('exportRange',JSON.stringify({from:SY.years[na],to:SY.years[nb]})); }catch{} });
+  $('#syCheck').onclick=syncCheck; $('#syRun').onclick=syncRun;
+  syncRender();
+}
+function syncSel(){ return SY.years.slice(SY.a,SY.b+1); }
+function syncRender(){
+  const sel=syncSel(), src=exportSource();
+  roll($('#syA'),SY.years[SY.a]||'–'); roll($('#syB'),SY.years[SY.b]||'–');
+  $('#syTicks').querySelectorAll('span').forEach((t,i)=>t.classList.toggle('in',i>=SY.a&&i<=SY.b));
+  const st=f=>{ const p=SY.plan?.files.find(x=>x.file===f); return p?`<span class="st ${p.cls}">${p.label}</span>`:'<span class="st idle"></span>'; };
+  $('#syRows').innerHTML=sel.map((y,i)=>`<div class="yr" style="animation-delay:${i*25}ms"><span>${y}.json</span><span class="n">${fmt0(exportEntries(y,src).length)} Tage</span>${st(y+'.json')}</div>`).join('')
+    +`<div class="yr" style="animation-delay:${sel.length*25}ms"><span>stats.md</span><span class="n">Übersicht</span>${st('stats.md')}</div>`;
+  const todo=SY.plan?SY.plan.files.filter(f=>f.put).length:0;
+  $('#syRun').disabled=!SY.plan||!todo||SOURCE!=='github'||SY.busy; $('#syCheck').disabled=SY.busy;
+  $('#syRun').textContent=SY.plan&&SOURCE==='github'?(todo?`${todo} ${todo>1?'Dateien':'Datei'} veröffentlichen`:'Alles aktuell'):'Veröffentlichen';
+}
+function slog(m,cls=''){ const l=$('#syLog'); if(!l) return; l.insertAdjacentHTML('beforeend',`<div class="${cls}">${esc(m)}</div>`); l.scrollTop=l.scrollHeight; }
+function sbar(p){ const b=$('#syBar'); if(!b) return; b.classList.toggle('on',p!==null); b.firstChild.style.width=((p||0)*100)+'%'; }
+
+async function syncCheck(){
+  SY.busy=true; SY.plan=null; syncRender(); $('#syLog').innerHTML=''; const sel=syncSel(), src=exportSource(), files=[];
+  try{
+    const live=SOURCE==='github';
+    if(!live) slog('Probelauf mit Demo-Daten, ohne Verbindung zum Repo.');
+    // stats.md umfasst alle veröffentlichten Jahre, nicht nur die Auswahl
+    let first=sel[0], last=sel[sel.length-1], oldStats=null;
+    if(live){ oldStats=await pubGet('stats.md'); const m1=oldStats?.text.match(/year_first:\s*(\d{4})/), m2=oldStats?.text.match(/year_last:\s*(\d{4})/);
+      if(m1&&+m1[1]<+first) first=m1[1]; if(m2&&+m2[1]>+last) last=m2[1]; }
+    for(let i=0;i<sel.length;i++){
+      const y=sel[i], f=y+'.json', json=exportJson(y,src); sbar(i/(sel.length+1));
+      if(!live){ files.push({file:f,content:json,put:true,cls:'new',label:'würde geschrieben'}); continue; }
+      const cur=await pubGet(f);
+      if(!cur){ files.push({file:f,content:json,put:true,cls:'new',label:'neu'}); slog(`${f}: noch nicht veröffentlicht`); }
+      else if(cur.text===json){ files.push({file:f,put:false,cls:'ok',label:'aktuell'}); }
+      else { let n=0; try{ const A=Object.fromEntries(JSON.parse(cur.text).entries.map(e=>[e.date,JSON.stringify(e)])); JSON.parse(json).entries.forEach(e=>{ if(A[e.date]!==JSON.stringify(e)) n++; }); }catch{}
+        files.push({file:f,content:json,sha:cur.sha,put:true,cls:'chg',label:n?`${n} ${n>1?'Tage':'Tag'} geändert`:'geändert'}); slog(`${f}: ${n||'einige'} ${n===1?'Tag':'Tage'} geändert`); }
+    }
+    const stats=statsContent(first,last,src);
+    if(!live) files.push({file:'stats.md',content:stats,put:true,cls:'new',label:'würde geschrieben'});
+    else if(oldStats&&oldStats.text===stats) files.push({file:'stats.md',put:false,cls:'ok',label:'aktuell'});
+    else { files.push({file:'stats.md',content:stats,sha:oldStats?.sha,put:true,cls:oldStats?'chg':'new',label:oldStats?'geändert':'neu'}); slog(`stats.md: Jahre ${first}–${last}`); }
+    SY.plan={files}; const todo=files.filter(f=>f.put).length;
+    slog(live?(todo?`${todo} ${todo>1?'Dateien müssen':'Datei muss'} aktualisiert werden.`:'Alles ist aktuell.'):'Probelauf fertig.', 'ok');
+  }catch(e){ slog('Fehler: '+e.message,'err'); }
+  SY.busy=false; sbar(null); syncRender();
+}
+async function syncRun(){
+  if(SOURCE!=='github'||!SY.plan) return;
+  const todo=SY.plan.files.filter(f=>f.put); SY.busy=true; syncRender(); let ok=0;
+  for(let i=0;i<todo.length;i++){ const f=todo[i]; sbar(i/todo.length);
+    try{ const cur=await pubGet(f.file); await pubPut(f.file,f.content,cur?.sha); f.put=false; f.cls='ok'; f.label='veröffentlicht'; ok++; slog(`${f.file} → GitHub ✓`,'ok'); }
+    catch(e){ f.cls='err'; f.label='Fehler'; slog(`${f.file}: ${e.message}`,'err'); }
+    syncRender(); }
+  sbar(1); setTimeout(()=>sbar(null),600); SY.busy=false; syncRender();
+  island(ok===todo.length?`${ok} ${ok>1?'Dateien':'Datei'} veröffentlicht`:'Teilweise fehlgeschlagen', ok===todo.length?'var(--good)':'var(--bad)');
+}
+
+/* Zwei-Griff-Regler: Griffe folgen dem Finger, rasten federnd auf Jahren ein */
+function rangeSlider(el,n,a,b,onChange){
+  el.innerHTML='<div class="tr"><i class="fill"></i></div><span class="kn" tabindex="0" aria-label="Von"></span><span class="kn" tabindex="0" aria-label="Bis"></span>';
+  const tr=el.querySelector('.tr'), fill=el.querySelector('.fill'), [ka,kb]=el.querySelectorAll('.kn'); let drag=null;
+  const P=i=>n>1?i/(n-1):.5, pos=(k,p)=>k.style.left=`calc(13px + ${p} * (100% - 26px))`;
+  const draw=(pa=P(a),pb=P(b))=>{ pos(ka,pa); pos(kb,pb); fill.style.left=Math.min(pa,pb)*100+'%'; fill.style.right=(1-Math.max(pa,pb))*100+'%'; };
+  const pAt=x=>{ const r=tr.getBoundingClientRect(); return Math.max(0,Math.min(1,(x-r.left)/r.width)); };
+  const move=e=>{ if(!drag) return; let p=pAt(e.clientX); const i=Math.round(p*(n-1));
+    if(drag==='a'){ p=Math.min(p,P(b)); const na=Math.min(i,b); if(na!==a){ a=na; onChange(a,b); navigator.vibrate?.(4); } draw(p,P(b)); }
+    else { p=Math.max(p,P(a)); const nb=Math.max(i,a); if(nb!==b){ b=nb; onChange(a,b); navigator.vibrate?.(4); } draw(P(a),p); } };
+  el.addEventListener('pointerdown',e=>{ const p=pAt(e.clientX); drag=Math.abs(p-P(a))<Math.abs(p-P(b))||(a===b&&p<P(a))?'a':'b';
+    el.setPointerCapture(e.pointerId); el.classList.add('drag'); (drag==='a'?ka:kb).classList.add('act'); move(e); });
+  el.addEventListener('pointermove',move);
+  const up=()=>{ if(!drag) return; drag=null; el.classList.remove('drag'); ka.classList.remove('act'); kb.classList.remove('act'); draw(); };
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+  [ka,kb].forEach((k,ki)=>k.addEventListener('keydown',e=>{ const d=e.key==='ArrowRight'||e.key==='ArrowUp'?1:e.key==='ArrowLeft'||e.key==='ArrowDown'?-1:0; if(!d) return; e.preventDefault();
+    if(ki===0) a=Math.max(0,Math.min(b,a+d)); else b=Math.min(n-1,Math.max(a,b+d)); draw(); onChange(a,b); }));
+  draw();
 }
 
 /* ═══════════════════════════════════════════════════════════
