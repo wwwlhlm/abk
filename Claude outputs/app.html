@@ -138,25 +138,14 @@ svg{display:block}
 .sd.future{opacity:.35}
 .sd.weekstart{margin-left:8px}
 
-/* Zähler: Rolling counter (Kilometerzähler mit Übertrag) */
-.counters{display:flex;flex-direction:column;gap:4px}
-.crow{display:flex;align-items:center;gap:10px;min-height:52px}
-.crow .cl{display:flex;align-items:center;gap:9px;font-size:15px}
-.crow .cl .sw{width:9px;height:9px;border-radius:50%}
-.stepper{margin-left:auto;display:flex;align-items:center;gap:2px;padding:4px;border-radius:16px;background:var(--bg)}
-.stepper button{width:40px;height:40px;border-radius:12px;background:var(--surface-2);color:var(--text-2);display:grid;place-items:center;font-size:20px;line-height:1;
-  transition:transform .35s var(--spring),background-color .2s,color .2s;touch-action:manipulation;user-select:none;-webkit-user-select:none}
-.stepper button:hover{color:var(--text);background:var(--surface-3)}
-.stepper button:active,.stepper button.held{transform:scale(.9);transition-duration:.08s}
-.stepper button:disabled{opacity:.35}
-.odo{min-width:54px;height:40px;display:flex;justify-content:center;align-items:center;font-size:26px;font-weight:500;line-height:1;
-  cursor:ns-resize;touch-action:none;user-select:none;-webkit-user-select:none;outline:none;border-radius:10px;font-variant-numeric:tabular-nums}
-.odo:focus-visible{box-shadow:0 0 0 1.5px var(--accent)}
-.oc{--oh:1.34em;display:inline-block;height:var(--oh);overflow:hidden;width:.6em;transition:width .35s var(--spring),opacity .25s;
-  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
-.oc.gone{width:0;opacity:0}
-.oc>span{display:flex;flex-direction:column;will-change:transform}
-.oc i{font-style:normal;height:var(--oh);line-height:var(--oh);text-align:center}
+/* Zähler */
+.counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.counter{background:var(--bg);border-radius:16px;padding:12px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.counter .cl{display:flex;align-items:center;gap:6px}
+.counter .val{font-size:30px;font-weight:500;height:30px;display:flex;align-items:center}
+.counter .ctrl{display:flex;gap:6px;width:100%}
+.counter .ctrl button{flex:1;height:36px;border-radius:11px;background:var(--surface);color:var(--text-2);font-size:20px;line-height:1}
+.counter .ctrl button:hover{color:var(--text);background:var(--surface-2)}
 
 /* Stimmung */
 .mood-top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
@@ -440,7 +429,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 
     <div class="grid-2">
       <div class="col">
-        <div class="card" style="padding:10px 10px 10px 18px">
+        <div class="card">
           <div class="counters" id="counters"></div>
         </div>
         <div class="card">
@@ -790,7 +779,7 @@ function renderEntry(dir=0){
     $('#dayWd').textContent=`${rel}${WD[d.getDay()]} · ${d.getFullYear()}`; $('#dayDate').textContent=fmtDay(cur);
   });
   $('#todayBtn').hidden=cur===TODAY;
-  COUNTERS.forEach(([k])=>odoSet($('#cnt-'+k), e[k]));
+  COUNTERS.forEach(([k])=>roll($('#cnt-'+k), e[k]));
   setMood(e.mood,false);
   LIST_KEYS.forEach(k=>renderGroup(k,e));
   $('#kmWrap').classList.toggle('open', e.sport.includes('Velo')); $('#km').value=e.cycling_km||'';
@@ -798,62 +787,13 @@ function renderEntry(dir=0){
   $('#entry').value=e.text||''; autosize($('#entry')); wordCount(); renderPrev();
   coffeeHint(e); foldSummary(e);
 }
-/* ─── Rolling counter ─────────────────────────────────────────
-   Jede Stelle ist ein Streifen 0–9,0–9. Vorwärts über 9 rollt weiter
-   statt zurück (Übertrag), rechte Stelle zuerst, kurze Bewegungsunschärfe.
-   Tippen, gedrückt halten (beschleunigt), Zahl ziehen und schnippen.   */
-const ODO_STAGGER=45;
-function odoCol(){ const c=document.createElement('span'); c.className='oc'; c.innerHTML=`<span>${'01234567890123456789'.split('').map(x=>`<i>${x}</i>`).join('')}</span>`; c._pos=0; return c; }
-function odoSet(el,v,dir){
-  const s=String(Math.max(0,v|0)), prev=el._v??null; el._v=+s;
-  if(dir===undefined) dir=prev===null?0:Math.sign(+s-prev);
-  let cols=[...el.querySelectorAll('.oc:not(.gone)')];
-  while(cols.length<s.length){ const c=odoCol(); el.prepend(c); cols.unshift(c);
-    if(prev!==null&&!REDUCED){ c.classList.add('gone'); c.offsetWidth; c.classList.remove('gone'); } }
-  while(cols.length>s.length){ const c=cols.shift(); c.classList.add('gone'); setTimeout(()=>c.remove(),350); }
-  const n=cols.length;
-  [...s].forEach((ch,i)=>{
-    const c=cols[i], strip=c.firstChild, to=+ch, from=c._pos%10; if(from===to&&c._pos<10) return;
-    if(c._pos>=10){ strip.style.transition='none'; strip.style.transform=`translateY(calc(${-(c._pos-10)} * var(--oh)))`; c._pos-=10; strip.offsetWidth; }
-    let target=to;
-    if(dir>0&&to<c._pos) target=to+10;                       // 9 → 0 rollt vorwärts weiter
-    if(dir<0&&to>c._pos){ strip.style.transition='none'; strip.style.transform=`translateY(calc(${-(c._pos+10)} * var(--oh)))`; strip.offsetWidth; } // 0 → 9 rollt rückwärts
-    const delay=prev===null||REDUCED?0:(n-1-i)*ODO_STAGGER;
-    strip.style.transition=prev===null||REDUCED?'none':`transform .6s var(--spring-pop) ${delay}ms`;
-    strip.style.transform=`translateY(calc(${-target} * var(--oh)))`; c._pos=target;
-    if(prev!==null&&!REDUCED&&c.animate) c.animate([{filter:'blur(0)'},{filter:'blur(1.4px)',offset:.35},{filter:'blur(0)'}],{duration:420,delay});
-  });
-  el.setAttribute('aria-valuenow',s);
-}
 function buildCounters(){
-  $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="crow">
-      <span class="cl"><i class="sw" style="background:${c}"></i>${l}</span>
-      <div class="stepper"><button data-k="${k}" data-d="-1" aria-label="${l} weniger">−</button>
-        <span class="odo" id="cnt-${k}" role="spinbutton" tabindex="0" aria-label="${l}" aria-valuemin="0"></span>
-        <button data-k="${k}" data-d="1" aria-label="${l} mehr">+</button></div></div>`).join('');
-  const step=(k,d)=>{ const e={...entryFor(cur)}, v=Math.max(0,(e[k]||0)+d); if(v===e[k]) return false;
-    e[k]=v; odoSet($('#cnt-'+k),v,d); touch(e); coffeeHint(e); navigator.vibrate?.(3); return true; };
-  // Tippen + Halten mit Beschleunigung
-  $('#counters').querySelectorAll('button[data-k]').forEach(b=>{
-    let t=null, n=0;
-    const stop=()=>{ clearTimeout(t); t=null; b.classList.remove('held'); };
-    b.addEventListener('pointerdown',e=>{ e.preventDefault(); n=0; step(b.dataset.k,+b.dataset.d); b.classList.add('held');
-      const rep=()=>{ n++; if(!step(b.dataset.k,+b.dataset.d)) return stop(); t=setTimeout(rep,Math.max(55,200-n*18)); };
-      t=setTimeout(rep,420); });
-    ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,stop));
-    b.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); step(b.dataset.k,+b.dataset.d); } });
-  });
-  // Zahl ziehen (hoch = mehr) und schnippen
-  $('#counters').querySelectorAll('.odo').forEach(o=>{
-    const k=o.id.slice(4); let y0=null, acc=0, ly=0, lt=0, v=0, fling=null;
-    o.addEventListener('pointerdown',e=>{ clearTimeout(fling); y0=e.clientY; ly=e.clientY; lt=performance.now(); acc=0; v=0; o.setPointerCapture(e.pointerId); });
-    o.addEventListener('pointermove',e=>{ if(y0===null) return; const now=performance.now(); v=(ly-e.clientY)/Math.max(1,now-lt); ly=e.clientY; lt=now;
-      acc+=(y0-e.clientY); y0=e.clientY; while(Math.abs(acc)>=16){ const d=Math.sign(acc); step(k,d); acc-=d*16; } });
-    const up=()=>{ if(y0===null) return; y0=null; let left=Math.min(12,Math.round(Math.abs(v)*6)); const d=Math.sign(v), gap=[60];
-      const go=()=>{ if(left--<=0||!step(k,d)) return; fling=setTimeout(go,gap[0]*=1.25); }; if(Math.abs(v)>.35) go(); };
-    o.addEventListener('pointerup',up); o.addEventListener('pointercancel',up);
-    o.addEventListener('keydown',e=>{ const d=e.key==='ArrowUp'||e.key==='ArrowRight'?1:e.key==='ArrowDown'||e.key==='ArrowLeft'?-1:0; if(d){ e.preventDefault(); step(k,d); } });
-  });
+  $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="counter">
+      <span class="cl label"><i class="sw" style="background:${c}"></i>${l}</span><span class="val" id="cnt-${k}"><span class="roll"></span></span>
+      <div class="ctrl"><button class="press" data-k="${k}" data-d="-1" aria-label="${l} weniger">−</button><button class="press" data-k="${k}" data-d="1" aria-label="${l} mehr">+</button></div></div>`).join('');
+  $('#counters').addEventListener('click',ev=>{ const b=ev.target.closest('button[data-k]'); if(!b) return;
+    const e={...entryFor(cur)}; e[b.dataset.k]=Math.max(0,(e[b.dataset.k]||0)+ +b.dataset.d);
+    roll($('#cnt-'+b.dataset.k), e[b.dataset.k]); touch(e); coffeeHint(e); });
 }
 function setDay(d){ if(d===cur) return; const dir=d>cur?1:-1; cur=d; renderEntry(dir); renderStrip(); centerStrip(); }
 $('#prevDay').onclick=()=>setDay(addDays(cur,-1));
