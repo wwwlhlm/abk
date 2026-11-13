@@ -85,9 +85,21 @@ svg{display:block}
 .roll .s{display:inline-block;line-height:1}
 
 /* ─── Status-Insel ───────────────────────────────────────── */
+.fnav{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:55;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;
+  background:rgba(38,38,38,.82);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);box-shadow:0 0 0 1px rgba(255,255,255,.06),0 10px 30px rgba(0,0,0,.4);
+  transform:translate(-50%,calc(-100% - 20px));opacity:0;pointer-events:none;transition:transform .5s var(--spring),opacity .25s}
+.fnav.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.kb .fnav{transform:translate(-50%,calc(-100% - 20px));opacity:0;pointer-events:none}
+.fnav>button:not(.fdate){width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2)}
+.fnav>button:not(.fdate):hover{color:var(--text);background:var(--surface-2)}
+.fnav .ico{width:18px;height:18px}
+.fdate{height:38px;padding:0 12px;min-width:118px;border-radius:999px;font-size:15px;font-weight:500;overflow:hidden;white-space:nowrap}
+.fdate span{display:inline-block}
+.fdate .t{color:var(--accent)}
+.fnav-on .island{top:calc(env(safe-area-inset-top) + 62px)}
 .island{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 10px);z-index:75;transform:translate(-50%,-160%);
   display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 10px;border-radius:999px;background:#000;color:var(--text);font-size:13px;
-  box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .55s var(--spring-pop);white-space:nowrap}
+  box-shadow:0 8px 30px rgba(0,0,0,.4);transition:transform .55s var(--spring-pop),top .45s var(--spring);white-space:nowrap}
 .island.show{transform:translate(-50%,0)}
 .src-badge{position:fixed;left:50%;translate:-50% 0;bottom:calc(env(safe-area-inset-bottom) + 92px);z-index:49;white-space:nowrap;height:28px;padding:0 12px 0 10px;border-radius:999px;
   display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:500;background:#ffd54f;color:#111;box-shadow:0 4px 16px rgba(0,0,0,.35);animation:pop .45s var(--spring-pop)}
@@ -209,7 +221,7 @@ svg{display:block}
 
 /* Eintrag */
 .entry{width:100%;min-height:150px;resize:none;border:0;outline:none;background:transparent;font-size:16px;line-height:1.7;color:var(--text);padding:0;field-sizing:content;display:block}
-.entry::placeholder{color:var(--text-3)}
+.entry::placeholder{color:var(--text-2)}
 .entry[readonly]{cursor:text}
 
 /* Details (einklappbar) */
@@ -414,7 +426,7 @@ mark{background:var(--accent-bg);color:var(--accent);border-radius:3px;padding:0
 .fmt-btn.on{color:var(--accent);background:var(--accent-bg)}
 .fmt-sep{width:1px;height:18px;background:var(--border-2);margin:0 6px}
 .entry-prev{font-size:16px;line-height:1.7;white-space:pre-wrap;overflow-wrap:break-word;hyphens:auto;min-height:150px;cursor:text}
-.entry-prev .ph{color:var(--text-3)}
+.entry-prev .ph{color:var(--text-2)}
 .entry[hidden],.entry-prev[hidden]{display:none}
 #v-entry .grid-2{transition:opacity .25s}
 #v-entry.loading .grid-2{opacity:.55}
@@ -439,6 +451,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 <body>
 
 <button class="src-badge" id="srcBadge" hidden></button>
+<div class="fnav" id="fnav" aria-hidden="true">
+  <button class="press" id="fPrev" aria-label="Vorheriger Tag" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+  <button class="fdate" id="fDate" tabindex="-1"><span id="fDateIn"></span></button>
+  <button class="press" id="fNext" aria-label="Nächster Tag" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+</div>
 <div class="island" id="island" role="status" aria-live="polite"><span class="dot"></span><span id="islandText">Demo-Daten</span></div>
 
 <main>
@@ -487,7 +504,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
             <button class="fmt-btn" data-fmt="name" title="Name markieren [[…]]" aria-label="Name markieren"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></button>
             <button class="fmt-btn" data-fmt="quote" title="Zitat markieren" aria-label="Zitat markieren"><svg class="ico" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-1.5 5-4 6M15 7h4v4c0 3-1.5 5-4 6"/></svg></button>
             <span class="fmt-sep"></span><button class="fmt-btn" id="prevBtn" title="Vorschau" aria-label="Vorschau" aria-pressed="false"><svg class="ico" viewBox="0 0 24 24"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-          <textarea class="entry" id="entry" placeholder="Was war heute?" rows="6"></textarea>
+          <textarea class="entry" id="entry" placeholder="—" rows="6"></textarea>
           <div class="entry-prev" id="entryPrev" hidden></div>
         </div>
         <div class="card fold" id="details">
@@ -926,7 +943,7 @@ function go(v, onShown){
   if(v==='search'&&searchDirty) renderSearch();
   const nav=v==='write'?'entry':v; document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===nav?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(v==='dash' && dashDirty) renderDash(true);
-  const swap=()=>{ from.hidden=true; to.hidden=false; scrollTo(0,scrollMem[v]); if(v==='dash') requestAnimationFrame(growBars); onShown&&onShown(); };
+  const swap=()=>{ from.hidden=true; to.hidden=false; requestAnimationFrame(fnavUpdate); scrollTo(0,scrollMem[v]); if(v==='dash') requestAnimationFrame(growBars); onShown&&onShown(); };
   if(REDUCED||!to.animate){ swap(); return; }
   if(onShown&&TOUCH){ // sofort tauschen, damit der Fokus im selben Tipp passiert und iOS die Tastatur öffnet
     swap(); to.animate([{opacity:0,transform:`translateX(${dir*40}px)`},{opacity:1,transform:'none'}],{duration:520,easing:SPRING}); return; }
@@ -973,6 +990,7 @@ function renderEntry(dir=0){
     const rel=cur===TODAY?'Heute · ':cur===addDays(TODAY,-1)?'Gestern · ':'';
     $('#dayWd').textContent=`${rel}${WD[d.getDay()]} · ${d.getFullYear()}`; $('#dayDate').textContent=fmtDay(cur);
   });
+  fnavDate(dir);
   $('#todayBtn').hidden=cur===TODAY;
   COUNTERS.forEach(([k])=>roll($('#cnt-'+k), e[k]));
   setMood(e.mood,false);
@@ -982,6 +1000,21 @@ function renderEntry(dir=0){
   $('#entry').value=e.text||''; autosize($('#entry')); wordCount(); renderPrev();
   ccOpen=false; ccState(e); coffeeHint(e); foldSummary(e);
 }
+/* Schwebende Tagesnavigation: erscheint, sobald der Tageskopf aus dem Bild ist */
+function fnavDate(dir=0){
+  const d=parse(cur), y=d.getFullYear()!==+TODAY.slice(0,4)?` ${d.getFullYear()}`:'';
+  const txt=cur===TODAY?'<span class="t">Heute</span>':`${WD2[d.getDay()]} ${d.getDate()}. ${MON3[d.getMonth()]}${y}`;
+  const el=$('#fDateIn'); if(!$('#fnav').classList.contains('show')||!dir){ el.innerHTML=txt; return; }
+  slideSwap(el,dir,()=>el.innerHTML=txt,18);
+  $('#fDate').animate?.([{transform:'scale(1)'},{transform:'scale(1.08)'},{transform:'scale(1)'}],{duration:420,easing:SPRING});
+}
+let headVisible=true;
+function fnavUpdate(){ const on=view==='entry'&&!headVisible; $('#fnav').classList.toggle('show',on); $('#fnav').setAttribute('aria-hidden',!on); root.classList.toggle('fnav-on',on);
+  $('#fnav').querySelectorAll('button').forEach(b=>b.tabIndex=on?0:-1); }
+new IntersectionObserver(([en])=>{ headVisible=en.isIntersecting; fnavUpdate(); },{rootMargin:'-8px 0px 0px 0px'}).observe($('#dayHead'));
+$('#fPrev').onclick=()=>setDay(addDays(cur,-1));
+$('#fNext').onclick=()=>setDay(addDays(cur,1));
+$('#fDate').onclick=()=>openDatePicker();
 function buildCounters(){
   $('#counters').innerHTML=COUNTERS.map(([k,l,c])=>`<div class="counter">
       <span class="cl label"><i class="sw" style="background:${c}"></i>${l}</span><span class="val" id="cnt-${k}"><span class="roll"></span></span>
@@ -1198,7 +1231,7 @@ document.querySelectorAll('.fmt-btn[data-fmt]').forEach(b=>{
   b.addEventListener('click',()=>{ const inWriter=!!b.closest('#v-write'); if(!inWriter&&previewOn) setPreview(false); wrap(inWriter?$('#writerTa'):$('#entry'), b.dataset.fmt); });
 });
 let previewOn=false; try{ previewOn=localStorage.getItem('previewMode')==='true'; }catch{}
-function renderPrev(){ const v=$('#entry').value; $('#entryPrev').innerHTML=v.trim()?renderRich(v):'<span class="ph">Was war heute?</span>'; }
+function renderPrev(){ const v=$('#entry').value; $('#entryPrev').innerHTML=v.trim()?renderRich(v):'<span class="ph">—</span>'; }
 function setPreview(on, animate=true){
   previewOn=on||TOUCH; try{ if(!TOUCH) localStorage.setItem('previewMode',on); }catch{}
   const ta=$('#entry'), pv=$('#entryPrev'); renderPrev();
