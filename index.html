@@ -485,7 +485,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <div class="mood-top"><span class="mood-val" id="moodVal"><span class="roll"></span></span><span class="mood-word" id="moodWord"></span>
             <span class="label" style="margin-left:auto">Stimmung</span></div>
           <div class="slider" id="mood" role="slider" tabindex="0" aria-label="Stimmung" aria-valuemin="-2" aria-valuemax="2"><div class="track"></div><div class="knob"></div></div>
-          <div class="ticks"><span style="left:0">−2</span><span style="left:25%">−1</span><span style="left:50%">0</span><span style="left:75%">+1</span><span style="left:100%">+2</span></div>
+          <div class="ticks"><span style="left:3px">−2</span><span style="left:calc(3px + (100% - 6px) * .25)">−1</span><span style="left:50%">0</span><span style="left:calc(3px + (100% - 6px) * .75)">+1</span><span style="left:calc(100% - 3px)">+2</span></div>
         </div>
         <div class="card">
           <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div>
@@ -1092,19 +1092,21 @@ $('#strip').addEventListener('click',e=>{ const b=e.target.closest('.sd'); if(b)
 
 /* Stimmung */
 const STEPS=[-2,-1.5,-1,-.5,0,.5,1,1.5,2]; let moodV=0;
+/* Position auf der Leiste: um den Radius der runden Enden (3px) eingerückt, damit −2/+2 in der Rundung sitzen */
+const moodPos=p=>`calc(3px + (100% - 6px) * ${p})`;
 function setMood(v,commit=true){
   moodV=v; const k=moodKey(v), sl=$('#mood');
   roll($('#moodVal'),(v>0?'+':v<0?'−':'')+String(Math.abs(v)).replace('.',','));
   $('#moodVal').style.color=MOOD_COL[k]; $('#moodWord').textContent=MOOD_WORD[k];
   sl.setAttribute('aria-valuenow',v); sl.setAttribute('aria-valuetext',MOOD_WORD[k]);
-  if(!sl.classList.contains('drag')){ sl.classList.add('snap'); sl.querySelector('.knob').style.left=((v+2)/4*100)+'%'; }
+  if(!sl.classList.contains('drag')){ sl.classList.add('snap'); sl.querySelector('.knob').style.left=moodPos((v+2)/4); }
   if(commit) touch({...entryFor(cur),mood:v});
 }
 (function slider(){
   const sl=$('#mood'), knob=sl.querySelector('.knob'); let down=false;
-  sl.querySelector('.track').innerHTML=STEPS.map((_,i)=>`<span class="tick" style="left:${i/8*100}%"></span>`).join('');
-  const pAt=x=>{ const r=sl.getBoundingClientRect(); return Math.max(0,Math.min(1,(x-r.left)/r.width)); };
-  const move=e=>{ if(!down) return; const p=pAt(e.clientX); knob.style.left=(p*100)+'%'; const v=Math.round(p*8)/2-2;
+  sl.querySelector('.track').innerHTML=STEPS.map((_,i)=>`<span class="tick" style="left:${moodPos(i/8)}"></span>`).join('');
+  const pAt=x=>{ const r=sl.getBoundingClientRect(); return Math.max(0,Math.min(1,(x-r.left-3)/(r.width-6))); };
+  const move=e=>{ if(!down) return; const p=pAt(e.clientX); knob.style.left=moodPos(p); const v=Math.round(p*8)/2-2;
     if(v!==moodV){ moodV=v; setMood(v,false); navigator.vibrate?.(4); } };
   sl.addEventListener('pointerdown',e=>{ down=true; sl.setPointerCapture(e.pointerId); sl.classList.remove('snap'); sl.classList.add('drag'); move(e); });
   sl.addEventListener('pointermove',move);
