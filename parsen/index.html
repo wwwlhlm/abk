@@ -1,404 +1,309 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Import</title>
-  <style>
-    :root {
-      --bg:        #1a1a1a;
-      --surface:   #262626;
-      --surface-2: #2f2f2f;
-      --border:    #383838;
-      --border-2:  #444;
-      --text:      #ececec;
-      --text-2:    #a0a0a0;
-      --text-3:    #666;
-      --accent:    #FD939F;
-      --accent-bg: rgba(253,147,159,.12);
-      --error:     #e57373;
-      --good:      #81c784;
-      --warn:      #ffb74d;
-      --radius:    10px;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-      font-size: 14px; line-height: 1.5;
-      background: var(--bg); color: var(--text);
-      height: 100vh; overflow: hidden;
-      -webkit-font-smoothing: antialiased;
-      zoom: 1.1;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="robots" content="noindex">
+<title>Import</title>
+<style>
+/* Tokens wie in der Tagebuch-App */
+:root{
+  --bg:#1a1a1a; --surface:#262626; --surface-2:#2f2f2f; --surface-3:#383838;
+  --border:#333; --border-2:#444;
+  --text:#ececec; --text-2:#a0a0a0; --text-3:#6b6b6b;
+  --accent:#FD939F; --accent-bg:rgba(253,147,159,.12);
+  --c-km:#64b5f6; --c-km-bg:rgba(100,181,246,.12);
+  --good:#81c784; --good-bg:rgba(129,199,132,.12);
+  --bad:#e57373; --bad-bg:rgba(229,115,115,.12);
+  --warn:#ffb74d; --warn-bg:rgba(255,183,77,.12);
+  --r-card:20px;
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --spring:cubic-bezier(.32,.72,0,1);
+  --spring-pop:cubic-bezier(.34,1.56,.64,1);
+}
+@supports (transition-timing-function: linear(0, 1)){
+  :root{
+    --spring:linear(0,.013 .6%,.05 1.2%,.2 2.6%,.4 4.3%,.6 6.4%,.75 8.4%,.87 10.9%,.95 13.6%,1.006 17.3%,1.03 21.4%,1.035 25.9%,1.025 33%,1.008 43%,.999 55%,1);
+    --spring-pop:linear(0,.009,.035 2.1%,.141,.281 6.7%,.723 12.9%,.938 16.7%,1.017,1.077,1.121,1.149 24.3%,1.159,1.163,1.161,1.154 29.9%,1.129 32.8%,1.051 39.6%,1.017 43.1%,.991,.977 51%,.974 53.8%,.975 57.1%,.997 69.8%,1.003 76.9%,1);
+  }
+}
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important} }
 
-    /* ── Header ── */
-    .header-wrap { position: sticky; top: 0; z-index: 50; background: var(--bg); box-shadow: 0 1px 0 var(--border); }
-    .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 0 20px; height: 62px; gap: 16px; }
+*{box-sizing:border-box}
+html{background:var(--bg);color-scheme:dark}
+body{margin:0;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+textarea{font:inherit;color:inherit}
+svg{display:block}
+.ico{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.press{transition:transform .35s var(--spring),background-color .2s,color .2s,opacity .2s}
+.press:active{transform:scale(.95);transition-duration:.08s}
+@keyframes pop{from{transform:scale(.6);opacity:0}}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
 
-    /* Tabs */
-    .tabs { display: flex; gap: 2px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 3px; }
-    .tab {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 500; color: var(--text-3);
-      padding: 5px 14px; border-radius: 6px; border: 1px solid transparent;
-      background: transparent; cursor: pointer; font-family: inherit;
-      transition: all .15s; white-space: nowrap;
-    }
-    .tab:hover { color: var(--text); background: var(--surface-2); border-color: var(--border); }
-    .tab.active { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
+/* ─── Kopf ─────────────────────────────────────────────── */
+.wrap{max-width:1120px;margin:0 auto;padding:20px 28px 120px}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:16px;min-height:44px}
+.head h1{font-size:22px;font-weight:600;letter-spacing:-.3px;margin:0}
+.head .sub{font-size:13px;color:var(--text-3)}
+.head .grow{flex:1}
 
-    /* Folder button */
-    .folder-btn {
-      display: flex; align-items: center; gap: 6px;
-      height: 34px; padding: 0 12px; border-radius: 8px;
-      border: 1px solid var(--border-2); background: var(--surface);
-      color: var(--text-2); font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: all .15s; font-family: inherit;
-      max-width: 160px; overflow: hidden;
-    }
-    .folder-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
-    .folder-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .folder-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
-    .folder-btn.chosen { color: var(--text); border-color: var(--border-2); background: var(--surface); }
+.seg{position:relative;display:inline-flex;padding:3px;border-radius:999px;background:var(--surface);flex-shrink:0}
+.seg button{position:relative;z-index:1;height:32px;padding:0 14px;border-radius:999px;font-size:13px;color:var(--text-2);transition:color .25s}
+.seg button[aria-selected="true"]{color:var(--text)}
+.seg button:not([aria-selected="true"]):hover{color:var(--text)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;left:0;border-radius:999px;background:var(--surface-3);transition:transform .5s var(--spring),width .5s var(--spring)}
 
-    /* Steps */
-    .steps { display: flex; align-items: center; flex: 1; justify-content: center; }
-    .step {
-      display: flex; align-items: center; gap: 7px;
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .5px; color: var(--text-3);
-      padding: 5px 14px 5px 10px; border-radius: 20px;
-      transition: all .2s ease; cursor: default;
-    }
-    .step.active { color: var(--accent); background: var(--accent-bg); }
-    .step.done   { color: var(--good); }
-    .step-num {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 1.5px solid currentColor;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; flex-shrink: 0; line-height: 1;
-    }
-    .step.done .step-num { background: var(--good); border-color: var(--good); color: #1a1a1a; }
-    .step-arrow { color: var(--border-2); font-size: 12px; padding: 0 2px; display: none; }
+.folder-btn{height:38px;max-width:220px;padding:0 14px 0 12px;border-radius:999px;background:var(--surface);color:var(--text-2);
+  display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500}
+.folder-btn:hover{background:var(--surface-2);color:var(--text)}
+.folder-btn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.folder-btn .ico{width:16px;height:16px;flex-shrink:0}
+.folder-btn.chosen{color:var(--text)}
+.folder-btn.chosen .ico{color:var(--good)}
 
-    .icon-btn {
-      width: 34px; height: 34px; border-radius: 8px;
-      border: 1px solid var(--border); background: transparent;
-      color: var(--text-2); display: flex; align-items: center; justify-content: center;
-      cursor: pointer; transition: all .15s; flex-shrink: 0;
-    }
-    .icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-2); }
-    .icon-btn svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+/* ─── Layout ───────────────────────────────────────────── */
+.main{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.left-side{position:sticky;top:20px}
+.right-side{display:flex;flex-direction:column;gap:12px;min-width:0}
+@media (max-width:900px){
+  .main{grid-template-columns:1fr}
+  .left-side{position:static}
+  .input-card{height:60vh!important}
+  .head{flex-wrap:wrap}
+}
 
-    /* ── Layout ── */
-    .main { display: flex; height: calc(100vh / 1.1 - 57px); position: relative; }
-    .main::before { content: ''; position: absolute; left: 50%; top: -9999px; bottom: -9999px; width: 1px; background: var(--border); pointer-events: none; }
-    .left-side { width: 50%; display: flex; flex-direction: column; padding: 16px 16px 80px; gap: 10px; overflow-y: auto; }
-    .right-side { width: 50%; overflow-y: auto; padding: 16px 16px 80px; }
+.card{background:var(--surface);border-radius:var(--r-card);padding:18px;position:relative}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;min-height:34px}
+.card-title{font-size:15px;font-weight:500}
+.card-sub{font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums}
 
-    /* ── Cards ── */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-    .card-head { display: flex; align-items: center; gap: 8px; padding: 0 14px; height: 42px; border-bottom: 1px solid var(--border); }
-    .card-head svg { width: 13px; height: 13px; stroke: var(--text-3); fill: none; stroke-width: 2; flex-shrink: 0; }
-    .card-head-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; color: var(--text-3); }
-    .card-head-meta { margin-left: auto; font-size: 11px; color: var(--text-3); }
-    .card-body { padding: 14px; }
+/* ─── Eingabe ──────────────────────────────────────────── */
+.panel{display:none}
+.panel.active{display:block}
+.input-card{display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:360px}
+.input-area{flex:1;min-height:0;width:100%;resize:none;border:0;outline:none;background:var(--bg);border-radius:12px;padding:14px 16px;
+  font:13px/1.75 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--text);transition:box-shadow .2s}
+.input-area:focus{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.input-area::placeholder{color:var(--text-3)}
+.fmt-btns{display:flex;gap:2px;margin-left:auto}
+.fmt-btn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--text-3)}
+.fmt-btn:hover{background:var(--surface-2);color:var(--text)}
+.fmt-btn .ico{width:17px;height:17px}
+.parse-hints{display:flex;flex-direction:column;gap:6px}
+.parse-hints:not(:empty){margin-top:10px}
+.parse-hint{font-size:12px;color:var(--warn);background:var(--warn-bg);border-radius:10px;padding:7px 10px;animation:rise .35s var(--spring)}
 
-    /* ── Input card ── */
-    .input-card { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-    .input-card .card-body { display: flex; flex-direction: column; padding: 12px 14px; flex: 1; min-height: 0; }
-    .input-area {
-      width: 100%; flex: 1; min-height: 0;
-      background: transparent; border: none; outline: none;
-      font-size: 13px; line-height: 1.7; color: var(--text); resize: none;
-      font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
-    }
-    .input-area::placeholder { color: var(--text-3); font-family: ui-sans-serif, system-ui, sans-serif; }
-    .parse-hints { margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
-    .parse-hint { font-size: 11px; color: var(--warn); display: flex; align-items: baseline; gap: 5px; }
-    .parse-hint::before { content: '⚠'; flex-shrink: 0; }
+/* ─── Vorschau ─────────────────────────────────────────── */
+.preview-panel{display:none}
+.preview-panel.active{display:flex;flex-direction:column;gap:12px}
+.preview-panel>div{display:flex;flex-direction:column;gap:12px}
+.preview-empty{display:grid;place-items:center;text-align:center;min-height:220px;padding:24px;border-radius:var(--r-card);
+  border:1px dashed var(--border-2);color:var(--text-3);font-size:14px}
+.month-group{padding:6px}
+.month-header{position:sticky;top:0;z-index:2;display:flex;align-items:baseline;gap:10px;padding:12px 12px 10px;
+  background:var(--surface);border-radius:14px 14px 0 0;font-size:15px;font-weight:500}
+.month-header-count{margin-left:auto;font-size:13px;font-weight:400;color:var(--text-2);font-variant-numeric:tabular-nums}
 
-    /* Format buttons */
-    .fmt-btns { display: flex; gap: 4px; margin-left: auto; }
-    .fmt-btn {
-      display: flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: 5px;
-      border: 1px solid var(--border); background: transparent;
-      color: var(--text-3); cursor: pointer; transition: all .15s; flex-shrink: 0;
-    }
-    .fmt-btn:hover { background: var(--surface-2); color: var(--accent); border-color: var(--border-2); }
-    .fmt-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.entry-row{display:flex;align-items:flex-start;gap:4px;border-radius:14px;transition:background-color .3s}
+.entry-row+.entry-row{margin-top:2px}
+.entry-row:hover{background:var(--surface-2)}
+.entry-row.has-conflict{background:var(--warn-bg)}
+.entry-row.is-written{background:var(--good-bg)}
+.entry-day{width:42px;flex-shrink:0;padding:11px 0 11px 12px;font-size:13px;font-weight:500;color:var(--text-3);font-variant-numeric:tabular-nums}
+.entry-main{flex:1;min-width:0;padding:10px 12px 10px 0}
+.entry-text{font-size:14px;line-height:1.6;overflow-wrap:break-word}
+.entry-text em{font-style:italic;color:var(--text-2)}
+.entry-text .wl{text-transform:uppercase;font-size:.84em;letter-spacing:.05em}
 
-    /* ── Folder button (header) ── */
-    .folder-btn {
-      display: flex; align-items: center; gap: 6px;
-      height: 34px; padding: 0 12px; border-radius: 8px;
-      border: 1px solid var(--border); background: var(--bg);
-      color: var(--text-2); font-size: 13px; font-weight: 500;
-      cursor: pointer; transition: all .15s; font-family: inherit;
-      max-width: 160px; overflow: hidden;
-    }
-    .folder-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
-    .folder-btn span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .folder-btn:hover { background: var(--surface); color: var(--text); border-color: var(--border-2); }
-    .folder-btn.chosen { color: var(--text); border-color: var(--border-2); background: var(--bg); }
+.entry-km{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.3}
+.entry-km-unit{font-size:13px;color:var(--text-3);margin-left:3px;font-weight:400}
+.entry-badges{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.entry-main>.entry-badges:first-child{margin-top:1px}
+.badge{height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:500;display:inline-flex;align-items:center}
+.badge-velo{color:var(--c-km);background:var(--c-km-bg)}
+#panelLaufenRight .badge-velo{color:var(--accent);background:var(--accent-bg)}
+.badge-km{color:var(--text-2);background:var(--bg)}
+.badge-warn{color:var(--warn);background:var(--warn-bg)}
 
-    /* ── FAB ── */
-    .fab {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) scale(1);
-      display: flex; align-items: center; gap: 8px;
-      padding: 0 24px; height: 44px; border-radius: 22px;
-      border: 1px solid rgba(253,147,159,.4);
-      background: var(--bg);
-      color: var(--accent); font-size: 14px; font-weight: 500;
-      cursor: pointer; font-family: inherit;
-      transition: all .2s ease; z-index: 40;
-      box-shadow: 0 4px 20px rgba(0,0,0,.4);
-    }
-    .fab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .fab:hover { background: var(--surface); border-color: rgba(253,147,159,.7); transform: translateX(-50%) scale(1.03); }
-    .fab:disabled { opacity: 1; cursor: not-allowed; background: var(--bg); color: var(--text-3); border-color: var(--border); transform: translateX(-50%) scale(1); box-shadow: none; }
+.entry-status{display:flex;align-items:center;gap:6px;margin-top:4px;font-size:12px;font-weight:500;animation:rise .35s var(--spring)}
+.entry-main>.entry-status:first-child{margin-top:4px}
+.entry-status svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.status-ok{color:var(--good)}
+.status-warn{color:var(--warn)}
+.status-error{color:var(--bad)}
+.status-skip{color:var(--text-3)}
 
-    /* ── Preview shared ── */
-    .preview-empty {
-      display: flex; align-items: center; justify-content: center;
-      height: 60px; padding: 20px; font-size: 13px; color: var(--text-3); font-style: italic;
-    }
-    .month-group { margin-bottom: 10px; }
-    .month-header {
-      display: flex; align-items: center; padding: 10px 14px 8px;
-      font-size: 11px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .6px; color: var(--text-3);
-      border-bottom: 1px solid var(--border);
-      position: sticky; top: 0; background: var(--surface); z-index: 2;
-    }
-    .month-header-count { margin-left: auto; font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 11px; }
-    .entry-row {
-      display: flex; align-items: flex-start; border-bottom: 1px solid var(--border); transition: background .15s;
-    }
-    .entry-row:last-child { border-bottom: none; }
-    .entry-row:hover { background: var(--surface-2); }
-    .entry-row.has-conflict { background: rgba(255,183,77,.04); }
-    .entry-row.has-conflict:hover { background: rgba(255,183,77,.08); }
-    .entry-row.is-written { background: rgba(129,199,132,.05); }
-    .entry-day {
-      width: 44px; flex-shrink: 0; padding: 12px 0 12px 14px;
-      font-size: 13px; font-weight: 600; color: var(--text-3); font-variant-numeric: tabular-nums;
-    }
-    .entry-main { flex: 1; padding: 11px 14px 11px 0; min-width: 0; }
-    .entry-text { font-size: 13px; color: var(--text); line-height: 1.5; word-break: break-word; }
-    .entry-text em { font-style: italic; color: var(--text-2); }
-    .entry-text .wl { color: var(--accent); font-style: normal; }
+/* Konflikt: vorhanden ↔ neu */
+.conflict-box{margin-top:10px;padding:6px;border-radius:14px;background:var(--bg);animation:rise .4s var(--spring)}
+.conflict-cols{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.conflict-col{padding:10px 12px;border-radius:8px;background:var(--surface);font-size:13px;line-height:1.55}
+.conflict-col-label{font-size:11px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px}
+.conflict-col-text{color:var(--text-2);overflow-wrap:break-word}
+.conflict-col.new-col .conflict-col-label{color:var(--warn)}
+.conflict-col.new-col .conflict-col-text{color:var(--text)}
+.conflict-col .wl{text-transform:uppercase;font-size:.84em;letter-spacing:.05em}
+.conflict-actions{display:flex;gap:6px;margin-top:6px}
+.btn-tiny{flex:1;height:34px;border-radius:8px;font-size:13px;font-weight:500;transition:transform .35s var(--spring),background-color .2s,color .2s}
+.btn-tiny:active{transform:scale(.96);transition-duration:.08s}
+.btn-overwrite{background:var(--warn-bg);color:var(--warn)}
+.btn-overwrite:hover{background:rgba(255,183,77,.2)}
+.btn-keep{background:var(--surface);color:var(--text-2)}
+.btn-keep:hover{background:var(--surface-2);color:var(--text)}
 
-    /* Velo-specific entry display */
-    .entry-km { font-size: 15px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
-    .entry-km-unit { font-size: 12px; color: var(--text-3); margin-left: 3px; }
-    .entry-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-    .badge {
-      font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px;
-      padding: 2px 7px; border-radius: 4px; border: 1px solid;
-    }
-    .badge-velo    { color: var(--accent); border-color: rgba(253,147,159,.35); background: var(--accent-bg); }
-    .badge-km      { color: var(--text-3); border-color: var(--border); background: transparent; }
-    .badge-warn    { color: var(--warn);   border-color: rgba(255,183,77,.35); background: rgba(255,183,77,.08); }
+/* Ergebnis */
+.result-card{display:none;padding:8px;background:var(--surface);border-radius:var(--r-card)}
+.result-card.visible{display:block;animation:rise .45s var(--spring)}
+.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.result-stat{background:var(--bg);border-radius:12px;padding:16px 8px 14px;text-align:center}
+.result-stat-val{font-size:30px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums}
+.result-stat-label{margin-top:8px;font-size:12px;font-weight:500;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3)}
+.val-good{color:var(--good)}
+.val-skip{color:var(--text-2)}
+.val-error{color:var(--bad)}
 
-    .entry-status { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-size: 11px; }
-    .entry-status svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2.5; flex-shrink: 0; }
-    .status-ok    { color: var(--good); }
-    .status-warn  { color: var(--warn); }
-    .status-error { color: var(--error); }
-    .status-skip  { color: var(--text-3); }
+/* ─── Aktion unten ─────────────────────────────────────── */
+.fab-wrap{position:fixed;left:0;right:0;bottom:24px;display:flex;justify-content:center;pointer-events:none;z-index:40}
+.fab-wrap::before{content:"";position:absolute;left:50%;bottom:-24px;width:420px;height:110px;translate:-50% 0;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(10,10,10,.6),rgba(10,10,10,.3) 55%,transparent);filter:blur(4px)}
+.fab{pointer-events:auto;position:relative;height:52px;padding:0 22px 0 18px;border-radius:999px;display:inline-flex;align-items:center;gap:10px;
+  background:var(--accent);color:#1a1a1a;font-size:15px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.45);
+  transition:transform .4s var(--spring),background-color .25s,color .25s,box-shadow .25s}
+.fab .ico{width:18px;height:18px;stroke-width:2.2}
+.fab:hover{transform:scale(1.03)}
+.fab:active{transform:scale(.96);transition-duration:.08s}
+.fab:disabled{cursor:default;background:rgba(38,38,38,.85);color:var(--text-3);box-shadow:0 0 0 1px rgba(255,255,255,.06);
+  backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);transform:none}
 
-    /* Conflict box (diary) */
-    .conflict-box { margin-top: 8px; border-radius: 7px; overflow: hidden; border: 1px solid rgba(255,183,77,.25); }
-    .conflict-cols { display: grid; grid-template-columns: 1fr 1fr; }
-    .conflict-col { padding: 8px 10px; font-size: 12px; line-height: 1.5; }
-    .conflict-col:first-child { border-right: 1px solid rgba(255,183,77,.2); }
-    .conflict-col-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 4px; color: var(--text-3); }
-    .conflict-col-text { color: var(--text-2); word-break: break-word; }
-    .conflict-col.new-col .conflict-col-label { color: var(--warn); }
-    .conflict-col.new-col .conflict-col-text  { color: var(--text); }
-    .conflict-actions { display: flex; gap: 6px; padding: 8px 10px; border-top: 1px solid rgba(255,183,77,.15); }
-    .btn-tiny { font-size: 11px; font-weight: 500; padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-family: inherit; transition: all .15s; }
-    .btn-overwrite { background: rgba(255,183,77,.15); color: var(--warn); border: 1px solid rgba(255,183,77,.3); }
-    .btn-overwrite:hover { background: rgba(255,183,77,.25); }
-    .btn-keep { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
-    .btn-keep:hover { color: var(--text); border-color: var(--border-2); }
+/* ─── Meldung (wie die Insel in der App) ───────────────── */
+.toast{position:fixed;left:50%;top:14px;z-index:99;display:flex;align-items:center;gap:8px;height:36px;padding:0 16px 0 12px;border-radius:999px;
+  background:#000;color:var(--text);font-size:13px;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.45);
+  transform:translate(-50%,-160%) scale(.9);opacity:0;pointer-events:none;transition:transform .45s var(--spring),opacity .2s}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--text-3)}
+.toast.show{transform:translate(-50%,0);opacity:1;transition:transform .55s var(--spring-pop),opacity .15s}
+.toast.ok::before{background:var(--good)}
+.toast.err::before{background:var(--bad)}
+.toast.warn::before{background:var(--warn)}
 
-    /* Result card */
-    .result-card { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; display: none; }
-    .result-card.visible { display: block; }
-    .result-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; }
-    .result-stat { padding: 16px; text-align: center; border-right: 1px solid var(--border); }
-    .result-stat:last-child { border-right: none; }
-    .result-stat-val { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
-    .result-stat-label { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: .4px; margin-top: 4px; }
-    .val-good  { color: var(--good); }
-    .val-skip  { color: var(--text-3); }
-    .val-error { color: var(--error); }
-
-    /* Panel switching */
-    .panel { display: none; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
-    .panel.active { display: flex; }
-    .preview-panel { display: none; }
-    .preview-panel.active { display: block; }
-
-    /* Scrollbars */
-    .left-side::-webkit-scrollbar, .right-side::-webkit-scrollbar { width: 4px; }
-    .left-side::-webkit-scrollbar-track, .right-side::-webkit-scrollbar-track { background: transparent; }
-    .left-side::-webkit-scrollbar-thumb, .right-side::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 2px; }
-
-    /* Toast */
-    .toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(8px);
-      background: var(--surface-2); border: 1px solid var(--border-2);
-      color: var(--text); padding: 9px 16px; border-radius: 8px;
-      font-size: 13px; opacity: 0; pointer-events: none;
-      transition: all .25s ease; white-space: nowrap; z-index: 99;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.ok   { border-color: rgba(129,199,132,.4); color: var(--good); }
-    .toast.err  { border-color: rgba(229,115,115,.4); color: var(--error); }
-    .toast.warn { border-color: rgba(255,183,77,.4);  color: var(--warn); }
-  </style>
+.support{display:none;margin-bottom:12px;padding:10px 14px;border-radius:14px;background:var(--warn-bg);color:var(--warn);font-size:13px}
+.support.show{display:block}
+</style>
 </head>
 <body>
 
-<!-- Header -->
-<div class="header-wrap">
-  <div class="header-inner">
-    <div style="width:160px"></div>
-
-    <div class="tabs">
-      <button class="tab active" id="tabDiary" onclick="switchTab('diary')">Einträge</button>
-      <button class="tab" id="tabVelo" onclick="switchTab('velo')">Velo</button>
-      <button class="tab" id="tabLaufen" onclick="switchTab('laufen')">Laufen</button>
+<div class="wrap">
+  <header class="head">
+    <h1>Import</h1>
+    <span class="sub">Nachträge und Strava-Abgleich</span>
+    <span class="grow"></span>
+    <div class="seg" id="tabs" role="tablist">
+      <span class="thumb"></span>
+      <button data-v="diary" role="tab">Einträge</button>
+      <button data-v="velo" role="tab">Velo</button>
+      <button data-v="laufen" role="tab">Laufen</button>
     </div>
+    <button class="folder-btn press" id="folderBtn" onclick="pickFolder()" title="Diary-Ordner wählen">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span id="folderBtnLabel">Ordner wählen</span>
+    </button>
+  </header>
 
-    <div style="width:160px;display:flex;justify-content:flex-end;position:relative;z-index:2">
-      <button class="folder-btn" id="folderBtn" onclick="pickFolder()" title="Ordner wählen">
-        <svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        <span id="folderBtnLabel">Wählen</span>
-      </button>
-    </div>
-  </div>
-</div>
+  <div class="support" id="support">Diese Seite braucht Zugriff auf den Diary-Ordner und läuft deshalb nur in Chrome oder Edge am Desktop.</div>
 
-<!-- Main -->
-<div class="main">
+  <div class="main">
 
-  <!-- LEFT -->
-  <div class="left-side">
+    <!-- LINKS: Eingabe -->
+    <div class="left-side">
 
-    <!-- Diary panel -->
-    <div class="panel active" id="panelDiaryLeft">
-      <div class="card input-card">
-        <div class="card-head">
-          <svg viewBox="0 0 24 24"><line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
-          <span class="card-head-title">Einträge</span>
-          <span class="card-head-meta" id="diaryCountMeta"></span>
-          <div class="fmt-btns">
-            <button class="fmt-btn" onclick="wrapSelection('quote')" title="Als Zitat markieren">
-              <svg viewBox="0 0 24 24"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-            </button>
-            <button class="fmt-btn" onclick="wrapSelection('wikilink')" title="Als Wikilink markieren">
-              <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-            </button>
+      <div class="panel active" id="panelDiaryLeft">
+        <div class="card input-card">
+          <div class="card-head">
+            <span class="card-title">Einträge</span>
+            <span class="card-sub" id="diaryCountMeta"></span>
+            <div class="fmt-btns">
+              <button class="fmt-btn" onclick="wrapSelection('wikilink')" title="Name markieren [[…]]" aria-label="Name markieren">
+                <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+              </button>
+              <button class="fmt-btn" onclick="wrapSelection('quote')" title="Zitat markieren" aria-label="Zitat markieren">
+                <svg class="ico" viewBox="0 0 24 24"><path d="M7 7h4v4c0 3-1.5 5-4 6M15 7h4v4c0 3-1.5 5-4 6"/></svg>
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="card-body">
           <textarea class="input-area" id="diaryInput"
-            placeholder="### 2022-01&#10;1. Erster Eintrag Januar&#10;2. Zweiter Januar&#10;&#10;### 2022-02&#10;1. Erster Februar..."
-            oninput="onDiaryChange()" spellcheck="false" rows="18"></textarea>
+            placeholder="### 2022-01&#10;1. Erster Eintrag Januar&#10;2. Zweiter Januar&#10;&#10;### 2022-02&#10;1. Erster Februar …"
+            oninput="onDiaryChange()" spellcheck="false"></textarea>
           <div class="parse-hints" id="diaryHints"></div>
         </div>
       </div>
-    </div>
 
-    <!-- Velo panel -->
-    <div class="panel" id="panelVeloLeft">
-      <div class="card input-card">
-        <div class="card-head">
-          <svg viewBox="0 0 24 24"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 0 0 0-2h-3l-3 9 2.5 2.5"/><path d="M15 6h-3l-3 9"/></svg>
-          <span class="card-head-title">Fahrten</span>
-          <span class="card-head-meta" id="veloCountMeta"></span>
-        </div>
-        <div class="card-body">
+      <div class="panel" id="panelVeloLeft">
+        <div class="card input-card">
+          <div class="card-head">
+            <span class="card-title">Fahrten</span>
+            <span class="card-sub" id="veloCountMeta"></span>
+          </div>
           <textarea class="input-area" id="veloInput"
-            placeholder="Jan 14, 2024, 11:07:59 AM&#10;42.19&#10;Jan 27, 2024, 10:52:08 AM&#10;101.86&#10;Feb 3, 2024, 10:17:57 AM&#10;108.76"
-            oninput="onVeloChange()" spellcheck="false" rows="18"></textarea>
+            placeholder="Jan 14, 2024, 11:07:59 AM&#10;42.19&#10;Jan 27, 2024, 10:52:08 AM&#10;101.86"
+            oninput="onVeloChange()" spellcheck="false"></textarea>
           <div class="parse-hints" id="veloHints"></div>
         </div>
       </div>
-    </div>
 
-    <!-- Laufen panel -->
-    <div class="panel" id="panelLaufenLeft">
-      <div class="card input-card">
-        <div class="card-head">
-          <svg viewBox="0 0 24 24"><path d="M13 4a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/><path d="M7.5 17.5 10 12l3 3 2-4 3.5 5"/><path d="M6 21l3-4"/></svg>
-          <span class="card-head-title">Läufe</span>
-          <span class="card-head-meta" id="laufenCountMeta"></span>
-        </div>
-        <div class="card-body">
+      <div class="panel" id="panelLaufenLeft">
+        <div class="card input-card">
+          <div class="card-head">
+            <span class="card-title">Läufe</span>
+            <span class="card-sub" id="laufenCountMeta"></span>
+          </div>
           <textarea class="input-area" id="laufenInput"
             placeholder="Jan 24, 2023, 6:39:59 PM&#10;Feb 7, 2023, 6:20:56 PM&#10;Feb 10, 2023, 6:34:47 PM"
-            oninput="onLaufenChange()" spellcheck="false" rows="18"></textarea>
+            oninput="onLaufenChange()" spellcheck="false"></textarea>
           <div class="parse-hints" id="laufenHints"></div>
         </div>
       </div>
+
     </div>
 
-    <!-- Shared: Folder + Action -->
+    <!-- RECHTS: Vorschau -->
+    <div class="right-side">
 
-  </div>
-
-  <!-- RIGHT -->
-  <div class="right-side">
-
-    <!-- Shared result card -->
-    <div class="result-card" id="resultCard">
-      <div class="card-head">
-        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        <span class="card-head-title">Ergebnis</span>
+      <div class="card result-card" id="resultCard">
+        <div class="result-stats">
+          <div class="result-stat"><div class="result-stat-val val-good" id="resOk">0</div><div class="result-stat-label">Geschrieben</div></div>
+          <div class="result-stat"><div class="result-stat-val val-skip" id="resSkip">0</div><div class="result-stat-label">Übersprungen</div></div>
+          <div class="result-stat"><div class="result-stat-val val-error" id="resErr">0</div><div class="result-stat-label">Fehler</div></div>
+        </div>
       </div>
-      <div class="result-stats">
-        <div class="result-stat"><div class="result-stat-val val-good" id="resOk">0</div><div class="result-stat-label">Geschrieben</div></div>
-        <div class="result-stat"><div class="result-stat-val val-skip" id="resSkip">0</div><div class="result-stat-label">Übersprungen</div></div>
-        <div class="result-stat"><div class="result-stat-val val-error" id="resErr">0</div><div class="result-stat-label">Fehler</div></div>
+
+      <div class="preview-panel active" id="panelDiaryRight">
+        <div id="diaryPreviewContainer">
+          <div class="preview-empty" id="diaryPreviewEmpty">Einträge links einfügen,<br>die Vorschau erscheint hier.</div>
+        </div>
       </div>
+
+      <div class="preview-panel" id="panelVeloRight">
+        <div id="veloPreviewContainer">
+          <div class="preview-empty" id="veloPreviewEmpty">Fahrten aus Strava links einfügen,<br>die Vorschau erscheint hier.</div>
+        </div>
+      </div>
+
+      <div class="preview-panel" id="panelLaufenRight">
+        <div id="laufenPreviewContainer">
+          <div class="preview-empty" id="laufenPreviewEmpty">Läufe links einfügen,<br>die Vorschau erscheint hier.</div>
+        </div>
+      </div>
+
     </div>
-
-    <!-- Diary preview -->
-    <div class="preview-panel active" id="panelDiaryRight">
-      <div id="diaryPreviewContainer">
-        <div class="preview-empty" id="diaryPreviewEmpty">Text eingeben um Vorschau zu sehen.</div>
-      </div>
-    </div>
-
-    <!-- Velo preview -->
-    <div class="preview-panel" id="panelVeloRight">
-      <div id="veloPreviewContainer">
-        <div class="preview-empty" id="veloPreviewEmpty">Fahrtdaten eingeben um Vorschau zu sehen.</div>
-      </div>
-    </div>
-
-    <!-- Laufen preview -->
-    <div class="preview-panel" id="panelLaufenRight">
-      <div id="laufenPreviewContainer">
-        <div class="preview-empty" id="laufenPreviewEmpty">Laufdaten eingeben um Vorschau zu sehen.</div>
-      </div>
-    </div>
-
   </div>
 </div>
 
-<button class="fab" id="btnWrite" disabled onclick="startWrite()">
-  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-  Einpflegen
-</button>
+<div class="fab-wrap">
+  <button class="fab" id="btnWrite" disabled onclick="startWrite()">
+    <svg class="ico" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="btnWriteLabel">Einpflegen</span>
+  </button>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -423,10 +328,22 @@
   let laufenStates  = {};
 
   // ── Tab switching ────────────────────────────────────────────────
-  function switchTab(tab) {
+  // Segment-Umschalter wie in der App
+  const tabsEl=document.getElementById('tabs');
+  function placeThumb(animate=true){
+    const b=tabsEl.querySelector('[aria-selected="true"]'), th=tabsEl.querySelector('.thumb');
+    if(!b||!b.offsetWidth) return;
+    if(!animate) th.style.transition='none';
+    th.style.width=b.offsetWidth+'px'; th.style.transform='translateX('+b.offsetLeft+'px)';
+    if(!animate){ th.offsetWidth; th.style.transition=''; }
+  }
+  tabsEl.addEventListener('click',ev=>{ const b=ev.target.closest('button'); if(b&&b.dataset.v!==activeTab) switchTab(b.dataset.v); });
+
+  function switchTab(tab, animate=true) {
     activeTab = tab;
+    tabsEl.querySelectorAll('button').forEach(b=>b.setAttribute('aria-selected',b.dataset.v===tab));
+    placeThumb(animate);
     ['diary','velo','laufen'].forEach(t => {
-      document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).className = 'tab'+(tab===t?' active':'');
       const lp = document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)+'Left');
       const rp = document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)+'Right');
       if(lp) lp.className = 'panel'+(tab===t?' active':'');
@@ -479,9 +396,10 @@
         if(!year||!month){hints.push('Zeile '+(i+1)+': Kein Monat-Header.');return;}
         const day=+e[1], maxDay=new Date(year,month,0).getDate();
         if(day<1||day>maxDay){hints.push('Zeile '+(i+1)+': Tag '+day+' ungültig.');return;}
+        if(entries.some(x=>x.year===year&&x.month===month&&x.day===day)){hints.push('Zeile '+(i+1)+': Tag '+day+' doppelt – nur der erste wird übernommen.');return;}
         entries.push({year,month,day,text:e[2].trim()}); return;
       }
-      if(t.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt — "'+t.substring(0,28)+'"');
+      if(t.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt – "'+t.substring(0,28)+'"');
     });
     return {entries,hints};
   }
@@ -500,7 +418,7 @@
     diaryEntries=entries;
     entries.forEach(e=>{diaryStates[dk(e)]={state:'pending'};});
     document.getElementById('diaryHints').innerHTML=hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
-    document.getElementById('diaryCountMeta').textContent=entries.length?entries.length+' Eintr.':'';
+    document.getElementById('diaryCountMeta').textContent=entries.length?entries.length+' erkannt':'';
     renderDiaryPreview(); updateWriteBtn();
   }
 
@@ -631,10 +549,18 @@
           i+=2; continue;
         }
       }
-      if(line.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt — "'+line.substring(0,32)+'"');
+      if(line.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt – "'+line.substring(0,32)+'"');
       i++;
     }
-    return {entries,hints};
+    // Mehrere Fahrten am selben Tag zusammenzählen
+    const byDay=new Map();
+    entries.forEach(e=>{
+      const k=dk(e), d=byDay.get(k);
+      if(d){ d.km+=e.km; d.rides++; } else byDay.set(k,{...e,rides:1});
+    });
+    const merged=[...byDay.values()].sort((a,b)=>dk(a)<dk(b)?-1:1);
+    merged.forEach(e=>{ e.km=Math.round(e.km*100)/100; });
+    return {entries:merged,hints};
   }
 
   function onVeloChange() {
@@ -651,7 +577,8 @@
     veloEntries=entries;
     entries.forEach(e=>{veloStates[dk(e)]={state:'pending'};});
     document.getElementById('veloHints').innerHTML=hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
-    document.getElementById('veloCountMeta').textContent=entries.length?entries.length+' Fahrten':'';
+    const rides=entries.reduce((s,e)=>s+e.rides,0);
+    document.getElementById('veloCountMeta').textContent=entries.length?rides+' erkannt':'';
     renderVeloPreview(); updateWriteBtn();
   }
 
@@ -662,6 +589,7 @@
 
     // Badges shown in preview (before write)
     let badgesHtml='<div class="entry-badges"><span class="badge badge-velo">Velo</span>';
+    if(e.rides>1) badgesHtml+='<span class="badge badge-km">'+e.rides+' Fahrten zusammengezählt</span>';
     if(st.state==='pending'&&st.kmExisted){
       badgesHtml+='<span class="badge badge-warn">km überschreiben ('+esc(String(st.kmOld))+')</span>';
     }
@@ -698,9 +626,9 @@
     let html='';
     groups.forEach((entries,key)=>{
       const [y,m]=key.split('-');
-      const totalKm=entries.reduce((s,e)=>s+e.km,0);
+      const totalKm=entries.reduce((s,e)=>s+e.km,0), rides=entries.reduce((s,e)=>s+e.rides,0);
       html+='<div class="month-group card"><div class="month-header">'+MONTHS[+m-1]+' '+y+
-        '<span class="month-header-count">'+entries.length+' Fahrt'+(entries.length!==1?'en':'')+' · '+totalKm.toFixed(1)+' km</span></div>';
+        '<span class="month-header-count">'+rides+' Fahrt'+(rides!==1?'en':'')+' · '+totalKm.toFixed(1)+' km</span></div>';
       entries.forEach(e=>{html+=veloRowHtml(e,dk(e),veloStates[dk(e)]||{state:'pending'});});
       html+='</div>';
     });
@@ -776,14 +704,17 @@
       rootDirHandle=await window.showDirectoryPicker({mode:'readwrite'});
       const btn=document.getElementById('folderBtn');
       document.getElementById('folderBtnLabel').textContent=rootDirHandle.name;
-      btn.className='folder-btn chosen';
+      btn.className='folder-btn press chosen';
       updateWriteBtn();
     }catch(e){if(e.name!=='AbortError') toast('Fehler beim Öffnen','err');}
   }
 
   function updateWriteBtn(){
     const entries = activeTab==='diary' ? diaryEntries : activeTab==='velo' ? veloEntries : laufenEntries;
-    document.getElementById('btnWrite').disabled=!(rootDirHandle&&entries.length);
+    const btn=document.getElementById('btnWrite'), n=entries.length;
+    btn.disabled=!(rootDirHandle&&n);
+    const unit = activeTab==='diary' ? (n===1?'Eintrag':'Einträge') : activeTab==='velo' ? (n===1?'Tag':'Tage') : (n===1?'Lauf':'Läufe');
+    document.getElementById('btnWriteLabel').textContent = !rootDirHandle ? 'Erst Ordner wählen' : n ? n+' '+unit+' einpflegen' : 'Einpflegen';
   }
 
   function startWrite(){
@@ -805,25 +736,6 @@
     toast(ok+' geschrieben · '+skip+' übersprungen · '+err+' Fehler',ok>0?'ok':'');
   }
 
-  function setStep(n){
-    [1,2,3].forEach(i=>{
-      const el=document.getElementById('step'+i);
-      el.className='step'+(i===n?' active':i<n?' done':'');
-      el.querySelector('.step-num').textContent=i<n?'✓':i;
-    });
-  }
-
-  function clearAll(){
-    if(activeTab==='diary'){
-      document.getElementById('diaryInput').value=''; onDiaryChange();
-    } else if(activeTab==='velo'){
-      document.getElementById('veloInput').value=''; onVeloChange();
-    } else {
-      document.getElementById('laufenInput').value=''; onLaufenChange();
-    }
-    document.getElementById('resultCard').className='result-card';
-  }
-
   let toastT;
   function toast(msg,type=''){
     const el=document.getElementById('toast');
@@ -839,10 +751,11 @@
     lines.forEach((line,i)=>{
       const dm=line.match(DATE_RE);
       if(dm && MONTH_MAP[dm[1]]){
-        entries.push({year:+dm[3],month:MONTH_MAP[dm[1]],day:+dm[2]});
+        const e={year:+dm[3],month:MONTH_MAP[dm[1]],day:+dm[2]};
+        if(!entries.some(x=>dk(x)===dk(e))) entries.push(e);
         return;
       }
-      if(line.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt — "'+line.substring(0,32)+'"');
+      if(line.length>2) hints.push('Zeile '+(i+1)+': Nicht erkannt – "'+line.substring(0,32)+'"');
     });
     return {entries,hints};
   }
@@ -861,7 +774,7 @@
     laufenEntries=entries;
     entries.forEach(e=>{laufenStates[dk(e)]={state:'pending'};});
     document.getElementById('laufenHints').innerHTML=hints.slice(0,4).map(h=>'<div class="parse-hint">'+h+'</div>').join('');
-    document.getElementById('laufenCountMeta').textContent=entries.length?entries.length+' Läufe':'';
+    document.getElementById('laufenCountMeta').textContent=entries.length?entries.length+' erkannt':'';
     renderLaufenPreview(); updateWriteBtn();
   }
 
@@ -936,7 +849,15 @@
     const lines=fm.split('\n');
     let sportIdx=-1;
     for(let i=0;i<lines.length;i++){if(/^sport:/.test(lines[i])){sportIdx=i;break;}}
-    if(sportIdx===-1) return {fm,added:false};
+    if(sportIdx===-1){
+      // keine sport:-Zeile – vor cycling_km/people bzw. vor dem schliessenden --- einfügen
+      let at=lines.findIndex(l=>/^(cycling_km|people|weekday_index):/.test(l));
+      if(at===-1){ at=lines.length-1; while(at>0 && lines[at].trim()!=='---') at--; }
+      if(at<=0) return {fm,added:false};
+      lines.splice(at,0,'sport:','  - '+sport);
+      return {fm:lines.join('\n'),added:true};
+    }
+    if(/^sport:\s*\[\s*\]\s*$/.test(lines[sportIdx])) lines[sportIdx]='sport:';
     let insertIdx=sportIdx+1, hasEntry=false;
     while(insertIdx<lines.length && /^  - /.test(lines[insertIdx])){
       if(lines[insertIdx].trim()==='- '+sport) hasEntry=true;
@@ -979,10 +900,16 @@
 
   // Also scan when switching to velo tab if folder already chosen
   const _origSwitchTab = switchTab;
-  switchTab = function(tab){
-    _origSwitchTab(tab);
+  switchTab = function(tab, animate){
+    _origSwitchTab(tab, animate);
     if(tab==='velo'&&rootDirHandle&&veloEntries.length) preScanVelo();
   };
+
+  // Start
+  if(!window.showDirectoryPicker) document.getElementById('support').classList.add('show');
+  switchTab('diary', false);
+  if(document.fonts) document.fonts.ready.then(()=>placeThumb(false));
+  window.addEventListener('resize',()=>placeThumb(false));
 </script>
 </body>
 </html>

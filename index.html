@@ -18,7 +18,7 @@
   --c-coffee:#FD939F; --c-apple:#81c784; --c-banana:#ffd54f; --c-km:#64b5f6;
   --good:#81c784; --bad:#e57373;
   --r-card:20px;
-  --font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   --ease-out:cubic-bezier(.32,.72,0,1);
   --spring:cubic-bezier(.32,.72,0,1);
   --spring-pop:cubic-bezier(.34,1.56,.64,1);
@@ -37,7 +37,7 @@
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg);color-scheme:dark;touch-action:manipulation}   /* kein Doppeltipp-Zoom, Pinch-Zoom bleibt */
-body{margin:0;overflow-x:clip;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+body{margin:0;overflow-x:clip;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,textarea{font:inherit;color:inherit}
 svg{display:block}
