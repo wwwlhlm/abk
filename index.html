@@ -157,12 +157,13 @@ svg{display:block}
 .sd.weekstart{margin-left:8px}
 
 /* Zähler */
+.card.cnt-card{padding:8px}
 .counters{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.counter{background:var(--bg);border-radius:16px;padding:12px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.counter{background:var(--bg);border-radius:calc(var(--r-card) - 8px);padding:14px 6px 6px;display:flex;flex-direction:column;align-items:center;gap:8px}
 .counter .cl{display:flex;align-items:center;gap:6px}
 .counter .val{font-size:30px;font-weight:500;height:30px;display:flex;align-items:center}
 .counter .ctrl{display:flex;gap:6px;width:100%}
-.counter .ctrl button{flex:1;height:36px;border-radius:11px;background:var(--surface);color:var(--text-2);font-size:20px;line-height:1}
+.counter .ctrl button{flex:1;height:36px;border-radius:calc(var(--r-card) - 14px);background:var(--surface);color:var(--text-2);font-size:20px;line-height:1}
 .counter .ctrl button:hover{color:var(--text);background:var(--surface-2)}
 
 /* Stimmung */
@@ -226,8 +227,9 @@ svg{display:block}
 
 /* Details (einklappbar) */
 .fold-head{display:flex;align-items:center;gap:10px;width:100%;text-align:left;min-height:32px}
-.fold-head .card-sub{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.fold-head .ico{width:18px;height:18px;color:var(--text-3);transition:transform .45s var(--spring)}
+.fold-head .fh-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fold-head .card-sub{margin-left:10px}
+.fold-head .ico{flex-shrink:0;width:18px;height:18px;color:var(--text-3);transition:transform .45s var(--spring)}
 .fold.open .fold-head .ico{transform:rotate(180deg)}
 .fold-body{padding-top:16px}
 
@@ -476,7 +478,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 
     <div class="grid-2">
       <div class="col">
-        <div class="card">
+        <div class="card cnt-card">
           <div class="counters" id="counters"></div>
         </div>
         <div class="card">
@@ -508,7 +510,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <div class="entry-prev" id="entryPrev" hidden></div>
         </div>
         <div class="card fold" id="details">
-          <button class="fold-head" id="foldBtn" aria-expanded="false"><span class="card-title">Details</span><span class="card-sub" id="foldSum"></span>
+          <button class="fold-head" id="foldBtn" aria-expanded="false"><span class="fh-t"><span class="card-title">Details</span><span class="card-sub" id="foldSum"></span></span>
             <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="expand" id="foldBody"><div><div class="fold-body">
             <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div></div>
