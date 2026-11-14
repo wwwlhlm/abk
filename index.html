@@ -448,6 +448,118 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .w-bar .fmt{margin-left:auto}
 .w-ta{width:100%;min-height:50vh;border:0;outline:0;background:transparent;resize:none;font-size:17px;line-height:1.7;color:var(--text);padding:10px 2px 45vh;display:block;overflow:hidden;field-sizing:content}
 .w-ta::placeholder{color:var(--text-3)}
+
+/* ─── Orte (Register) ────────────────────────────────────── */
+.reg-hints{display:flex;flex-wrap:wrap;gap:2px 12px;margin-top:8px}
+.reg-hints:empty{display:none}
+.reg-hint{font-size:12px;color:var(--text-3);display:inline-flex;align-items:center;gap:5px;padding:3px 0;animation:pop .35s var(--spring-pop) backwards}
+.reg-hint b{font-weight:500;color:var(--text-2)}
+.reg-hint .go{color:var(--accent)}
+.reg-hint:hover .go{text-decoration:underline;text-underline-offset:3px}
+.fold-link{display:flex;align-items:center;gap:10px;width:100%;margin-top:18px;padding:12px 14px;border-radius:14px;background:var(--bg);text-align:left;font-size:14px;color:var(--text-2)}
+.fold-link:hover{color:var(--text);background:var(--surface-2)}
+.fold-link .ico{width:18px;height:18px;color:var(--text-3)}
+.fold-link .n{margin-left:auto;font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
+
+#v-orte,#v-ort{max-width:720px;padding-top:0}
+.o-bar{position:sticky;top:0;z-index:5;background:var(--bg);margin:0 calc(-1*var(--px));padding:calc(env(safe-area-inset-top) + 16px) var(--px) 10px;transition:box-shadow .2s}
+.o-bar.stuck{box-shadow:0 1px 0 var(--border)}
+.o-top{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.o-top .s-title{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.o-sum{font-size:13px;color:var(--text-2);padding:2px 4px 0}
+.o-sum b{font-weight:500;color:var(--text)}
+.o-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1*var(--px)) 0;padding:0 var(--px)}
+.o-filters::-webkit-scrollbar{display:none}
+@media (min-width:700px){.o-filters{flex-wrap:wrap;margin:10px 0 0;padding:0}}
+.o-filters .sg.on{background:var(--accent-bg);color:var(--accent)}
+.o-filters .sg.on .c{color:inherit;opacity:.7}
+.o-filters .sep{flex:0 0 1px;background:var(--border-2);margin:6px 2px}
+.o-err{padding:14px 16px;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.o-err .pill{margin-left:auto}
+
+.dup-card{padding:14px 16px}
+.dup-card .card-head{margin-bottom:6px}
+.dup{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border);flex-wrap:wrap}
+.dup:first-of-type{border-top:0}
+.dup .pair{flex:1;min-width:180px;font-size:14px}
+.dup .pair .c{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
+.dup .pair .why{display:block;font-size:12px;color:var(--text-3);margin-top:1px}
+.dup .acts{display:flex;gap:6px}
+.pill-ghost{background:var(--bg);color:var(--text-2)}
+.pill-ghost:hover{color:var(--text)}
+
+.olist{display:flex;flex-direction:column;gap:4px}
+.orow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:11px 14px;border-radius:16px;background:var(--surface);animation:rise .4s var(--spring) backwards}
+.orow:hover{background:var(--surface-2)}
+.orow .nm{flex:1;min-width:0}
+.orow .t1{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orow .t2{font-size:12px;color:var(--text-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.orow .t2 .none{opacity:.7}
+.orow .t2 .al{color:var(--text-2)}
+.orow .src{display:flex;gap:3px;color:var(--text-3)}
+.orow .src .ico{width:15px;height:15px}
+.orow .src .off{opacity:.18}
+.orow .pos{width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1.5px var(--text-3)}
+.orow .pos.has{background:var(--good);box-shadow:none}
+.orow .pos.na{background:var(--surface-3);box-shadow:none}
+.orow .pos.lock{box-shadow:none;background:none;width:auto;height:auto;color:var(--text-3)}
+.orow .pos.lock .ico{width:13px;height:13px}
+.orow .days{width:42px;text-align:right;font-size:14px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.olist-foot{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;padding:14px 0 0}
+
+.o-name-sub{font-size:13px;color:var(--text-2);margin:-6px 4px 0}
+.o-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.o-stats .stat .big{font-size:24px;height:28px;margin:6px 0 0}
+.o-stats .stat .big.d{font-size:15px;white-space:nowrap}
+.o-stats .stat .avg{margin-top:2px}
+.o-types{display:flex;flex-wrap:wrap;gap:6px}
+.sec-hint{font-size:13px;color:var(--text-3);margin:12px 2px 0;line-height:1.5;display:flex;gap:8px;align-items:flex-start}
+.sec-hint .ico{width:15px;height:15px;flex-shrink:0;margin-top:2px}
+.pos-now{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--bg);margin-bottom:10px}
+.pos-now .k{font-size:16px;font-variant-numeric:tabular-nums;flex:1}
+.pos-now .k.none{color:var(--text-3);font-size:14px}
+.pos-now a{font-size:12px;color:var(--text-2)}
+.pos-now .x{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--text-3);background:var(--surface-2);font-size:11px}
+.pos-row{display:flex;gap:8px;align-items:center}
+.pos-row .text-in{flex:1}
+.pos-row .pill{height:38px;padding:0 14px;font-size:14px}
+.pos-row .pill .ico{width:16px;height:16px}
+.pos-err{font-size:12px;color:var(--bad);margin:6px 2px 0}
+.field-row{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+.tgl{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:14px;background:var(--bg);margin-top:10px;font-size:14px}
+.tgl .sw2{margin-left:auto;width:40px;height:24px;border-radius:12px;background:var(--surface-3);position:relative;transition:background .25s;flex-shrink:0}
+.tgl .sw2::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .4s var(--spring)}
+.tgl[aria-checked="true"] .sw2{background:var(--accent)}
+.tgl[aria-checked="true"] .sw2::after{transform:translateX(16px)}
+.tgl p{margin:2px 0 0;font-size:12px;color:var(--text-3)}
+.tgl[disabled]{opacity:.45;pointer-events:none}
+.name-acts{display:flex;gap:8px;flex-wrap:wrap}
+.name-acts .pill{height:38px;padding:0 15px;font-size:14px}
+.name-acts .pill.on{background:var(--accent-bg);color:var(--accent)}
+.o-panel{padding-top:14px}
+.o-prev{margin-top:12px;padding:14px;border-radius:14px;background:var(--bg);font-size:14px;line-height:1.55}
+.o-prev .big{font-size:17px;font-weight:500;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.o-prev .big .ar{color:var(--text-3)}
+.o-prev .big .c{font-size:13px;color:var(--text-3);font-weight:400;font-variant-numeric:tabular-nums}
+.o-prev ul{margin:8px 0 0;padding-left:18px;color:var(--text-2);font-size:13px}
+.o-prev ul li{margin:2px 0}
+.o-prev .err{color:var(--bad)}
+.o-mode{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.o-mode .opt{margin:0;cursor:pointer;transition:box-shadow .2s}
+.o-mode .opt[aria-checked="true"]{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.o-mode .opt .rd{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--text-3);flex-shrink:0;transition:box-shadow .2s}
+.o-mode .opt[aria-checked="true"] .rd{box-shadow:inset 0 0 0 5px var(--accent)}
+.o-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.o-pick .acs.on{background:var(--accent-bg);color:var(--accent)}
+.alias-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--border);font-size:14px;flex-wrap:wrap}
+.alias-row:first-child{border-top:0}
+.alias-row .c{font-size:12px;color:var(--text-3)}
+.alias-row .pill:first-of-type{margin-left:auto}
+.run-actions{display:flex;gap:8px;margin-top:12px;align-items:center}
+.run-actions .pill{height:42px;padding:0 18px;font-size:14px}
+.run-actions .pill[disabled]{opacity:.35;pointer-events:none}
+.o-json{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:var(--text-2);background:var(--bg);border-radius:14px;padding:14px;white-space:pre;overflow:auto;max-height:52vh;margin:0}
+.o-json-note{font-size:12px;color:var(--text-3);margin:10px 2px 0;line-height:1.5}
 </style>
 </head>
 <body>
@@ -490,7 +602,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <div class="card">
           <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div>
             <div class="expand" id="ccWrap"><div><div class="cc-row"><span class="label">Land <span class="hint" id="ccHint">mehrfach tippen, Reihenfolge wie die Orte</span></span><div data-g="countries"></div></div></div></div></div>
-          <div class="chip-group"><span class="label">Kaffee <span class="hint" id="coffeeHint"></span></span><div data-g="coffeeLocations"></div></div>
+          <div class="chip-group"><span class="label">Kaffee <span class="hint" id="coffeeHint"></span></span><div data-g="coffeeLocations"></div><div class="reg-hints" id="oHintCoffee"></div></div>
         </div>
         <div class="card">
           <div class="chip-group"><span class="label">Sport</span><div data-g="sport"></div>
@@ -513,10 +625,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <button class="fold-head" id="foldBtn" aria-expanded="false"><span class="fh-t"><span class="card-title">Details</span><span class="card-sub" id="foldSum"></span></span>
             <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="expand" id="foldBody"><div><div class="fold-body">
-            <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div></div>
+            <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
             <div class="chip-group"><span class="label">Personen</span><div data-g="people"></div></div>
             <div class="chip-group"><span class="label">Tags</span><div data-g="tags"></div></div>
             <div class="chip-group"><span class="label">Koordinaten</span><input class="text-in" id="coords" placeholder="47.3769, 8.5417" inputmode="decimal" enterkeyhint="done"></div>
+            <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Orte verwalten<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
           </div></div></div>
         </div>
       </div>
@@ -589,6 +702,38 @@ input[type=search]{-webkit-appearance:none;appearance:none}
       <button class="pill pill-white press" id="writerDone">Fertig</button>
     </div>
     <textarea class="w-ta" id="writerTa" placeholder="Was war heute?"></textarea>
+  </section>
+  <!-- ═══════════════ ORTE (Register) ═══════════════ -->
+  <section class="view" id="v-orte" aria-label="Orte" hidden>
+    <div class="o-bar" id="oBar">
+      <div class="o-top">
+        <button class="icon-btn press" id="oBack" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="s-title">Orte</div>
+      </div>
+      <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="oq" type="search" placeholder="Ort suchen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        <button class="clr" id="oqClear" aria-label="Leeren" hidden>✕</button></label>
+      <div class="o-filters" id="oFilters"></div>
+    </div>
+    <div id="oErr"></div>
+    <div class="o-sum" id="oSum"></div>
+    <div id="dupWrap"></div>
+    <div class="olist" id="olist"></div>
+    <div class="olist-foot">
+      <button class="pill pill-ghost press" id="oShowJson">orte.json ansehen</button>
+      <button class="pill pill-ghost press" id="oShowExport">Karten-Export ansehen</button>
+    </div>
+  </section>
+  <!-- ═══════════════ ORT (bearbeiten) ═══════════════ -->
+  <section class="view" id="v-ort" aria-label="Ort" hidden>
+    <div class="o-bar" id="dBar">
+      <div class="o-top">
+        <button class="icon-btn press" id="dBack" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <div class="s-title" id="dName"></div>
+      </div>
+      <div class="o-name-sub" id="dSub"></div>
+    </div>
+    <div id="dBody" style="display:flex;flex-direction:column;gap:12px"></div>
   </section>
 </main>
 
@@ -778,7 +923,7 @@ async function setSource(src){
     else { DATA=demoData(); SOURCE='demo'; }
   }
   if(SOURCE==='github'&&!OFFLINE) OFFLINE=null;
-  sourceBadge();
+  sourceBadge(); oLoadReg();
   buildDatalists(); renderEntry(0); renderStrip(true); renderDash(true); searchDirty=true; if(view==='search') renderSearch();
   if(SOURCE==='github'&&!OFFLINE){ ensureDay(cur); indexRefresh().catch(e=>console.warn('Index-Abgleich:',e)); }
 }
@@ -940,13 +1085,13 @@ function usage(k){ const c={}; DATA.forEach(e=>(e[k]||[]).forEach(v=>c[v]=(c[v]|
    Ansichten + Dock
    ═══════════════════════════════════════════════════════════ */
 let view='entry';
-const scrollMem={entry:0,write:0,dash:0,search:0}, ORDER=['entry','write','dash','search'];
+const scrollMem={entry:0,write:0,dash:0,search:0,orte:0,ort:0}, ORDER=['entry','write','dash','search','orte','ort'];
 function go(v, onShown){
   if(v===view){ if(v==='search') $('#q').focus(); else scrollTo({top:0,behavior:'smooth'}); return; }
   const from=$('#v-'+view), to=$('#v-'+v), dir=ORDER.indexOf(v)>ORDER.indexOf(view)?1:-1;
   scrollMem[view]=scrollY; view=v; document.activeElement?.blur(); flushSaves();
   if(v==='search'&&searchDirty) renderSearch();
-  const nav=v==='write'?'entry':v; document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===nav?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
+  const nav=v==='write'||v==='orte'||v==='ort'?'entry':v; document.querySelectorAll('[data-go]').forEach(b=>b.dataset.go===nav?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current'));
   if(v==='dash' && dashDirty) renderDash(true);
   const swap=()=>{ from.hidden=true; to.hidden=false; requestAnimationFrame(fnavUpdate); scrollTo(0,scrollMem[v]); if(v==='dash') requestAnimationFrame(growBars); onShown&&onShown(); };
   if(REDUCED||!to.animate){ swap(); return; }
@@ -1123,9 +1268,9 @@ function setMood(v,commit=true){
 const GROUPS={
   locations:{mode:'toggle', top:()=>TOP.locations, ph:'+ Ort'},
   countries:{mode:'multi', max:5, top:()=>TOP.countries, ph:'+ Land', upper:true},   // wie bisher: mehrfach tippen, je Ort ein Land
-  coffeeLocations:{mode:'multi', max:6, top:()=>TOP.coffeeLocations, ph:'+ Ort'},
+  coffeeLocations:{mode:'multi', max:6, top:()=>oTop(TOP.coffeeLocations), ph:'+ Ort'},
   sport:{mode:'toggle', top:()=>TOP.sport, ph:'+ Sport'},
-  places:{mode:'toggle', top:()=>usage('places').slice(0,6), ph:'+ Ort'},
+  places:{mode:'toggle', top:()=>oTop(usage('places')).slice(0,6), ph:'+ Ort'},
   people:{mode:'toggle', top:()=>TOP.people, ph:'+ Person'},
   tags:{mode:'toggle', top:()=>usage('tags').slice(0,8), ph:'+ Tag'},
 };
@@ -1156,6 +1301,7 @@ $('#ccToggle').onclick=()=>{ ccOpen=!ccOpen; ccState(entryFor(cur)); };
 let SUGG={};
 function buildDatalists(){ buildLocCC();
   SUGG={}; LIST_KEYS.forEach(k=>{ const c={}; DATA.forEach(e=>new Set(e[k]||[]).forEach(v=>c[v]=(c[v]||0)+1)); (TOP[k]||[]).forEach(v=>c[v]??=0); SUGG[k]=Object.entries(c).sort((a,b)=>b[1]-a[1]); });
+  oMergeSugg();
 }
 let acSel=-1;
 function acMatches(k,q){
@@ -1176,6 +1322,7 @@ function acClose(k){ const b=document.querySelector(`[data-ac="${k}"]`); if(b){ 
 function addValue(k,v){
   v=v.trim().replace(/\s+/g,'_'); if(!v) return; if(GROUPS[k].upper) v=v.toUpperCase();
   const known=(SUGG[k]||[]).find(([x])=>x.toLowerCase()===v.toLowerCase()); if(known) v=known[0];   // Schreibweise vom bestehenden Wert übernehmen
+  if(O_KEYS.includes(k)) v=oResolveCI(v);   // Verweis aus dem Ortsregister → Zielname
   const e={...entryFor(cur)}; e[k]=[...e[k],v]; if(GROUPS[k].mode!=='multi') e[k]=[...new Set(e[k])];
   if(TOP[k]&&!TOP[k].includes(v)) TOP[k].push(v);
   if(k==='locations'&&e.countries.length===e.locations.length-1&&LOC_CC[v]) e.countries=[...e.countries,LOC_CC[v]];
@@ -1222,6 +1369,7 @@ function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coff
 function foldSummary(e){
   const bits=[e.places.length&&`${e.places.length} ${e.places.length>1?'Orte':'Ort'}`, e.people.length&&e.people.join(', '), e.tags.length&&e.tags.map(t=>'#'+t).join(' '), e.coords&&'📍'].filter(Boolean);
   $('#foldSum').textContent=bits.join(' · ')||'Orte, Personen, Tags, Koordinaten';
+  oHints(e);
 }
 function setFold(open){ $('#details').classList.toggle('open',open); $('#foldBody').classList.toggle('open',open); $('#foldBtn').setAttribute('aria-expanded',open); try{ localStorage.setItem('abkFold',open?'1':''); }catch{} }
 $('#foldBtn').onclick=()=>setFold(!$('#details').classList.contains('open'));
@@ -1441,7 +1589,7 @@ function growBars(){ document.querySelectorAll('#chartCols .seg-b').forEach(b=>b
 let METER_E=[], meterHl=null;
 const PALETTE=['#22b8cf','#4c8dff','#a06bff','#ef5da8','#2ecc71','#ffb84d'];
 function renderMeter(){
-  const counts={}; METER_E.forEach(e=>(e[meterKind]||[]).forEach(v=>counts[v]=(counts[v]||0)+1));
+  const counts={}; METER_E.forEach(e=>(e[meterKind]||[]).forEach(v=>{ v=oRes(meterKind,v); counts[v]=(counts[v]||0)+1; }));
   let rows=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   if(rows.length>6){ const rest=rows.slice(5).reduce((s,r)=>s+r[1],0); rows=[...rows.slice(0,5),['Andere',rest]]; }
   const total=rows.reduce((s,r)=>s+r[1],0), bar=$('#meterBar'), leg=$('#meterLegend');
@@ -1512,7 +1660,7 @@ const parsePrefix=q=>{ const m=q.match(/^([a-zA-Z0-9]+)[=:]\s*(.*)$/); if(!m) re
 const pLabel=p=>PREFIX[p]?.[1]||(p==='jahr'?'Jahr':p==='monat'?'Monat':p);
 function countTerms(entries){
   const c=new Map(), add=(p,v)=>{ const k=p+'\u0000'+v; c.set(k,(c.get(k)||0)+1); };
-  entries.forEach(e=>{ Object.entries(PREFIX).forEach(([p,[f]])=>new Set(e[f]||[]).forEach(v=>add(p,v))); add('jahr',e.date.slice(0,4)); add('monat',MON[+e.date.slice(5,7)-1]); });
+  entries.forEach(e=>{ Object.entries(PREFIX).forEach(([p,[f]])=>new Set((e[f]||[]).map(v=>oRes(f,v))).forEach(v=>add(p,v))); add('jahr',e.date.slice(0,4)); add('monat',MON[+e.date.slice(5,7)-1]); });
   return [...c].map(([k,n])=>{ const [p,v]=k.split('\u0000'); return {p,v,n}; }).sort((a,b)=>b.n-a.n);
 }
 function openSearch(){ go('search', ()=>$('#q').focus({preventScroll:true})); }
@@ -1537,7 +1685,8 @@ addEventListener('scroll',()=>{ if(view!=='search') return;
 function matchFilter(e,f){
   if(f.p==='jahr') return e.date.startsWith(f.v+'-');
   if(f.p==='monat') return +e.date.slice(5,7)===MON.indexOf(f.v)+1;
-  return (e[PREFIX[f.p][0]]||[]).some(x=>x.toLowerCase()===f.v.toLowerCase());
+  const k=PREFIX[f.p][0], fv=oRes(k,f.v).toLowerCase();
+  return (e[k]||[]).some(x=>oRes(k,x).toLowerCase()===fv);
 }
 const ago=t=>{ if(!t) return ''; const m=Math.round((Date.now()-new Date(t))/6e4); return m<2?'gerade eben':m<60?`vor ${m} Min.`:m<1440?`vor ${Math.round(m/60)} Std.`:`vor ${Math.round(m/1440)} Tagen`; };
 let HQ='', HPP=null;
@@ -1720,6 +1869,505 @@ function rangeSlider(el,n,a,b,onChange){
     if(ki===0) a=Math.max(0,Math.min(b,a+d)); else b=Math.min(n-1,Math.max(a,b+d)); draw(); onChange(a,b); }));
   draw();
 }
+
+
+/* ═══════════════════════════════════════════════════════════
+   ORTE – Register für Kaffeeorte und spezifische Orte (orte.json)
+   Konzept: Ortsregister_Konzept.md. Frontmatter bleibt unverändert,
+   der Name ist der Schlüssel. Typ (wo) und Genauigkeit (wie genau) sind getrennt.
+   ═══════════════════════════════════════════════════════════ */
+const O_TYPES=[['café','Café'],['arbeit','Arbeit'],['zuhause','Zuhause'],['privat','bei Freund*innen'],['ort','Ort']];
+const O_TYPE_LABEL=Object.fromEntries(O_TYPES);
+const O_GENAU=[['','Genauer Ort'],['stadt','Irgendwo in Stadt'],['land','Irgendwo im Land']];
+const O_ARTEN=['Berg','Pass','Veranstaltung','Quartier'];
+const O_PUBLIC=['café','arbeit','ort'];
+const O_KEYS=['coffeeLocations','places'];
+const O_FILE='orte.json';
+let OREG={v:1,orte:{},ignoriert:[]}, OREG_SHA=null, OREG_SAVED=null, OREG_STATE='none', OREG_ERR='';
+const O_ICO={
+  cup:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/></svg>',
+  pin:'<svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
+  lock:'<svg class="ico" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  info:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
+  loc:'<svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="7"/></svg>',
+};
+
+/* ─── Register lesen / schreiben ──────────────────────── */
+function oNormReg(j){ return {v:1, orte:(j&&typeof j.orte==='object'&&j.orte)||{}, ignoriert:Array.isArray(j?.ignoriert)?j.ignoriert:[]}; }
+function oDemoReg(){ return oNormReg({orte:{
+  Home:{typ:'zuhause'}, Bodara:{typ:'arbeit',koord:[47.38,8.53],stadt:'Zürich'}, Lab:{typ:'arbeit'},
+  Miro:{typ:'café',koord:[47.3769,8.5417],stadt:'Zürich'}, Bonheur:{typ:'café',koord:[47.3745,8.522],stadt:'Zürich'} }}); }
+function oRegJson(){ // eine Zeile pro Ort, alphabetisch – gut lesbar und kleine Diffs
+  const keys=Object.keys(OREG.orte).sort((a,b)=>a.localeCompare(b,'de'));
+  const one=v=>JSON.stringify(v).replace(/,"/g,', "').replace(/":/g,'": ').replace(/^\{/,'{ ').replace(/\}$/,' }').replace(/\[([-\d.]+),([-\d.]+)\]/g,'[$1, $2]');
+  const rows=keys.map(k=>`    ${JSON.stringify(k)}: ${one(OREG.orte[k])}`);
+  const ign=OREG.ignoriert.length?`,\n  "ignoriert": ${JSON.stringify(OREG.ignoriert)}`:'';
+  return `{\n  "v": 1,\n  "orte": {\n${rows.join(',\n')}${rows.length?'\n':''}  }${ign}\n}\n`;
+}
+async function oLoadReg(){
+  if(SOURCE!=='github'||OFFLINE){ OREG=SOURCE==='github'?oNormReg({}):oDemoReg(); OREG_STATE=SOURCE==='github'?'error':'demo'; OREG_ERR=OFFLINE||''; OREG_SAVED=null; oAfterReg(); return; }
+  OREG_STATE='loading';
+  try{
+    const f=await ghGetFile(O_FILE);
+    if(f){ OREG=oNormReg(JSON.parse(f.text)); OREG_SHA=f.sha; OREG_SAVED=oRegJson(); }
+    else { OREG=oNormReg({}); OREG_SHA=null; OREG_SAVED=null; }
+    OREG_STATE='ok';
+  }catch(e){ OREG=oNormReg({}); OREG_STATE='error'; OREG_ERR=e.message; console.warn('orte.json:',e); }
+  oAfterReg();
+}
+function oAfterReg(){ buildDatalists(); oHints(entryFor(cur)); if(view==='orte') oRenderList(false); if(view==='ort') oRenderOrt(); }
+const oCanEdit=()=>OREG_STATE==='ok'||OREG_STATE==='demo';
+let oSaveT=null, oSaving=null;
+function oScheduleSave(){
+  if(OREG_STATE==='demo'){ clearTimeout(oSaveT); oSaveT=setTimeout(()=>island('Gespeichert (Demo)'),500); return; }
+  clearTimeout(oSaveT); oSaveT=setTimeout(()=>oSaveNow().catch(e=>island('Orte nicht gespeichert: '+e.message,'var(--bad)',5000)),1200);
+}
+async function oSaveNow(){
+  clearTimeout(oSaveT);
+  if(OREG_STATE==='demo') return;
+  if(OREG_STATE!=='ok') throw new Error('orte.json ist nicht geladen');
+  if(oSaving) await oSaving.catch(()=>{});
+  oSaving=(async()=>{
+    const s=oRegJson(); if(s===OREG_SAVED) return;
+    const fresh=await ghGetFile(O_FILE);
+    if(fresh&&OREG_SHA&&fresh.sha!==OREG_SHA&&fresh.text!==OREG_SAVED) throw new Error('orte.json wurde anderswo geändert, bitte neu laden');
+    const res=await ghPutFile(O_FILE,s,'Update orte.json',fresh?.sha);
+    OREG_SHA=res.content?.sha||null; OREG_SAVED=s; island('Orte gespeichert');
+  })();
+  try{ await oSaving; } finally{ oSaving=null; }
+}
+addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'&&OREG_STATE==='ok'&&oRegJson()!==OREG_SAVED) oSaveNow().catch(()=>{}); });
+
+/* ─── Auflösen, Zählen ────────────────────────────────── */
+const oReg=n=>OREG.orte[n]||null;
+const oAliasOf=n=>oReg(n)?.alias||null;
+function oResolve(n){ let s=n,k=0; while(oAliasOf(s)&&k++<8) s=oAliasOf(s); return s; }
+const oRes=(k,v)=>O_KEYS.includes(k)?oResolve(v):v;
+function oResolveCI(v){ if(OREG.orte[v]) return oResolve(v); const k=Object.keys(OREG.orte).find(x=>x.toLowerCase()===v.toLowerCase()); return k?oResolve(k):v; }
+const oAliasesTo=n=>Object.keys(OREG.orte).filter(k=>OREG.orte[k].alias===n);
+const oKnown=n=>{ const r=oReg(oResolve(n)); return !!(r&&(r.typ||r.koord||r.genau)); };
+const oNeedsKoord=r=>!r.koord&&r.typ!=='privat'&&r.genau!=='land';
+const oIsPublic=r=>!!(r.koord&&O_PUBLIC.includes(r.typ)&&r.oeffentlich!==false);
+const oNorm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[_\-\s.]/g,'');
+let oUse=null;   // Name → {coffee, place, days, first, last}  (Tage, nicht Kaffees)
+function oUsage(){
+  if(oUse) return oUse; const u={};
+  DATA.forEach(e=>{ if(e.date>TODAY) return; const seen={};
+    O_KEYS.forEach(k=>new Set(e[k]||[]).forEach(n=>{ const x=u[n]||(u[n]={coffee:0,place:0,days:0,first:e.date,last:e.date});
+      x[k==='places'?'place':'coffee']++; if(!seen[n]){ seen[n]=1; x.days++; if(e.date<x.first) x.first=e.date; if(e.date>x.last) x.last=e.date; } })); });
+  return oUse=u;
+}
+function oInfo(n){
+  const U=oUsage(), names=[n,...oAliasesTo(n)], us=names.map(x=>U[x]).filter(Boolean);
+  return {name:n, aliases:oAliasesTo(n), coffee:us.reduce((s,x)=>s+x.coffee,0), place:us.reduce((s,x)=>s+x.place,0), total:us.reduce((s,x)=>s+x.days,0),
+    first:us.map(x=>x.first).sort()[0]||null, last:us.map(x=>x.last).sort().pop()||null, r:oReg(n)||{}};
+}
+function oAll(){
+  const names=new Set([...Object.keys(oUsage()),...Object.keys(OREG.orte)]);
+  return [...names].filter(n=>!oAliasOf(n)).map(oInfo).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name,'de'));
+}
+const oDaysOf=n=>oUsage()[n]?.days||0;
+function oTop(list){ return [...new Set(list.map(oResolve))]; }   // Chip-Vorschläge: Verweise durch Ziel ersetzen
+function oMergeSugg(){ // Vorschläge beim Erfassen: Verweise zählen zum Ziel, nur Zielname wird vorgeschlagen
+  O_KEYS.forEach(k=>{ if(!SUGG[k]) return; const c={}; SUGG[k].forEach(([v,n])=>{ const t=oResolve(v); c[t]=(c[t]||0)+n; }); SUGG[k]=Object.entries(c).sort((a,b)=>b[1]-a[1]); });
+}
+
+/* ─── Doppelte erkennen ───────────────────────────────── */
+function oLev1(a,b){ if(a===b||Math.abs(a.length-b.length)>1) return false; let i=0,j=0,d=0;
+  while(i<a.length&&j<b.length){ if(a[i]===b[j]){i++;j++;continue;} if(++d>1) return false; if(a.length>b.length) i++; else if(b.length>a.length) j++; else {i++;j++;} }
+  return d+(a.length-i)+(b.length-j)===1; }
+function oDuplicates(list=oAll()){
+  const out=[], ign=new Set(OREG.ignoriert.map(p=>[...p].sort().join('|')));
+  const L=list.map(p=>({p,n:oNorm(p.name)}));
+  for(let i=0;i<L.length;i++) for(let j=i+1;j<L.length;j++){
+    const a=L[i].p.name, b=L[j].p.name, na=L[i].n, nb=L[j].n;
+    if(/_div$/.test(a)&&/_div$/.test(b)) continue;
+    if(ign.has([a,b].sort().join('|'))) continue;
+    let why=null;
+    if(na===nb) why=a.toLowerCase()===b.toLowerCase()?'Gross-/Kleinschreibung':/[̀-ͯ]/.test((a+b).normalize('NFD'))?'Akzent':'Unterstrich';
+    else if(Math.min(na.length,nb.length)>=5&&oLev1(na,nb)) why='ein Buchstabe anders';
+    if(why) out.push({a:L[i].p,b:L[j].p,why});
+  }
+  return out;
+}
+
+/* ─── Hinweis beim Erfassen: „Miro · Ort zuordnen“ ────── */
+function oHints(e){
+  oUse=null;
+  const box={coffeeLocations:$('#oHintCoffee'),places:$('#oHintPlaces')}; if(!box.places) return;
+  $('#orteCount').textContent=OREG_STATE==='loading'||OREG_STATE==='none'?'':fmt0(oAll().length);
+  O_KEYS.forEach(k=>{
+    const show=OREG_STATE==='ok'||OREG_STATE==='demo';
+    const tmpl=k==='coffeeLocations'&&!e.coffee&&e.coffeeLocations.length===1&&e.coffeeLocations[0]==='Home';
+    box[k].innerHTML=show&&!tmpl?[...new Set(e[k]||[])].filter(v=>!oKnown(v)).map(v=>`<button class="reg-hint" data-ort="${esc(oResolve(v))}"><b>${esc(v)}</b> · <span class="go">Ort zuordnen</span></button>`).join(''):'';
+  });
+}
+document.addEventListener('click',ev=>{ const h=ev.target.closest('.reg-hint[data-ort]'); if(h) oOpenOrt(h.dataset.ort); });
+$('#openOrte').onclick=()=>oOpenList();
+
+/* ═══════════════════════════════════════════════════════════
+   Navigation
+   ═══════════════════════════════════════════════════════════ */
+let O_CUR=null, O_FROM='entry';
+function oOpenList(){ oUse=null; scrollMem.orte=0; oRenderList(); go('orte'); }
+function oOpenOrt(n,opt={}){
+  if(!oCanEdit()){ island(OREG_STATE==='loading'?'Orte werden noch geladen …':'orte.json nicht geladen','var(--bad)',2500); return; }
+  oUse=null; O_CUR=n; O_PANEL=opt.merge?'merge':null; O_MT=opt.merge||null; O_MQ=''; O_MODE='alias'; O_RN='';
+  if(view!=='ort') O_FROM=view; scrollMem.ort=0; oRenderOrt(); if(view!=='ort') go('ort'); else scrollTo({top:0});
+}
+function oBack(){
+  if(O_RUN) return;
+  if(view==='ort'&&O_FROM==='orte'){ oRenderList(false); go('orte'); return; }
+  const e=entryFor(cur); renderEntry(0); oHints(e); go('entry');
+}
+$('#oBack').onclick=oBack; $('#dBack').onclick=oBack;
+addEventListener('keydown',e=>{ if(e.key==='Escape'&&(view==='orte'||view==='ort')&&!$('#sheet').classList.contains('open')&&!e.target.closest('input')) oBack(); });
+addEventListener('scroll',()=>{ if(view==='orte') $('#oBar').classList.toggle('stuck',scrollY>4); if(view==='ort') $('#dBar').classList.toggle('stuck',scrollY>4); },{passive:true});
+
+/* ═══════════════════════════════════════════════════════════
+   Ortsliste
+   ═══════════════════════════════════════════════════════════ */
+let OF={q:'',flag:null,typ:null,src:null};
+function oFiltered(all){
+  const q=oNorm(OF.q);
+  return all.filter(p=>{
+    if(q&&!oNorm(p.name).includes(q)&&!p.aliases.some(a=>oNorm(a).includes(q))&&!oNorm(p.r.stadt||'').includes(q)) return false;
+    if(OF.flag==='nokoord'&&!oNeedsKoord(p.r)) return false;
+    if(OF.flag==='notyp'&&p.r.typ) return false;
+    if(OF.flag==='unscharf'&&!p.r.genau) return false;
+    if(OF.typ&&p.r.typ!==OF.typ) return false;
+    if(OF.src==='coffee'&&!p.coffee) return false;
+    if(OF.src==='place'&&!p.place) return false;
+    return true;
+  });
+}
+function oRenderList(anim=true){
+  oUse=null;
+  const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
+  const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
+  $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Stadt/Land',cnt(p=>p.r.genau))
+    +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Spezifische Orte',cnt(p=>p.place))
+    +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('');
+  $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt, damit nichts überschrieben wird.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`
+    :OREG_STATE==='demo'?`<p class="muted" style="padding:0 4px">Demo-Daten: Änderungen bleiben nur bis zum Neuladen.</p>`:'';
+  $('#oRetry')?.addEventListener('click',()=>oLoadReg());
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>p.r.koord))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
+  const d=OF.q||OF.flag||OF.typ||OF.src?[]:oDuplicates(all);
+  $('#dupWrap').innerHTML=d.length?`<div class="card dup-card"><div class="card-head"><span class="card-title">Mögliche Doppelte</span><span class="card-sub">${d.length}</span></div>
+    ${d.map((x,i)=>{ const [hi,lo]=x.a.total>=x.b.total?[x.a,x.b]:[x.b,x.a];
+      return `<div class="dup"><div class="pair">${esc(lo.name)} <span class="c">${lo.total}</span> &nbsp;·&nbsp; ${esc(hi.name)} <span class="c">${hi.total}</span><span class="why">${x.why}</span></div>
+      <div class="acts"><button class="pill pill-accent press" data-merge="${esc(lo.name)}" data-into="${esc(hi.name)}">Zusammenführen</button><button class="pill pill-ghost press" data-ign="${i}">Kein Duplikat</button></div></div>`; }).join('')}</div>`:'';
+  $('#dupWrap').querySelectorAll('[data-ign]').forEach(b=>b.onclick=()=>{ if(!oCanEdit()) return; const x=d[+b.dataset.ign]; OREG.ignoriert.push([x.a.name,x.b.name].sort()); oScheduleSave(); island('Wird nicht mehr vorgeschlagen'); oRenderList(false); });
+  $('#dupWrap').querySelectorAll('[data-merge]').forEach(b=>b.onclick=()=>oOpenOrt(b.dataset.merge,{merge:b.dataset.into}));
+  const N=Math.min(list.length,O_SHOWN);
+  $('#olist').innerHTML=list.slice(0,N).map((p,i)=>`<button class="orow" data-o="${esc(p.name)}" style="${anim&&i<24&&!REDUCED?`animation-delay:${i*18}ms`:'animation:none'}">
+      <div class="nm"><div class="t1">${esc(p.name)}</div><div class="t2">${oSub(p)}</div></div>${oSrcIcons(p)}${oPosDot(p.r)}<span class="days">${fmt0(p.total)}</span></button>`).join('')
+    +(list.length>N?`<button class="more press" id="oMore">${fmt0(list.length-N)} weitere anzeigen</button>`:'')
+    ||'<p class="muted" style="text-align:center;padding:24px">Keine Orte gefunden.</p>';
+  $('#oMore')?.addEventListener('click',()=>{ O_SHOWN+=150; oRenderList(false); });
+}
+let O_SHOWN=150;
+function oSrcIcons(p){ return `<span class="src" title="${p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':p.place?'Spezifischer Ort':'nicht mehr verwendet'}"><span class="${p.coffee?'':'off'}">${O_ICO.cup}</span><span class="${p.place?'':'off'}">${O_ICO.pin}</span></span>`; }
+function oPosDot(r){
+  if(r.typ==='privat') return `<span class="pos lock" title="privat, keine Koordinaten">${O_ICO.lock}</span>`;
+  if(r.genau==='land') return `<span class="pos na" title="irgendwo im Land, keine Koordinaten nötig"></span>`;
+  return `<span class="pos${r.koord?' has':''}" title="${r.koord?'Koordinaten vorhanden':'keine Koordinaten'}"></span>`; }
+function oSub(p){
+  const b=[p.r.typ?esc(O_TYPE_LABEL[p.r.typ])+(p.r.art?' · '+esc(p.r.art):''):'<span class="none">kein Typ</span>'];
+  if(p.r.genau) b.push(p.r.genau==='stadt'?'irgendwo in der Stadt':'irgendwo im Land');
+  if(p.r.stadt) b.push(esc(p.r.stadt));
+  if(p.aliases.length) b.push(`<span class="al">+ ${p.aliases.map(esc).join(', ')}</span>`);
+  return b.join(' · ');
+}
+$('#oFilters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'); if(!b) return; const k=b.dataset.f, v=b.dataset.val; OF[k]=OF[k]===v?null:v; O_SHOWN=150; oRenderList(); });
+$('#oq').addEventListener('input',e=>{ OF.q=e.target.value; $('#oqClear').hidden=!OF.q; O_SHOWN=150; oRenderList(false); });
+$('#oqClear').onclick=e=>{ e.preventDefault(); $('#oq').value=''; OF.q=''; $('#oqClear').hidden=true; oRenderList(false); };
+$('#olist').addEventListener('click',e=>{ const r=e.target.closest('[data-o]'); if(r) oOpenOrt(r.dataset.o); });
+
+/* ═══════════════════════════════════════════════════════════
+   Ort bearbeiten
+   ═══════════════════════════════════════════════════════════ */
+let O_PANEL=null, O_MT=null, O_MQ='', O_MODE='alias', O_RN='', O_RUN=null;
+function oSet(n,patch){
+  if(!oCanEdit()) return false;
+  const r={...(OREG.orte[n]||{}),...patch};
+  Object.keys(r).forEach(k=>{ if(r[k]===undefined||r[k]===null||r[k]==='') delete r[k]; });
+  if(Object.keys(r).length) OREG.orte[n]=r; else delete OREG.orte[n];
+  oScheduleSave(); return true;
+}
+const oOrigin=p=>p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':p.place?'Spezifischer Ort':'Nicht mehr verwendet';
+const oDShort=s=>{ if(!s) return '–'; const d=parse(s); return `${d.getDate()}. ${MON3[d.getMonth()]} ${d.getFullYear()}`; };
+function oAllArten(){ return [...new Set([...O_ARTEN,...Object.values(OREG.orte).map(r=>r.art).filter(Boolean)])]; }
+
+function oRenderOrt(){
+  if(!O_CUR) return; oUse=null;
+  const p=oInfo(O_CUR), r=p.r, pub=oIsPublic(r), pubType=O_PUBLIC.includes(r.typ);
+  $('#dName').textContent=O_CUR;
+  $('#dSub').textContent=`${oOrigin(p)} · ${fmt0(p.total)} ${p.total===1?'Tag':'Tage'}`;
+  let pos;
+  if(r.typ==='privat') pos=`<div class="sec-hint" style="margin-top:0">${O_ICO.lock}<span>Orte bei Freund*innen bekommen keine Koordinaten.</span></div>`;
+  else {
+    pos=`<div class="o-types" style="margin-bottom:12px">${O_GENAU.map(([g,l])=>`<button class="chip${(r.genau||'')===g?' on':''}" data-genau="${g}"><span class="cd"></span>${l}</button>`).join('')}</div>`;
+    pos+= r.genau==='land' ? `<div class="sec-hint">${O_ICO.info}<span>Irgendwo in einem Land: keine Koordinaten nötig. Zählt in Auswertungen normal mit, erscheint aber nicht auf der Karte.</span></div>`
+    : `<div class="pos-now">${r.koord?`<span class="k">${r.koord[0].toFixed(4)}, ${r.koord[1].toFixed(4)}</span>
+        <a href="https://www.openstreetmap.org/?mlat=${r.koord[0]}&mlon=${r.koord[1]}#map=${r.genau==='stadt'?12:17}/${r.koord[0]}/${r.koord[1]}" target="_blank" rel="noopener">Karte ↗</a>
+        <button class="x press" id="oKDel" aria-label="Koordinaten entfernen">✕</button>`:`<span class="k none">Keine Koordinaten</span>`}</div>
+      <div class="pos-row"><button class="pill pill-dark press" id="oKHere">${O_ICO.loc}Aktueller Standort</button></div>
+      <div class="pos-row" style="margin-top:8px"><input class="text-in" id="oKIn" placeholder="Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+        <button class="pill pill-accent press" id="oKSet">Setzen</button></div>
+      <div class="pos-err" id="oKErr"></div>
+      <div class="field-row"><span class="label">Stadt</span><input class="text-in" id="oStadt" placeholder="optional, z. B. Zürich" value="${esc(r.stadt||'')}" autocomplete="off" enterkeyhint="done"></div>
+      ${r.genau==='stadt'?`<div class="sec-hint">${O_ICO.info}<span>Irgendwo in der Stadt: als Position das Stadtzentrum setzen. Auf der Karte erscheint eine Stadt-Markierung statt eines Punkts.</span></div>`:''}
+      ${r.typ==='zuhause'?`<div class="sec-hint">${O_ICO.lock}<span>Zuhause-Orte dürfen Koordinaten haben, landen aber nie auf der Webseite.</span></div>`:''}
+      ${pubType?`<button class="tgl press" id="oPub" role="switch" aria-checked="${r.oeffentlich!==false}" ${r.koord?'':'disabled'}><div>Auf der Karte zeigen<p>${r.koord?(pub?'Erscheint auf der Karte, sobald es sie gibt.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst Koordinaten.'}</p></div><span class="sw2"></span></button>`:''}`;
+  }
+  const al=p.aliases.length?`<div style="margin-top:14px"><span class="label">Verweise auf diesen Ort</span><div style="margin-top:4px">${p.aliases.map(a=>`<div class="alias-row">${esc(a)} <span class="c">${fmt0(oDaysOf(a))} Tage</span>
+      <button class="pill pill-ghost press" data-unalias="${esc(a)}">Aufheben</button><button class="pill pill-ghost press" data-replace="${esc(a)}">Überall ersetzen</button></div>`).join('')}</div></div>`:'';
+  $('#dBody').innerHTML=`
+    <div class="o-stats">
+      <div class="stat"><div class="cl">Tage</div><div class="big">${fmt0(p.total)}</div><div class="avg">${p.coffee&&p.place?`${p.coffee} Kaffee · ${p.place} Ort`:'&nbsp;'}</div></div>
+      <div class="stat"><div class="cl">Zuerst</div><div class="big d">${oDShort(p.first)}</div></div>
+      <div class="stat"><div class="cl">Zuletzt</div><div class="big d">${oDShort(p.last)}</div></div>
+    </div>
+    <div class="card"><div class="card-head"><span class="card-title">Typ</span><span class="card-sub">${r.typ?'':'noch keiner'}</span></div>
+      <div class="o-types">${O_TYPES.map(([t,l])=>`<button class="chip${r.typ===t?' on':''}" data-typ="${t}"><span class="cd"></span>${esc(l)}</button>`).join('')}</div>
+      ${r.typ==='ort'?`<div class="field-row"><span class="label">Art <span class="hint">optional</span></span><div class="o-types">${oAllArten().map(a=>`<button class="chip${r.art===a?' on':''}" data-art="${esc(a)}"><span class="cd"></span>${esc(a)}</button>`).join('')}<input class="chip-add" id="oArt" placeholder="+ Art" enterkeyhint="done" autocomplete="off"></div></div>`:''}
+    </div>
+    <div class="card"><div class="card-head"><span class="card-title">Position</span></div>${pos}</div>
+    <div class="card"><div class="card-head"><span class="card-title">Name</span></div>
+      <div class="name-acts">
+        <button class="pill pill-dark press${O_PANEL==='rename'?' on':''}" data-panel="rename">Umbenennen …</button>
+        <button class="pill pill-dark press${O_PANEL==='merge'?' on':''}" data-panel="merge">Zusammenführen mit …</button>
+      </div>
+      <div class="expand${O_PANEL?' open':''}"><div><div class="o-panel" id="oPanel">${O_PANEL==='rename'?oRenamePanel():O_PANEL==='merge'?oMergePanel():''}</div></div></div>
+      ${al}
+    </div>`;
+  oBindOrt();
+}
+function oBindOrt(){
+  const B=$('#dBody'), rerender=()=>{ oRenderOrt(); };
+  B.querySelectorAll('[data-typ]').forEach(b=>b.onclick=()=>{ const t=b.dataset.typ, r=oReg(O_CUR)||{}, nt=r.typ===t?undefined:t;
+    if(nt==='privat'&&r.koord) island('Koordinaten entfernt (privat)','var(--accent)');
+    oSet(O_CUR,{typ:nt,...(nt!=='ort'?{art:undefined}:{}),...(nt==='privat'?{koord:undefined,oeffentlich:undefined,genau:undefined}:{})}); rerender(); });
+  B.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>{ const a=b.dataset.art; oSet(O_CUR,{art:(oReg(O_CUR)||{}).art===a?undefined:a}); rerender(); });
+  $('#oArt')?.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const v=e.target.value.trim(); if(!v) return; oSet(O_CUR,{art:v[0].toUpperCase()+v.slice(1)}); rerender(); });
+  B.querySelectorAll('[data-genau]').forEach(b=>b.onclick=()=>{ const g=b.dataset.genau||undefined, r=oReg(O_CUR)||{};
+    if(g==='land'&&r.koord) island('Koordinaten entfernt (irgendwo im Land)','var(--accent)');
+    oSet(O_CUR,{genau:g,...(g==='land'?{koord:undefined}:{})}); rerender(); });
+  const kIn=$('#oKIn');
+  if(kIn){
+    const set=()=>{ const k=oParseCoord(kIn.value); if(!k){ $('#oKErr').textContent='Keine gültigen Koordinaten erkannt. Beispiel: 47.3769, 8.5417'; return; } oSet(O_CUR,{koord:k}); island('Position gesetzt'); rerender(); };
+    $('#oKSet').onclick=set; kIn.onkeydown=e=>{ if(e.key==='Enter') set(); }; kIn.oninput=()=>$('#oKErr').textContent='';
+    kIn.onpaste=()=>setTimeout(()=>{ if(oParseCoord(kIn.value)) set(); },0);
+    $('#oKHere').onclick=oHere;
+    $('#oStadt').onchange=e=>{ oSet(O_CUR,{stadt:e.target.value.trim()}); };
+  }
+  $('#oKDel')?.addEventListener('click',()=>{ oSet(O_CUR,{koord:undefined}); rerender(); });
+  $('#oPub')?.addEventListener('click',()=>{ const r=oReg(O_CUR)||{}; oSet(O_CUR,{oeffentlich:r.oeffentlich===false?undefined:false}); rerender(); });
+  B.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{ if(O_RUN) return; O_PANEL=O_PANEL===b.dataset.panel?null:b.dataset.panel; O_MT=null; O_MQ=''; O_RN=''; O_MODE='alias'; rerender();
+    setTimeout(()=>{ const i=$('#oPanel input'); if(i&&!TOUCH) i.focus({preventScroll:true}); },60); });
+  B.querySelectorAll('[data-unalias]').forEach(b=>b.onclick=()=>{ const a=b.dataset.unalias; delete OREG.orte[a]; oScheduleSave(); oUse=null; buildDatalists(); island('Verweis aufgehoben'); rerender(); });
+  B.querySelectorAll('[data-replace]').forEach(b=>b.onclick=()=>{ const a=b.dataset.replace, t=O_CUR; O_CUR=a; O_PANEL='merge'; O_MT=t; O_MODE='replace'; O_MQ=''; rerender(); });
+  oBindPanel();
+}
+
+/* ─── Koordinaten ─────────────────────────────────────── */
+function oParseCoord(s){
+  s=String(s).trim(); let m;
+  m=s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)
+   ||s.match(/[?&](?:m?lat|q|ll|query)=(-?\d+\.\d+)(?:&m?lon=|,|%2C)(-?\d+\.\d+)/i)
+   ||s.match(/#map=\d+\/(-?\d+\.\d+)\/(-?\d+\.\d+)/)
+   ||s.match(/(-?\d{1,2}\.\d+)\s*[,;]\s*(-?\d{1,3}\.\d+)/)
+   ||s.match(/(-?\d{1,2}\.\d+)\s+(-?\d{1,3}\.\d+)/);
+  if(!m) return null; const a=+m[1], b=+m[2]; if(Math.abs(a)>90||Math.abs(b)>180) return null;
+  return [Math.round(a*1e4)/1e4, Math.round(b*1e4)/1e4];
+}
+function oHere(){
+  if(!navigator.geolocation){ island('Standort nicht verfügbar','var(--bad)'); return; }
+  const n=O_CUR; island('Standort wird bestimmt …','var(--c-km)',0);
+  navigator.geolocation.getCurrentPosition(
+    p=>{ oSet(n,{koord:[Math.round(p.coords.latitude*1e4)/1e4,Math.round(p.coords.longitude*1e4)/1e4]}); island(`Standort übernommen (± ${Math.round(p.coords.accuracy)} m)`); if(O_CUR===n) oRenderOrt(); },
+    e=>island('Standort nicht verfügbar: '+(e.code===1?'keine Berechtigung':e.message),'var(--bad)',3500),
+    {enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+
+/* ─── Umbenennen ──────────────────────────────────────── */
+function oRenameCheck(v){
+  if(!v) return {ok:false};
+  if(/\s/.test(v)) return {err:'Keine Leerzeichen – im Suchindex trennen Leerzeichen die Namen. Unterstrich verwenden.'};
+  if(/[:#\[\]{},"']|^[-?!&*|>%@`]/.test(v)) return {err:'Bitte keine Sonderzeichen wie : # [ ] { } , " oder ein Zeichen wie - am Anfang (YAML).'};
+  if(v===O_CUR) return {err:'Das ist der aktuelle Name.'};
+  if(oUsage()[v]||OREG.orte[v]) return {err:'exists'};
+  return {ok:true};
+}
+function oRenamePanel(){
+  const u=oUsage()[O_CUR]||{coffee:0,place:0,days:0}, n=u.days, chk=oRenameCheck(O_RN);
+  return `<input class="text-in" id="oRn" placeholder="Neuer Name" value="${esc(O_RN)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done">
+    <div class="o-prev">${chk.err==='exists'
+      ?`<span class="err">„${esc(O_RN)}“ gibt es schon.</span> <button class="pill pill-accent press" data-to-merge="${esc(O_RN)}" style="margin-left:6px">Stattdessen zusammenführen</button>`
+      :chk.err?`<span class="err">${chk.err}</span>`
+      :chk.ok?`<div class="big">${esc(O_CUR)} <span class="ar">→</span> ${esc(O_RN)}</div>
+        <ul><li>${n?`${fmt0(n)} ${n===1?'Tag wird':'Tage werden'} geändert${u.coffee&&u.place?` (${u.coffee} in <i>Kaffee</i>, ${u.place} in <i>Spezifische Orte</i>)`:''}`:'Kommt in keinem Tag vor, nur das Register ändert sich'}</li>
+        <li>Typ, Position und Verweise ziehen mit um</li>${n&&SOURCE==='github'?'<li>Danach wird der Suchindex aktualisiert</li>':''}</ul>`
+      :`<span style="color:var(--text-3)">Neuer Name ohne Leerzeichen, z. B. <i>${esc(O_CUR)}_Kafi</i></span>`}</div>
+    <div class="run-actions"><button class="pill pill-accent press" id="oGo" ${chk.ok?'':'disabled'}>${n?`${fmt0(n)} ${n===1?'Tag':'Tage'} ändern`:'Umbenennen'}</button></div>
+    <div class="pbar" id="oBar2"><b></b></div><div class="slog" id="oLog"></div>`;
+}
+
+/* ─── Zusammenführen ─────────────────────────────────── */
+function oMergePanel(){
+  const cand=oAll().filter(x=>x.name!==O_CUR&&(!O_MQ||oNorm(x.name).includes(oNorm(O_MQ)))).slice(0,O_MQ?24:10);
+  if(O_MT&&!cand.some(x=>x.name===O_MT)) cand.unshift(oInfo(O_MT));
+  const u=oUsage()[O_CUR]||{days:0,coffee:0,place:0}, n=u.days, t=O_MT;
+  let both=0, bothPl=0; if(t){ DATA.forEach(e=>{ O_KEYS.forEach(k=>{ const v=e[k]||[]; if(v.includes(O_CUR)&&v.includes(t)){ both++; if(k==='places') bothPl++; } }); }); }
+  return `<input class="text-in" id="oMq" placeholder="Zielort suchen" value="${esc(O_MQ)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <div class="o-pick">${cand.map(x=>`<button class="acs${x.name===t?' on':''}" data-target="${esc(x.name)}">${esc(x.name)}<span class="c">${fmt0(x.total)}</span></button>`).join('')||'<span class="muted">Kein Ort gefunden</span>'}</div>
+    ${t?`<div class="o-prev"><div class="big">${esc(O_CUR)} <span class="c">${fmt0(n)} Tage</span> <span class="ar">→</span> ${esc(t)} <span class="c">${fmt0(oInfo(t).total)} Tage</span></div></div>
+    <div class="o-mode">
+      <div class="opt" role="radio" tabindex="0" data-mode="alias" aria-checked="${O_MODE==='alias'}"><span class="rd"></span><div><strong>Als Verweis</strong><p>Beide Namen gelten als ein Ort, vorgeschlagen wird nur noch ${esc(t)}. Die Tage bleiben unverändert, jederzeit rückgängig.</p></div></div>
+      <div class="opt" role="radio" tabindex="0" data-mode="replace" aria-checked="${O_MODE==='replace'}"><span class="rd"></span><div><strong>Überall ersetzen</strong><p>${esc(O_CUR)} wird in ${fmt0(n)} ${n===1?'Tag':'Tagen'} durch ${esc(t)} ersetzt, damit es auch in Obsidian sauber ist.${bothPl?` Bei den spezifischen Orten bleibt ${esc(t)} an ${bothPl} ${bothPl===1?'Tag':'Tagen'} nur einmal stehen.`:''}${both-bothPl?` Bei Kaffee bleibt jeder Eintrag erhalten, weil er einen Kaffee zählt.`:''}</p></div></div>
+    </div>
+    ${oConflictNote(t)}
+    <div class="run-actions"><button class="pill pill-accent press" id="oGo">${O_MODE==='alias'?'Verweis setzen':`${fmt0(n)} ${n===1?'Tag':'Tage'} ändern`}</button></div>
+    <div class="pbar" id="oBar2"><b></b></div><div class="slog" id="oLog"></div>`:''}`;
+}
+function oConflictNote(t){
+  const a=oReg(O_CUR)||{}, b=oReg(t)||{}, notes=[];
+  if(a.typ&&b.typ&&a.typ!==b.typ) notes.push(`Typ: ${O_TYPE_LABEL[b.typ]} von ${esc(t)} gilt (${esc(O_CUR)} war ${O_TYPE_LABEL[a.typ]}).`);
+  else if(a.typ&&!b.typ) notes.push(`${esc(t)} übernimmt den Typ ${O_TYPE_LABEL[a.typ]}.`);
+  if(a.koord&&b.koord) notes.push(`Position von ${esc(t)} gilt.`); else if(a.koord&&!b.koord) notes.push(`${esc(t)} übernimmt die Position.`);
+  return notes.length?`<div class="sec-hint">${O_ICO.info}<span>${notes.join(' ')}</span></div>`:'';
+}
+function oBindPanel(){
+  const P=$('#oPanel'); if(!P) return;
+  const redraw=(html,id)=>{ const el=$('#'+id), pos=el?.selectionStart; P.innerHTML=html(); const n=$('#'+id); if(n&&document.activeElement!==n&&id){ n.focus({preventScroll:true}); if(pos!=null) n.setSelectionRange(pos,pos); } oBindPanel(); };
+  const rn=$('#oRn');
+  if(rn){
+    rn.oninput=()=>{ O_RN=rn.value.trim(); redraw(oRenamePanel,'oRn'); };
+    rn.onkeydown=e=>{ if(e.key==='Enter'&&oRenameCheck(O_RN).ok) $('#oGo').click(); };
+    $('#oGo').onclick=()=>oReplace(O_CUR,O_RN,{rename:true});
+    P.querySelector('[data-to-merge]')?.addEventListener('click',e=>{ O_PANEL='merge'; O_MT=e.target.dataset.toMerge; O_MQ=''; oRenderOrt(); });
+  }
+  const mq=$('#oMq');
+  if(mq){
+    mq.oninput=()=>{ O_MQ=mq.value; redraw(oMergePanel,'oMq'); };
+    P.querySelectorAll('[data-target]').forEach(b=>b.onclick=()=>{ O_MT=b.dataset.target===O_MT?null:b.dataset.target; P.innerHTML=oMergePanel(); oBindPanel(); });
+    P.querySelectorAll('[data-mode]').forEach(o=>o.onclick=o.onkeydown=e=>{ if(e.type==='keydown'&&e.key!==' '&&e.key!=='Enter') return; e.preventDefault(); O_MODE=o.dataset.mode; P.innerHTML=oMergePanel(); oBindPanel(); });
+    $('#oGo')?.addEventListener('click',()=>{
+      if(O_MODE==='alias'){
+        const from=O_CUR, to=O_MT; oMergeData(from,to); OREG.orte[from]={alias:to}; oAliasesTo(from).forEach(a=>OREG.orte[a]={alias:to});
+        oScheduleSave(); oUse=null; buildDatalists(); island(`${from} verweist jetzt auf ${to}`);
+        O_CUR=to; O_PANEL=null; oRenderOrt();
+      } else oReplace(O_CUR,O_MT,{});
+    });
+  }
+}
+function oMergeData(from,to){ const a=oReg(from)||{}, b=oReg(to)||{}, add={};
+  ['typ','art','genau','koord','stadt','oeffentlich'].forEach(k=>{ if(a[k]!==undefined&&a[k]!==null&&b[k]===undefined) add[k]=a[k]; });
+  if(Object.keys(add).length) OREG.orte[to]={...b,...add}; }
+
+/* ─── Ersetzen in den Tagesdateien ────────────────────────
+   1. Register: alter Name wird sofort Verweis auf den neuen (gespeichert, bevor ein Tag geändert wird)
+   2. Tage nacheinander: frische Datei holen, nur die Listenzeilen in coffee_locations/places ersetzen, schreiben
+   3. Am Schluss: Suchindex schreiben, Verweis entfernen, Register speichern
+   Abbruch oder Fehler: Verweis bleibt stehen → stimmig, später einfach nochmals ausführen.          */
+function oReplaceText(raw,from,to){
+  const t=raw.replace(/\r\n/g,'\n'), m=t.match(/^---\n([\s\S]*?)\n---/); if(!m) return raw;
+  let key=null, seen=null, changed=false; const out=[];
+  for(const l of m[1].split('\n')){
+    const k=l.match(/^([A-Za-z_][\w-]*):/); if(k){ key=k[1]; seen=new Set(); out.push(l); continue; }
+    const it=l.match(/^(\s+-\s+)(.*?)\s*$/);
+    if(it&&(key==='coffee_locations'||key==='places')){
+      let v=it[2].replace(/^['"]|['"]$/g,'');
+      if(v===from){ v=to; changed=true; }
+      if(key==='places'){ if(seen.has(v)) continue; seen.add(v); }   // spezifische Orte: einmal pro Tag
+      out.push(it[1]+v); continue;                                     // Kaffee: jede Zeile ist ein Kaffee, bleibt
+    }
+    out.push(l);
+  }
+  if(!changed) return raw;
+  const n=new Date(), ts=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  const yaml=out.join('\n').replace(/^updated:.*$/m,`updated: ${ts}`);
+  return '---\n'+yaml+'\n---'+t.slice(m[0].length);
+}
+async function oReplace(from,to,{rename=false}={}){
+  if(O_RUN||!oCanEdit()) return;
+  const live=SOURCE==='github';
+  if(live&&OFFLINE){ island('Keine Verbindung zu GitHub','var(--bad)'); return; }
+  const P=$('#oPanel'), btn0=$('#oGo'), btn=btn0.cloneNode(true); btn0.replaceWith(btn); btn.disabled=false;
+  const bar=$('#oBar2'), log=$('#oLog');
+  P.querySelectorAll('input,[data-target],[data-mode],[data-to-merge]').forEach(x=>x.style.pointerEvents='none');
+  $('#dBody').querySelectorAll('[data-panel],[data-typ],[data-genau],[data-unalias],[data-replace]').forEach(x=>x.style.pointerEvents='none');
+  const L=(m,c='')=>{ log.insertAdjacentHTML('beforeend',`<div class="${c}">${esc(m)}</div>`); log.scrollTop=log.scrollHeight; };
+  const done=(label,ok)=>{ O_RUN=null; btn.textContent=label; btn.className='pill press '+(ok?'pill-accent':'pill-dark'); btn.onclick=()=>{ O_CUR=to; O_PANEL=null; oRenderOrt(); }; };
+  const run=O_RUN={stop:false}; btn.textContent='Abbrechen'; btn.className='pill pill-dark press'; btn.onclick=()=>{ run.stop=true; btn.disabled=true; btn.textContent='Wird abgebrochen …'; };
+  bar.classList.add('on');
+  try{
+    await flushSaves(); if(PENDING.size) throw new Error('ungespeicherte Änderungen an einem Tag');
+    // 1. Register
+    if(rename){ if(OREG.orte[from]&&!OREG.orte[from].alias) OREG.orte[to]={...OREG.orte[from]}; } else oMergeData(from,to);
+    oAliasesTo(from).forEach(a=>OREG.orte[a]={alias:to}); OREG.orte[from]={alias:to};
+    await oSaveNow(); oUse=null; buildDatalists();
+    L(`Register: ${from} → ${to} (Verweis gesetzt)`);
+    // 2. Tage
+    const dates=[...DATA.values()].filter(e=>O_KEYS.some(k=>(e[k]||[]).includes(from))).map(e=>e.date).sort();
+    let i=0, w=0;
+    for(const d of dates){
+      if(run.stop){ L(`Abgebrochen nach ${i} von ${dates.length} Tagen. ${from} bleibt als Verweis auf ${to} stehen. Nochmals ausführen setzt fort.`,'err'); done('Fertig',false); return; }
+      if(live){
+        const path=dayPath(d), f=await ghGetFile(path);
+        if(f&&f.text!=null){ const nt=oReplaceText(f.text,from,to);
+          if(nt!==f.text){ const res=await ghPutFile(path,nt,`Ort ${from} → ${to}`,f.sha); w++;
+            const old=DATA.get(d); delete FILES[d];
+            if(old?._file){ const P2=parseDay(nt,d); P2._file.sha=res.content?.sha||null; P2._file.exists=true; DATA.set(d,P2); }
+            else if(old){ old.coffeeLocations=old.coffeeLocations.map(x=>x===from?to:x); old.places=[...new Set(old.places.map(x=>x===from?to:x))]; }
+            const ie=indexEntry(d,nt,byteSize(nt)); if(ie&&RAW_INDEX){ const j=RAW_INDEX.findIndex(x=>x.date===d); if(j>=0) RAW_INDEX[j]=ie; else RAW_INDEX.push(ie); } } }
+      } else {
+        const e=DATA.get(d); if(e){ e.coffeeLocations=e.coffeeLocations.map(x=>x===from?to:x); e.places=[...new Set(e.places.map(x=>x===from?to:x))]; w++; }
+        await new Promise(r=>setTimeout(r,dates.length>100?8:40));
+      }
+      i++; bar.firstChild.style.width=(i/dates.length*100)+'%';
+      if(i<=3||i===dates.length||i%Math.max(1,Math.round(dates.length/8))===0) L(`${d}  ✓`);
+    }
+    // 3. Abschluss
+    if(live&&w){ L('Suchindex wird geschrieben …');
+      const tags=new Set(JSON.parse(localStorage.getItem('knownTags')||'[]')); INDEX_BUILT=new Date().toISOString();
+      const cur0=await ghGetFile('search-index.json');
+      await ghPutFile('search-index.json',JSON.stringify({v:10,built:INDEX_BUILT,index:RAW_INDEX,tags:[...tags]}),'Update search index',cur0?.sha); }
+    delete OREG.orte[from]; await oSaveNow();
+    ['coffeeLocations','places'].forEach(k=>{ if(TOP[k]) TOP[k]=[...new Set(TOP[k].map(x=>x===from?to:x))]; });
+    oUse=null; buildDatalists(); renderStrip(); dashDirty=true; searchDirty=true;
+    bar.firstChild.style.width='100%';
+    L(`${fmt0(w)} ${w===1?'Tag':'Tage'} geändert${live&&w?' · Suchindex aktualisiert':''} · Verweis entfernt`,'ok');
+    island(rename?`Umbenannt in ${to}`:`${from} überall durch ${to} ersetzt`);
+    done('Fertig',true);
+  }catch(e){
+    console.error(e); L('Fehler: '+e.message+(OREG.orte[from]?.alias===to?` · ${from} bleibt als Verweis auf ${to}, nochmals ausführen setzt fort.`:''),'err');
+    oUse=null; buildDatalists(); done('Schliessen',false);
+  }
+}
+
+/* ─── Ansicht der Datei / Vorschau Karten-Export ──────── */
+$('#oShowJson').onclick=()=>{
+  openSheet(`<div class="sheet-head"><h2>orte.json</h2>${closeBtn}</div><div class="sheet-body"><pre class="o-json">${esc(oRegJson())}</pre>
+    <p class="o-json-note">${OREG_STATE==='ok'?'Liegt im privaten Diary-Repo neben <i>search-index.json</i>.':OREG_STATE==='demo'?'Demo-Daten, wird nicht gespeichert.':'Nicht geladen.'} Nur Namen mit Angaben stehen drin, alle anderen funktionieren wie bisher.</p></div>`);
+};
+function oExport(){
+  const out={}, skip={zuhause:0,privat:0,land:0,ohne:0,aus:0};
+  oAll().forEach(p=>{ const r=p.r;
+    if(r.typ==='zuhause'||r.typ==='privat'){ skip[r.typ]++; return; }
+    if(r.genau==='land'){ skip.land++; return; }
+    if(!r.koord||!O_PUBLIC.includes(r.typ)){ skip.ohne++; return; }
+    if(r.oeffentlich===false){ skip.aus++; return; }
+    out[p.name]={typ:r.typ,...(r.art?{art:r.art}:{}),...(r.genau?{genau:r.genau}:{}),koord:r.koord,...(r.stadt?{stadt:r.stadt}:{}),besuche:p.total,erster:p.first,letzter:p.last};
+  });
+  return {out,skip};
+}
+$('#oShowExport').onclick=()=>{
+  const {out,skip}=oExport();
+  openSheet(`<div class="sheet-head"><h2>Karten-Export</h2>${closeBtn}</div><div class="sheet-body"><pre class="o-json">${esc(JSON.stringify({v:1,orte:out},null,1))}</pre>
+    <p class="o-json-note">Vorschau, noch nicht veröffentlicht. Später als <i>data/orte.json</i> im öffentlichen Repo über Synchronisieren. Nicht enthalten: ${skip.zuhause} Zuhause, ${skip.privat} privat, ${skip.land} irgendwo im Land, ${skip.aus} ausgeblendet, ${skip.ohne} ohne Koordinaten oder Typ. Keine Tagestexte, keine Personen.</p></div>`);
+};
 
 /* ═══════════════════════════════════════════════════════════
    Start
