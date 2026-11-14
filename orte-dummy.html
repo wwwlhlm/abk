@@ -662,9 +662,11 @@ const ICO = {
 /* ═══════════════════════════════════════════════════════════
    Demo-Daten – im echten Einbau aus search-index.json + orte.json
    ═══════════════════════════════════════════════════════════ */
-const TYPES = [['café','Café'],['arbeit','Arbeit'],['zuhause','Zuhause'],['privat','bei Freund*innen'],['stadt','Stadt'],['diverse','Diverse'],['ort','Ort']];
+const TYPES = [['café','Café'],['arbeit','Arbeit'],['zuhause','Zuhause'],['privat','bei Freund*innen'],['ort','Ort']];
+const GENAU = [['','Genauer Ort'],['stadt','Irgendwo in Stadt'],['land','Irgendwo im Land']];
+const ARTEN = ['Berg','Pass','Veranstaltung','Quartier'];
 const TYPE_LABEL = Object.fromEntries(TYPES);
-const PUBLIC_TYPES = ['café','arbeit','ort','stadt'];
+const PUBLIC_TYPES = ['café','arbeit','ort'];
 
 // [Name, Tage als Kaffeeort, Tage als spezifischer Ort]
 const RAW = [
@@ -696,12 +698,12 @@ const REG = { v:1, orte:{
   'Bonheur':     { typ:'café',    koord:[47.3745,8.5220], stadt:'Zürich' },
   'Lab':         { typ:'arbeit' },
   'Home_Berlin': { typ:'zuhause', koord:[52.5200,13.4000] },
-  'Berlin':      { typ:'stadt' },
-  'ZH_div':      { typ:'diverse' },
-  'CH_div':      { typ:'diverse' },
+  'Berlin':      { typ:'café',    genau:'stadt', koord:[52.5200,13.4050] },
+  'ZH_div':      { typ:'café',    genau:'stadt', koord:[47.3769,8.5417], stadt:'Zürich' },
+  'CH_div':      { typ:'café',    genau:'land' },
   'Eltern':      { typ:'privat' },
-  'Letzi':       { typ:'ort',     koord:[47.3830,8.5040], stadt:'Zürich' },
-  'Pragelpass':  { typ:'ort',     koord:[47.0000,8.9500] },
+  'Letzi':       { typ:'ort',     art:'Veranstaltung', koord:[47.3830,8.5040], stadt:'Zürich' },
+  'Pragelpass':  { typ:'ort',     art:'Pass', koord:[47.0000,8.9500] },
   'Sprüngli':    { typ:'café',    koord:[47.3698,8.5391], stadt:'Zürich', oeffentlich:false },
 }, ignoriert:[] };
 
@@ -720,6 +722,7 @@ function placeInfo(n){
 function allPlaces(){
   return Object.keys(USAGE).filter(n=>!aliasOf(n)).map(placeInfo).map(p=>({...p, total:p.coffee+p.place})).sort((a,b)=>b.total-a.total||a.name.localeCompare(b.name));
 }
+const needsKoord = r => !r.koord && r.typ!=='privat' && r.genau!=='land';
 const isPublic = r => !!(r.koord && PUBLIC_TYPES.includes(r.typ) && r.oeffentlich!==false);
 
 /* ─── Doppelte erkennen ───────────────────────────────── */
@@ -735,6 +738,7 @@ function duplicates(){
   for(let i=0;i<list.length;i++) for(let j=i+1;j<list.length;j++){
     const a=list[i].name, b=list[j].name, na=norm(a), nb=norm(b);
     if(ign.has([a,b].sort().join('|'))) continue;
+    if(/_div$/.test(a) && /_div$/.test(b)) continue;   // eigene Konvention, nie Doppelte
     let why=null;
     if(na===nb){ why = a.toLowerCase()===b.toLowerCase() ? 'Gross-/Kleinschreibung' : /[̀-ͯ]/.test((a+b).normalize('NFD')) ? 'Akzent' : 'Unterstrich'; }
     else if(Math.min(na.length,nb.length)>=5 && lev1(na,nb)) why='ein Buchstabe anders';
@@ -787,9 +791,10 @@ function filtered(){
   const q=norm(F.q);
   return allPlaces().filter(p=>{
     if(q && !norm(p.name).includes(q) && !p.aliases.some(a=>norm(a).includes(q)) && !norm(p.r.stadt||'').includes(q)) return false;
-    if(F.flag==='nokoord' && (p.r.koord || p.r.typ==='privat' || p.r.typ==='diverse')) return false;
+    if(F.flag==='nokoord' && !needsKoord(p.r)) return false;
     if(F.flag==='notyp' && p.r.typ) return false;
     if(F.typ && p.r.typ!==F.typ) return false;
+    if(F.flag==='unscharf' && !p.r.genau) return false;
     if(F.src==='coffee' && !p.coffee) return false;
     if(F.src==='place' && !p.place) return false;
     return true;
@@ -799,8 +804,8 @@ function renderFilters(){
   const all=allPlaces(), cnt=f=>all.filter(f).length;
   const sg=(kind,val,label,n)=>`<button class="sg${F[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
   $('#oFilters').innerHTML =
-    sg('flag','nokoord','Ohne Koordinaten',cnt(p=>!p.r.koord&&p.r.typ!=='privat'&&p.r.typ!=='diverse')) +
-    sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ)) + '<span class="sep"></span>' +
+    sg('flag','nokoord','Ohne Koordinaten',cnt(p=>needsKoord(p.r))) +
+    sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ)) + sg('flag','unscharf','Stadt/Land',cnt(p=>p.r.genau)) + '<span class="sep"></span>' +
     sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee)) + sg('src','place','Spezifische Orte',cnt(p=>p.place)) + '<span class="sep"></span>' +
     TYPES.map(([t,l])=>sg('typ',t,l,cnt(p=>p.r.typ===t))).join('');
 }
@@ -809,11 +814,13 @@ $('#oq').addEventListener('input',e=>{ F.q=e.target.value; $('#oqClear').hidden=
 $('#oqClear').onclick=e=>{ e.preventDefault(); $('#oq').value=''; F.q=''; $('#oqClear').hidden=true; renderList(false); };
 
 function srcIcons(p){ return `<span class="src" title="${p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':'Spezifischer Ort'}"><span class="${p.coffee?'':'off'}">${ICO.cup}</span><span class="${p.place?'':'off'}">${ICO.pin}</span></span>`; }
-function posDot(r){ if(r.typ==='privat') return `<span class="pos lock" title="privat, keine Koordinaten">${ICO.lock}</span>`;
+function posDot(r){ if(r.genau==='land') return `<span class="pos" style="box-shadow:none;background:var(--surface-3)" title="irgendwo im Land, keine Koordinaten nötig"></span>`;
+  if(r.typ==='privat') return `<span class="pos lock" title="privat, keine Koordinaten">${ICO.lock}</span>`;
   return `<span class="pos${r.koord?' has':''}" title="${r.koord?'Koordinaten vorhanden':'keine Koordinaten'}"></span>`; }
 function sub(p){
   const bits=[];
-  bits.push(p.r.typ?esc(TYPE_LABEL[p.r.typ]):'<span class="none">kein Typ</span>');
+  bits.push(p.r.typ?esc(TYPE_LABEL[p.r.typ])+(p.r.art?' · '+esc(p.r.art):''):'<span class="none">kein Typ</span>');
+  if(p.r.genau) bits.push(p.r.genau==='stadt'?'irgendwo in der Stadt':'irgendwo im Land');
   if(p.r.stadt) bits.push(esc(p.r.stadt));
   if(p.aliases.length) bits.push(`<span class="al">+ ${p.aliases.map(esc).join(', ')}</span>`);
   return bits.join(' · ');
@@ -852,6 +859,7 @@ function setReg(n, patch){
   Object.keys(r).forEach(k=>{ if(r[k]===undefined||r[k]===null||r[k]==='') delete r[k]; });
   if(Object.keys(r).length) REG.orte[n]=r; else delete REG.orte[n];
 }
+function allArten(){ return [...new Set([...ARTEN, ...Object.values(REG.orte).map(r=>r.art).filter(Boolean)])]; }
 function originText(p){ return p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':'Spezifischer Ort'; }
 
 function renderOrt(){
@@ -865,7 +873,7 @@ function renderOrt(){
   if(r.typ==='privat'){
     posHtml=`<div class="sec-hint">${ICO.lock}<span>Orte bei Freund*innen bekommen keine Koordinaten.</span></div>`;
   } else {
-    posHtml=`<div class="pos-now">${r.koord?`<span class="k">${r.koord[0].toFixed(4)}, ${r.koord[1].toFixed(4)}</span>
+    posHtml= r.genau==='land' ? `<div class="sec-hint" style="margin-top:0">${ICO.info}<span>Irgendwo in einem Land: keine Koordinaten nötig. Zählt in Auswertungen normal mit, erscheint aber nicht auf der Karte.</span></div>` : `<div class="pos-now">${r.koord?`<span class="k">${r.koord[0].toFixed(4)}, ${r.koord[1].toFixed(4)}</span>
         <a href="https://www.openstreetmap.org/?mlat=${r.koord[0]}&mlon=${r.koord[1]}#map=16/${r.koord[0]}/${r.koord[1]}" target="_blank" rel="noopener">Karte ↗</a>
         <button class="x press" id="kDel" aria-label="Koordinaten entfernen">✕</button>`
         :`<span class="k none">Keine Koordinaten</span>`}</div>
@@ -875,8 +883,9 @@ function renderOrt(){
       <div class="pos-err" id="kErr"></div>
       <div class="field-row"><span class="label">Stadt</span><input class="text-in" id="stadtIn" placeholder="optional, z. B. Zürich" value="${esc(r.stadt||'')}" autocomplete="off" enterkeyhint="done"></div>
       ${r.typ==='zuhause'?`<div class="sec-hint">${ICO.lock}<span>Zuhause-Orte dürfen Koordinaten haben, landen aber nie auf der Webseite.</span></div>`:''}
-      ${r.typ==='diverse'?`<div class="sec-hint">${ICO.info}<span>„Diverse“ steht für irgendwo, nicht genauer. Koordinaten sind hier meist nicht sinnvoll und werden nicht veröffentlicht.</span></div>`:''}
+      ${r.genau==='stadt'?`<div class="sec-hint">${ICO.info}<span>Irgendwo in der Stadt: als Position das Stadtzentrum setzen. Auf der Karte erscheint eine Stadt-Markierung statt eines Punkts.</span></div>`:''}
       ${pubType?`<button class="tgl press" id="pubTgl" role="switch" aria-checked="${r.oeffentlich!==false}" ${r.koord?'':'disabled'}><div>Auf der Karte zeigen<p>${r.koord?(pub?'Erscheint beim nächsten Veröffentlichen auf der Webseite.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst Koordinaten.'}</p></div><span class="sw2"></span></button>`:''}`;
+    posHtml = `<div class="types" style="margin-bottom:12px">${GENAU.map(([g,l])=>`<button class="chip${(r.genau||'')===g?' on':''}" data-genau="${g}"><span class="cd"></span>${l}</button>`).join('')}</div>` + posHtml;
   }
 
   // Verweise
@@ -891,7 +900,7 @@ function renderOrt(){
     </div>
     <div class="card"><div class="card-head"><span class="card-title">Typ</span><span class="card-sub">${r.typ?'':'noch keiner'}</span></div>
       <div class="types">${TYPES.map(([t,l])=>`<button class="chip${r.typ===t?' on':''}" data-typ="${t}"><span class="cd"></span>${esc(l)}</button>`).join('')}</div>
-      ${r.typ==='ort'?`<div class="sec-hint">${ICO.info}<span>„Ort“ ist der Normalfall für spezifische Orte. Eine feinere Unterteilung (Berg, Pass, Veranstaltung) bleibt offen.</span></div>`:''}
+      ${r.typ==='ort'?`<div class="field-row"><span class="label">Art <span class="hint">optional</span></span><div class="types">${allArten().map(a=>`<button class="chip${r.art===a?' on':''}" data-art="${esc(a)}"><span class="cd"></span>${esc(a)}</button>`).join('')}<input class="chip-add" id="artIn" placeholder="+ Art" enterkeyhint="done" autocomplete="off"></div></div>`:''}
     </div>
     <div class="card"><div class="card-head"><span class="card-title">Position</span></div>${posHtml}</div>
     <div class="card"><div class="card-head"><span class="card-title">Name</span></div>
@@ -909,7 +918,7 @@ function bindOrt(){
   const B=$('#dBody');
   B.querySelectorAll('[data-typ]').forEach(b=>b.onclick=()=>{ const t=b.dataset.typ, r=reg(CUR)||{};
     const nt = r.typ===t ? undefined : t;
-    setReg(CUR,{typ:nt, ...(nt==='privat'?{koord:undefined, oeffentlich:undefined}:{})});
+    setReg(CUR,{typ:nt, ...(nt!=='ort'?{art:undefined}:{}), ...(nt==='privat'?{koord:undefined, oeffentlich:undefined, genau:undefined}:{})});
     if(nt==='privat' && r.koord) island('Koordinaten entfernt (privat)','var(--accent)');
     renderOrt(); });
   const kIn=$('#kIn');
@@ -921,6 +930,11 @@ function bindOrt(){
     $('#kHere').onclick=hereCoord;
     $('#stadtIn').onchange=e=>{ setReg(CUR,{stadt:e.target.value.trim()}); island('Gespeichert'); };
   }
+  B.querySelectorAll('[data-genau]').forEach(b=>b.onclick=()=>{ const g=b.dataset.genau||undefined, r=reg(CUR)||{};
+    setReg(CUR,{genau:g, ...(g==='land'&&r.koord?{koord:undefined}:{})}); renderOrt(); });
+  B.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>{ const a=b.dataset.art; setReg(CUR,{art:(reg(CUR)||{}).art===a?undefined:a}); renderOrt(); });
+  $('#artIn')?.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const v=e.target.value.trim(); if(!v) return;
+    setReg(CUR,{art:v[0].toUpperCase()+v.slice(1)}); renderOrt(); });
   $('#kDel')?.addEventListener('click',()=>{ setReg(CUR,{koord:undefined}); renderOrt(); });
   $('#pubTgl')?.addEventListener('click',()=>{ const r=reg(CUR)||{}; setReg(CUR,{oeffentlich:r.oeffentlich===false?undefined:false}); renderOrt(); });
   B.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{ if(RUN) return; PANEL=PANEL===b.dataset.panel?null:b.dataset.panel; MERGE_T=null; RENAME_V=''; renderOrt();
@@ -1018,7 +1032,7 @@ function bindPanel(){
 }
 function mergeRegData(from,to){ // Typ/Position nur übernehmen, wo das Ziel nichts hat
   const a=reg(from)||{}, b=reg(to)||{}; const add={};
-  ['typ','koord','stadt','oeffentlich'].forEach(k=>{ if(a[k]!==undefined && b[k]===undefined) add[k]=a[k]; });
+  ['typ','art','genau','koord','stadt','oeffentlich'].forEach(k=>{ if(a[k]!==undefined && b[k]===undefined) add[k]=a[k]; });
   setReg(to,add);
 }
 
@@ -1095,16 +1109,17 @@ $('#showJson').onclick=()=>{
     <p class="json-note">Liegt im privaten Diary-Repo neben <i>search-index.json</i>. Nur Namen mit Angaben stehen drin, alle anderen funktionieren wie heute.${REG.ignoriert.length?' <i>ignoriert</i> merkt sich Paare, die keine Doppelten sind.':''}</p></div>`);
 };
 $('#showExport').onclick=()=>{
-  const out={}, skipped={zuhause:0,privat:0,diverse:0,ohneKoord:0,ausgeblendet:0};
+  const out={}, skipped={zuhause:0,privat:0,land:0,ohneKoord:0,ausgeblendet:0};
   allPlaces().forEach(p=>{ const r=p.r;
-    if(['zuhause','privat','diverse'].includes(r.typ)){ skipped[r.typ]++; return; }
+    if(['zuhause','privat'].includes(r.typ)){ skipped[r.typ]++; return; }
+    if(r.genau==='land'){ skipped.land++; return; }
     if(!r.koord){ skipped.ohneKoord++; return; }
     if(!PUBLIC_TYPES.includes(r.typ)){ skipped.ohneKoord++; return; }
     if(r.oeffentlich===false){ skipped.ausgeblendet++; return; }
-    out[p.name]={typ:r.typ, koord:r.koord, ...(r.stadt?{stadt:r.stadt}:{}), besuche:p.coffee+p.place, erster:p.first, letzter:p.last};
+    out[p.name]={typ:r.typ, ...(r.art?{art:r.art}:{}), ...(r.genau?{genau:r.genau}:{}), koord:r.koord, ...(r.stadt?{stadt:r.stadt}:{}), besuche:p.coffee+p.place, erster:p.first, letzter:p.last};
   });
   openSheet(`<div class="sheet-head"><h2>Karten-Export</h2>${closeBtn}</div><div class="sheet-body"><pre class="json">${esc(jsonCompact({v:1, orte:out}))}</pre>
-    <p class="json-note">Vorschau von <i>data/orte.json</i> im öffentlichen Repo, erstellt beim Veröffentlichen in Synchronisieren. Nicht enthalten: ${skipped.zuhause} Zuhause, ${skipped.privat} privat, ${skipped.diverse} diverse, ${skipped.ausgeblendet} ausgeblendet und ${skipped.ohneKoord} ohne Koordinaten oder Typ. Keine Tagestexte, keine Personen.</p></div>`);
+    <p class="json-note">Vorschau von <i>data/orte.json</i> im öffentlichen Repo, erstellt beim Veröffentlichen in Synchronisieren. Nicht enthalten: ${skipped.zuhause} Zuhause, ${skipped.privat} privat, ${skipped.land} irgendwo im Land, ${skipped.ausgeblendet} ausgeblendet und ${skipped.ohneKoord} ohne Koordinaten oder Typ. Einträge mit <i>genau: stadt</i> zeichnet die Karte als Stadt-Markierung. Keine Tagestexte, keine Personen.</p></div>`);
 };
 
 renderEntry();
