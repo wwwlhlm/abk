@@ -218,6 +218,7 @@ svg{display:block}
 .km-row{display:flex;align-items:center;gap:10px;padding-top:12px}
 .text-in{height:38px;border-radius:12px;border:0;background:var(--bg);padding:0 12px;font-size:16px;outline:none;width:100%}
 .text-in:focus{box-shadow:inset 0 0 0 1.5px var(--accent)}
+.text-in::placeholder{color:var(--text-3);opacity:1}
 .km-row .text-in{width:90px}
 
 /* Eintrag */
@@ -628,7 +629,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
             <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
             <div class="chip-group"><span class="label">Personen</span><div data-g="people"></div></div>
             <div class="chip-group"><span class="label">Tags</span><div data-g="tags"></div></div>
-            <div class="chip-group"><span class="label">Koordinaten</span><input class="text-in" id="coords" placeholder="47.3769, 8.5417" inputmode="decimal" enterkeyhint="done"></div>
+            <div class="chip-group"><span class="label">Koordinaten</span><input class="text-in" id="coords" placeholder="Keine – Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></div>
             <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Orte verwalten<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
           </div></div></div>
         </div>
@@ -1361,6 +1362,7 @@ $('#v-entry').addEventListener('click',ev=>{ const b=ev.target.closest('.acs'); 
 $('#v-entry').addEventListener('focusout',ev=>{ const inp=ev.target.closest?.('.chip-add'); if(inp) setTimeout(()=>{ if(document.activeElement!==inp) acClose(inp.dataset.k); },150); });
 $('#km').addEventListener('input',ev=>touch({...entryFor(cur),cycling_km:parseFloat(ev.target.value)||0,kmRaw:ev.target.value}));
 $('#coords').addEventListener('input',ev=>{ const e={...entryFor(cur),coords:ev.target.value}; touch(e); foldSummary(e); });
+$('#coords').addEventListener('paste',ev=>setTimeout(()=>{ const el=ev.target, k=oParseCoord(el.value); if(k&&el.value.trim()!==`${k[0]}, ${k[1]}`){ el.value=`${k[0]}, ${k[1]}`; el.dispatchEvent(new Event('input')); } },0));
 function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coffeeHint');
   if(!c&&n===1&&e.coffeeLocations[0]==='Home'){ h.textContent=''; h.classList.remove('warn'); return; } // leere Vorlage
   h.textContent = !c&&!n ? '' : n===c ? `alle ${c} zugeordnet` : `${n} von ${c} zugeordnet`; h.classList.toggle('warn', n!==c); }
