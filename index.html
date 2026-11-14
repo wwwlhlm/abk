@@ -37,7 +37,7 @@
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg);color-scheme:dark;touch-action:manipulation}   /* kein Doppeltipp-Zoom, Pinch-Zoom bleibt */
-body{margin:0;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+body{margin:0;overflow-x:clip;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,textarea{font:inherit;color:inherit}
 svg{display:block}
@@ -458,7 +458,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 </div>
 <div class="island" id="island" role="status" aria-live="polite"><span class="dot"></span><span id="islandText">Demo-Daten</span></div>
 
-<main>
+<main style="overflow-x:clip">
   <!-- ═══════════════ ERFASSEN ═══════════════ -->
   <section class="view" id="v-entry" aria-label="Erfassen">
     <header class="day-head" id="dayHead">
@@ -534,7 +534,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
     <div class="grid-2">
       <div class="col">
         <div class="card">
-          <div class="card-head"><div><div class="card-title">Konsum</div><div class="card-sub" id="chartSub"></div></div></div>
+          <div class="card-head"><div><div class="card-title">Übersicht</div><div class="card-sub" id="chartSub"></div></div></div>
           <div class="chart" id="chart"><div class="axis"></div><div class="ring" id="ring"></div><div class="tip" id="tip"></div><div class="chart-cols" id="chartCols"></div></div>
           <div class="chart-foot" id="chartFoot"></div>
           <div class="legend">
@@ -1393,7 +1393,7 @@ function renderDash(regrow=false,dir=0){
   const max=Math.max(1,...COLS.map(c=>c.coffee+c.apples+c.bananas));
   $('#chartCols').style.setProperty('--gap',(COLS.length>20?1.5:COLS.length>10?3:6)+'px');
   $('#chartCols').innerHTML=COLS.map((c,i)=>`<div class="ccol" style="opacity:${c.future?.25:1}">
-      <div class="up">${[['coffee','coffee'],['apples','apple'],['bananas','banana']].map(([k,v])=>`<div class="seg-b" data-h="${c[k]/max*100}" style="background:var(--c-${v});transition-delay:${i*14}ms"></div>`).join('')}</div>
+      <div class="up">${[['coffee','coffee'],['apples','apple'],['bananas','banana']].filter(([k])=>c[k]>0).map(([k,v])=>`<div class="seg-b" data-h="${c[k]/max*100}" style="background:var(--c-${v});transition-delay:${i*14}ms"></div>`).join('')}</div>
       <div class="dn">${c.mood?`<div class="seg-b" data-h="${Math.abs(c.mood)/2*100}" style="background:${c.mood>0?'var(--good)':'var(--bad)'};opacity:.85;transition-delay:${i*14+120}ms"></div>`:''}</div></div>`).join('');
   const f=COLS[0], l=COLS[COLS.length-1];
   $('#chartFoot').innerHTML=`<span>${per==='year'?f.label:f.title.split(', ')[1]}</span><span>${per==='year'?l.label:l.title.split(', ')[1]}</span>`;
