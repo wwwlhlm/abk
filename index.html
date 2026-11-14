@@ -254,7 +254,7 @@ svg{display:block}
 .ccol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0}
 .ccol .up{flex:0 0 74%;display:flex;flex-direction:column-reverse;align-items:center;gap:2px;width:100%;padding:0 var(--gap,3px)}
 .ccol .dn{flex:1;display:flex;align-items:flex-start;justify-content:center;width:100%;padding:3px var(--gap,3px) 0}
-.seg-b{width:100%;max-width:18px;border-radius:4px;height:0;transition:height .6s var(--spring),opacity .25s}
+.seg-b{width:100%;max-width:18px;border-radius:4px;height:0;flex-shrink:0;transition:height .6s var(--spring),opacity .25s}
 .chart.dim .ccol:not(.act) .seg-b{opacity:.35}
 .axis{position:absolute;left:0;right:0;top:74%;height:1px;background:var(--border)}
 .ring{position:absolute;top:-6px;bottom:-6px;left:0;border-radius:10px;border:1.5px solid rgba(255,255,255,.55);opacity:0;pointer-events:none;transition:transform .4s var(--spring),width .4s var(--spring),opacity .2s}
@@ -1407,7 +1407,8 @@ function renderDash(regrow=false,dir=0){
   $('#field').innerHTML=fd.map(d=>{ const e=DATA.get(d), fut=d>TODAY;
     return `<i class="${e?'':'empty'}" data-d="${e?d:''}" title="${parse(d).getDate()}. ${MON3[parse(d).getMonth()]}${e?' · '+(e.mood>0?'+':'')+e.mood:''}" style="background:${e?MOOD_COL[moodKey(e.mood)]:'var(--surface-3)'};opacity:${fut?.12:e?1:.35}"></i>`; }).join('');
 }
-function growBars(){ document.querySelectorAll('#chartCols .seg-b').forEach(b=>b.style.height=b.dataset.h+'%'); }
+/* Höhe relativ zur Fläche ohne die zwei Abstände (2 × 2 px): gleicher Wert = gleiche Höhe, unabhängig von den anderen Segmenten */
+function growBars(){ document.querySelectorAll('#chartCols .seg-b').forEach(b=>b.style.height=b.closest('.up')?`calc((100% - 4px) * ${b.dataset.h/100})`:b.dataset.h+'%'); }
 
 (function scrub(){
   const ch=$('#chart'), ring=$('#ring'), tip=$('#tip'); let act=-1, downX=null, moved=false;
