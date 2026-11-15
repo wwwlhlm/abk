@@ -111,10 +111,19 @@ Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“)
 - **Beim Erfassen** steht unter „Ort“ ein Hinweis „Naples · Position setzen“, solange eine Ortschaft keine Position hat. Im Ort-Editor öffnet das Antippen der Ortschaft dieselbe Ortschaft.
 
 - **Ortsliste:** alle Namen aus beiden Listen nach Häufigkeit, mit Anzahl Tage, Typ (und Art), Genauigkeit, Herkunft (Kaffeeort, spezifischer Ort oder beides) und einem Zeichen, ob Koordinaten vorhanden sind. Verweise erscheinen beim Zielort („+ Lalere“). Mit Suche und Filtern: ohne Koordinaten, ohne Typ, Ortschaft/Land, Kaffeeorte, spezifische Orte, nach Typ. Die Zahlen kommen direkt aus dem Suchindex.
-- **Ort bearbeiten:** Typ wählen (bei „Ort“ zusätzlich die Art), Genauigkeit wählen, Position setzen, entweder mit „aktuellen Standort übernehmen“ oder per Koordinaten bzw. Karten-Link einfügen (Google Maps, OpenStreetMap). Weil eine Karte das spätere Ziel ist, kann eine Karte zum Antippen später dazukommen.
+- **Ort bearbeiten:** Typ wählen (bei „Ort“ zusätzlich die Art), Genauigkeit wählen, Position setzen. Weil eine Karte das spätere Ziel ist, kann eine Karte zum Antippen später dazukommen.
+- **Position:** ein einziges Feld, das den aktuellen Wert zeigt. Überschreiben, Koordinaten oder einen Karten-Link einfügen (Google Maps, OpenStreetMap) oder leeren, um die Position zu entfernen. Gespeichert wird beim Verlassen des Felds bzw. mit Enter, Escape stellt den alten Wert wieder her. Daneben ein Knopf für den aktuellen Standort, darunter „Auf der Karte ansehen“. Gleich für Orte und Ortschaften.
 - **Umbenennen …** und **Zusammenführen mit …**, jeweils mit Vorschau (z. B. „Lalere (5 Tage) → Lalère (12 Tage)“).
 - **Doppelte erkennen:** ähnliche Schreibweisen vorschlagen (Gross-/Kleinschreibung, Akzente, Unterstrich, ein vertippter Buchstabe). Paare aus zwei `_div`-Namen werden nie vorgeschlagen. „Kein Duplikat“ merkt sich das Paar in `ignoriert`.
 - **Neue Namen:** dezenter Hinweis in den Details, „Miro · Ort zuordnen“, für Kaffeeorte und spezifische Orte gleich. Kein Pflichtschritt.
+
+## Entfernen, was nicht mehr vorkommt
+
+- Ein **Ort**, der in keinem Tag mehr vorkommt, kann aus dem Register entfernt werden, samt Verweisen auf ihn und seinen „Kein Duplikat“-Paaren.
+- Eine **Ortschaft** kann entfernt werden, wenn sie in keinem Tag und bei keinem Ort mehr vorkommt. Hängt noch ein Ort daran, muss dort zuerst eine andere Ortschaft gewählt werden.
+- **Einzeln** im Editor (Karte „Nicht mehr verwendet“) oder **gesammelt** über den Filter „Nicht mehr verwendet“ mit „Alle N entfernen“.
+- Immer zweistufig: erster Tipp fragt nach („Wirklich entfernen?“), erst der zweite löscht.
+- Gelöscht wird nur der Eintrag in `orte.json`. Die Tagesdateien bleiben unberührt, der alte Stand bleibt im Git-Verlauf.
 
 ## Karte auf der Webseite (später)
 

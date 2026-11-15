@@ -525,7 +525,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .pos-row .text-in{flex:1}
 .pos-row .pill{height:38px;padding:0 14px;font-size:14px}
 .pos-row .pill .ico{width:16px;height:16px}
-.pos-err{font-size:12px;color:var(--bad);margin:6px 2px 0}
+.pos-row .icon-btn{width:38px;height:38px;background:var(--surface-2)}
+.pos-meta{display:flex;gap:12px;align-items:center;margin:6px 2px 0;font-size:12px;min-height:0}
+.pos-meta:empty{display:none}
+.pos-meta a{color:var(--text-2)}
+.pos-err{font-size:12px;color:var(--bad)}
 .field-row{display:flex;flex-direction:column;gap:6px;margin-top:14px}
 .tgl{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:14px;background:var(--bg);margin-top:10px;font-size:14px}
 .tgl .sw2{margin-left:auto;width:40px;height:24px;border-radius:12px;background:var(--surface-3);position:relative;transition:background .25s;flex-shrink:0}
@@ -560,6 +564,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .run-actions .pill{height:42px;padding:0 18px;font-size:14px}
 .run-actions .pill[disabled]{opacity:.35;pointer-events:none}
 .o-json{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:var(--text-2);background:var(--bg);border-radius:14px;padding:14px;white-space:pre;overflow:auto;max-height:52vh;margin:0}
+.pill-danger{background:rgba(229,115,115,.18)!important;color:var(--bad)!important}
 .o-json-note{font-size:12px;color:var(--text-3);margin:10px 2px 0;line-height:1.5}
 </style>
 </head>
@@ -1988,6 +1993,16 @@ function oUsage(){
       x[k==='places'?'place':'coffee']++; if(!seen[n]){ seen[n]=1; x.days++; if(e.date<x.first) x.first=e.date; if(e.date>x.last) x.last=e.date; } })); });
   return oUse=u;
 }
+/* ─── Entfernen, was nicht mehr vorkommt ──────────────── */
+const oUnusedOrt=p=>p.total===0;
+const oUnusedOs=o=>o.days===0&&!o.orte.length;
+function oRemoveOrt(n){ if(!oCanEdit()) return;
+  [n,...oAliasesTo(n)].forEach(x=>delete OREG.orte[x]);
+  OREG.ignoriert=OREG.ignoriert.filter(pr=>!pr.includes(n)); oScheduleSave(); }
+function oRemoveOs(o){ if(!oCanEdit()) return; delete OREG.ortschaften[o]; oScheduleSave(); }
+function oConfirmBtn(btn,label,fn){ // zweistufig: erst fragen, dann ausführen
+  btn.onclick=()=>{ if(btn.dataset.armed){ fn(); return; } btn.dataset.armed='1'; const old=btn.textContent; btn.textContent=label;
+    btn.classList.add('pill-danger'); setTimeout(()=>{ if(btn.isConnected&&btn.dataset.armed){ delete btn.dataset.armed; btn.textContent=old; btn.classList.remove('pill-danger'); } },4000); }; }
 let oOsUse=null;
 function oOsUsage(){ if(oOsUse) return oOsUse; const u={};
   DATA.forEach(e=>{ if(e.date>TODAY) return; new Set(e.locations||[]).forEach(n=>{ const x=u[n]||(u[n]={days:0,first:e.date,last:e.date}); x.days++; if(e.date<x.first) x.first=e.date; if(e.date>x.last) x.last=e.date; }); });
@@ -2080,6 +2095,7 @@ function oFiltered(all){
     if(OF.flag==='nokoord'&&!oNeedsKoord(p.r)) return false;
     if(OF.flag==='notyp'&&p.r.typ) return false;
     if(OF.flag==='unscharf'&&!p.r.genau) return false;
+    if(OF.flag==='unused'&&!oUnusedOrt(p)) return false;
     if(OF.typ&&p.r.typ!==OF.typ) return false;
     if(OF.src==='coffee'&&!p.coffee) return false;
     if(OF.src==='place'&&!p.place) return false;
@@ -2093,11 +2109,14 @@ function oRenderList(anim=true){
   const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
   $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Ortschaft/Land',cnt(p=>p.r.genau))
     +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Spezifische Orte',cnt(p=>p.place))
-    +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('');
+    +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('')
+    +(cnt(oUnusedOrt)||OF.flag==='unused'?'<span class="sep"></span>'+sg('flag','unused','Nicht mehr verwendet',cnt(oUnusedOrt)):'');
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt, damit nichts überschrieben wird.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`
     :OREG_STATE==='demo'?`<p class="muted" style="padding:0 4px">Demo-Daten: Änderungen bleiben nur bis zum Neuladen.</p>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>oKoord(p.r)))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>oKoord(p.r)))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
+    +(OF.flag==='unused'&&list.length?` <button class="pill pill-ghost press" id="oRmAll" style="margin-left:6px">Alle ${list.length} entfernen</button>`:'');
+  if($('#oRmAll')) oConfirmBtn($('#oRmAll'),`Wirklich ${list.length} entfernen?`,()=>{ list.forEach(p=>oRemoveOrt(p.name)); island(`${list.length} Orte entfernt`); OF.flag=null; oRenderList(false); });
   const d=OF.q||OF.flag||OF.typ||OF.src?[]:oDuplicates(all);
   $('#dupWrap').innerHTML=d.length?`<div class="card dup-card"><div class="card-head"><span class="card-title">Mögliche Doppelte</span><span class="card-sub">${d.length}</span></div>
     ${d.map((x,i)=>{ const [hi,lo]=x.a.total>=x.b.total?[x.a,x.b]:[x.b,x.a];
@@ -2131,12 +2150,14 @@ $('#oFilters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'
 oSegSet=segInit($('#oSeg'),'orte',v=>{ O_TAB=v; OF.flag=null; OF.typ=null; OF.src=null; O_SHOWN=150; $('#oq').placeholder=v==='os'?'Ortschaft suchen':'Ort suchen'; oRenderList(); scrollTo({top:0}); });
 function oRenderOsList(anim=true){
   const all=oAllOs(), q=oNorm(OF.q), cnt=f=>all.filter(f).length;
-  const list=all.filter(o=>(!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q))&&(OF.flag!=='nopos'||!o.r.koord)&&(OF.flag!=='noland'||!o.land)&&(OF.flag!=='linked'||o.orte.length));
+  const list=all.filter(o=>(!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q))&&(OF.flag!=='nopos'||!o.r.koord)&&(OF.flag!=='noland'||!o.land)&&(OF.flag!=='linked'||o.orte.length)&&(OF.flag!=='unused'||oUnusedOs(o)));
   const sg=(val,label,n)=>`<button class="sg${OF.flag===val?' on':''}" data-f="flag" data-val="${val}">${label}<span class="c">${n}</span></button>`;
-  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Mit Orten',cnt(o=>o.orte.length));
+  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Mit Orten',cnt(o=>o.orte.length))+(cnt(oUnusedOs)||OF.flag==='unused'?sg('unused','Nicht mehr verwendet',cnt(oUnusedOs)):'');
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · Namen aus dem Feld <i>Ort</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · Namen aus dem Feld <i>Ort</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
+    +(OF.flag==='unused'&&list.length?` <button class="pill pill-ghost press" id="oRmAll" style="margin-left:6px">Alle ${list.length} entfernen</button>`:'');
+  if($('#oRmAll')) oConfirmBtn($('#oRmAll'),`Wirklich ${list.length} entfernen?`,()=>{ list.forEach(o=>oRemoveOs(o.name)); island(`${list.length} Ortschaften entfernt`); OF.flag=null; oRenderList(false); });
   $('#dupWrap').innerHTML='';
   const N=Math.min(list.length,O_SHOWN);
   $('#olist').innerHTML=list.slice(0,N).map((o,i)=>`<button class="orow" data-os-row="${esc(o.name)}" style="${anim&&i<24&&!REDUCED?`animation-delay:${i*18}ms`:'animation:none'}">
@@ -2212,8 +2233,12 @@ function oRenderOrt(){
       </div>
       <div class="expand${O_PANEL?' open':''}"><div><div class="o-panel" id="oPanel">${O_PANEL==='rename'?oRenamePanel():O_PANEL==='merge'?oMergePanel():''}</div></div></div>
       ${al}
-    </div>`;
+    </div>
+    ${oUnusedOrt(p)?`<div class="card"><div class="card-head"><span class="card-title">Nicht mehr verwendet</span></div>
+      <p class="muted" style="padding-top:0">${esc(O_CUR)} kommt in keinem Tag mehr vor. Entfernen löscht den Eintrag${p.aliases.length?' samt Verweisen':''} aus orte.json, die Tagesdateien sind nicht betroffen.</p>
+      <button class="pill pill-ghost press" id="oRm" style="height:38px;padding:0 15px">Aus dem Register entfernen</button></div>`:''}`;
   oBindOrt();
+  if($('#oRm')) oConfirmBtn($('#oRm'),'Wirklich entfernen?',()=>{ const n=O_CUR; oRemoveOrt(n); island(`${n} entfernt`); O_STACK=O_STACK.filter(s=>s.name!==n); oBack(); });
 }
 function oRenderOs(){
   const o=oOsInfo(O_CUR), r=o.r;
@@ -2232,9 +2257,14 @@ function oRenderOs(){
     <div class="card"><div class="card-head"><span class="card-title">Position</span></div>${oKoordBlock(r.koord,'os',12)}
       <div class="sec-hint">${O_ICO.info}<span>Gilt überall, wo ${esc(O_CUR)} vorkommt: für die Tage mit diesem Ort und für alle Orte, die „irgendwo in ${esc(O_CUR)}“ sind. Die Tagesdateien bleiben unverändert.</span></div></div>
     <div class="card"><div class="card-head"><span class="card-title">Orte in ${esc(O_CUR)}</span><span class="card-sub">${o.orte.length||''}</span></div>
-      ${rows?`<div class="olist">${rows}</div>`:`<p class="muted">Noch keine. Bei einem Ort unter Position die Ortschaft wählen.</p>`}</div>`;
+      ${rows?`<div class="olist">${rows}</div>`:`<p class="muted">Noch keine. Bei einem Ort unter Position die Ortschaft wählen.</p>`}</div>
+    ${oUnusedOs(o)&&OREG.ortschaften[O_CUR]?`<div class="card"><div class="card-head"><span class="card-title">Nicht mehr verwendet</span></div>
+      <p class="muted" style="padding-top:0">${esc(O_CUR)} kommt in keinem Tag und bei keinem Ort mehr vor. Entfernen löscht Land und Position aus orte.json.</p>
+      <button class="pill pill-ghost press" id="oRm" style="height:38px;padding:0 15px">Aus dem Register entfernen</button></div>`
+    :o.days===0&&o.orte.length?`<p class="muted" style="padding:0 4px">${esc(O_CUR)} kommt in keinem Tag mehr vor, ist aber noch mit ${o.orte.length===1?'einem Ort':o.orte.length+' Orten'} verknüpft. Entfernen geht, sobald dort eine andere Ortschaft gewählt ist.</p>`:''}`;
   oBindOrt();
   $('#dBody').querySelectorAll('[data-o2]').forEach(b=>b.onclick=()=>oOpenOrt(b.dataset.o2));
+  if($('#oRm')) oConfirmBtn($('#oRm'),'Wirklich entfernen?',()=>{ const n=O_CUR; oRemoveOs(n); island(`${n} entfernt`); O_STACK=O_STACK.filter(s=>s.name!==n); oBack(); });
 }
 function oBindOrt(){
   const B=$('#dBody'), rerender=()=>{ oRenderOrt(); };
@@ -2247,12 +2277,16 @@ function oBindOrt(){
     if(g&&r.koord) island(g==='land'?'Eigene Koordinaten entfernt (irgendwo im Land)':'Eigene Koordinaten entfernt, es gilt die Ortschaft','var(--accent)');
     oSet(O_CUR,{genau:g,...(g?{koord:undefined}:{}),...(g!=='land'?{land:undefined}:{})}); rerender(); });
   // Koordinaten (eigene oder der Ortschaft)
-  B.querySelectorAll('[data-kin]').forEach(inp=>{ const sc=inp.dataset.kin, err=B.querySelector(`[data-kerr="${sc}"]`);
-    const set=()=>{ const k=oParseCoord(inp.value); if(!k){ err.textContent='Keine gültigen Koordinaten erkannt. Beispiel: 47.3769, 8.5417'; return; } oKSetter(sc)(k); island(sc==='os'?'Position der Ortschaft gesetzt':'Position gesetzt'); rerender(); };
-    B.querySelector(`[data-kset="${sc}"]`).onclick=set; inp.onkeydown=e=>{ if(e.key==='Enter') set(); }; inp.oninput=()=>err.textContent='';
-    inp.onpaste=()=>setTimeout(()=>{ if(oParseCoord(inp.value)) set(); },0); });
-  B.querySelectorAll('[data-khere]').forEach(b=>b.onclick=()=>oHere(oKSetter(b.dataset.khere)));
-  B.querySelectorAll('[data-kdel]').forEach(b=>b.onclick=()=>{ oKSetter(b.dataset.kdel)(undefined); rerender(); });
+  B.querySelectorAll('[data-kin]').forEach(inp=>{ const sc=inp.dataset.kin, err=B.querySelector(`[data-kerr="${sc}"]`), was=inp.value;
+    const commit=()=>{ const v=inp.value.trim();
+      if(!v){ if(was){ oKSetter(sc)(undefined); island('Koordinaten entfernt'); rerender(); } return; }
+      const k=oParseCoord(v); if(!k){ err.textContent='Keine gültigen Koordinaten erkannt. Beispiel: 47.3769, 8.5417'; return; }
+      if(`${k[0]}, ${k[1]}`===was){ inp.value=was; return; }
+      oKSetter(sc)(k); island(sc==='os'?'Position der Ortschaft gesetzt':'Position gesetzt'); rerender(); };
+    inp.onkeydown=e=>{ if(e.key==='Enter'){ e.preventDefault(); inp.blur(); } if(e.key==='Escape'){ inp.value=was; err.textContent=''; inp.blur(); } };
+    inp.onblur=commit; inp.oninput=()=>err.textContent='';
+    inp.onpaste=()=>setTimeout(()=>{ if(oParseCoord(inp.value)) inp.blur(); },0); });
+  B.querySelectorAll('[data-khere]').forEach(b=>{ b.onpointerdown=e=>e.preventDefault(); b.onclick=()=>oHere(oKSetter(b.dataset.khere)); });
   // Ortschaft wählen
   const osIn=$('#oOsIn'), osAc=$('#oOsAc');
   if(osIn){ let sel=-1;
@@ -2304,14 +2338,10 @@ function oHere(setter){
 }
 
 /* ─── Bausteine: Koordinaten, Ortschaft, Land ──────────── */
-function oKoordBlock(k,scope,zoom){
-  return `<div class="pos-now">${k?`<span class="k">${k[0].toFixed(4)}, ${k[1].toFixed(4)}</span>
-      <a href="https://www.openstreetmap.org/?mlat=${k[0]}&mlon=${k[1]}#map=${zoom}/${k[0]}/${k[1]}" target="_blank" rel="noopener">Karte ↗</a>
-      <button class="x press" data-kdel="${scope}" aria-label="Koordinaten entfernen">✕</button>`:`<span class="k none">Keine Koordinaten</span>`}</div>
-    <div class="pos-row"><button class="pill pill-dark press" data-khere="${scope}">${O_ICO.loc}Aktueller Standort</button></div>
-    <div class="pos-row" style="margin-top:8px"><input class="text-in" data-kin="${scope}" placeholder="Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
-      <button class="pill pill-accent press" data-kset="${scope}">Setzen</button></div>
-    <div class="pos-err" data-kerr="${scope}"></div>`;
+function oKoordBlock(k,scope,zoom){   // ein Feld: zeigt den Wert, überschreiben, Link einfügen oder leeren
+  return `<div class="pos-row"><input class="text-in" data-kin="${scope}" value="${k?`${k[0]}, ${k[1]}`:''}" placeholder="Keine – Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      <button class="icon-btn press" data-khere="${scope}" aria-label="Aktueller Standort" title="Aktueller Standort">${O_ICO.loc}</button></div>
+    <div class="pos-meta">${k?`<a href="https://www.openstreetmap.org/?mlat=${k[0]}&mlon=${k[1]}#map=${zoom}/${k[0]}/${k[1]}" target="_blank" rel="noopener">Auf der Karte ansehen ↗</a>`:''}<span class="pos-err" data-kerr="${scope}"></span></div>`;
 }
 const oCurOs=()=>O_KIND==='os'?O_CUR:oReg(O_CUR)?.ortschaft;
 const oKSetter=scope=>scope==='os'?(k=>oSetOs(oCurOs(),{koord:k})):(k=>oSet(O_CUR,{koord:k}));
