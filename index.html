@@ -674,7 +674,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <div class="card">
           <div class="card-head"><span class="card-title">Verteilung</span>
             <div class="seg" id="meterSeg" role="tablist"><span class="thumb"></span>
-              <button role="tab" data-v="sport">Sport</button><button role="tab" data-v="locations">Ortschaften</button><button role="tab" data-v="coffeeLocations">Kaffee</button><button role="tab" data-v="people">Leute</button></div>
+              <button role="tab" data-v="sport">Sport</button><button role="tab" data-v="locations">Orte</button><button role="tab" data-v="coffeeLocations">Kaffee</button><button role="tab" data-v="people">Leute</button></div>
           </div>
           <div class="meter-num"><span class="big" id="meterBig"><span class="roll"></span></span><span class="of" id="meterOf"></span></div>
           <div class="meter-bar" id="meterBar"></div>
@@ -1613,7 +1613,8 @@ function renderMeter(){
   bar.innerHTML=rows.map((r,i)=>`<i data-i="${i}" style="background:${PALETTE[i]}"></i>`).join('')||'<i style="flex-basis:100%;background:var(--surface-3)"></i>';
   leg.innerHTML=rows.map((r,i)=>`<button class="ml press" data-i="${i}"><i class="sw" style="background:${PALETTE[i]}"></i>${esc(r[0])}<span class="c">${r[1]}</span></button>`).join('')||'<span class="muted">Keine Daten in diesem Zeitraum</span>';
   requestAnimationFrame(()=>requestAnimationFrame(()=>bar.querySelectorAll('i[data-i]').forEach((el,i)=>el.style.flexBasis=`calc(${rows[i][1]/total*100}% - 3px)`)));
-  const unit={sport:'Einheiten',locations:'Tage in Ortschaften',coffeeLocations:'Kaffees zugeordnet',people:'Begegnungen'}[meterKind];
+  const nLoc=Object.keys(counts).length;
+  const unit={sport:'Einheiten',locations:`Tage in ${nLoc} ${nLoc===1?'Ort':'Orten'}`,coffeeLocations:'Kaffees zugeordnet',people:'Begegnungen'}[meterKind];
   const hl=i=>{ meterHl=i; bar.classList.toggle('dim',i!==null);
     bar.querySelectorAll('i').forEach(el=>el.classList.toggle('hl',+el.dataset.i===i)); leg.querySelectorAll('.ml').forEach(el=>el.classList.toggle('hl',+el.dataset.i===i));
     if(i===null){ roll($('#meterBig'),fmt0(total)); $('#meterOf').textContent=unit; } else { roll($('#meterBig'),fmt0(rows[i][1])); $('#meterOf').textContent=`${rows[i][0]} · ${Math.round(rows[i][1]/total*100)} %`; } };
