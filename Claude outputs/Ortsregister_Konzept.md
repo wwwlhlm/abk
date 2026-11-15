@@ -96,9 +96,19 @@ Alle Felder ausser dem Namen sind optional.
   3. Erst am Schluss wird der Verweis entfernt und der Suchindex aktualisiert.
   4. Bei einem Abbruch oder Fehler bleibt der Verweis stehen. Der Zustand ist stimmig und lässt sich später fortsetzen.
 
+## Ortschaften: eine Verknüpfung für alles
+
+- Eine Ortschaft (z. B. `Zurich`) ist **ein** Eintrag im Register. Die Tage (Feld `location`) und die Orte (Feld `ortschaft`) zeigen beide darauf.
+- Land und Position werden einmal gesetzt und gelten überall: beim Erfassen (Land-Vorschlag), in der Ortsübersicht, für Orte „irgendwo in …“ und später auf den Karten.
+- **Die Tagesdateien bleiben unverändert.** Die Verknüpfung entsteht nur über den Namen, im Frontmatter kommt nichts dazu.
+- **Entschieden:** Die Positionen der Ortschaften speisen später auch eine Karte „wo war ich“ aus dem Feld `location` der Tage. Die Tageskoordinaten (`coordinates:`) bleiben davon getrennt.
+
 ## In der App
 
-Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“). Wegen der Suche ist es eine eigene Seite wie die Suche, kein Sheet.
+Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“). Wegen der Suche ist es eine eigene Seite wie die Suche, kein Sheet. Oben umschaltbar zwischen **Orte** und **Ortschaften**.
+
+- **Ortschaften:** alle Namen aus dem Feld Ort der Tage, mit Anzahl Tage, Land, Position und Anzahl verknüpfter Orte. Filter: ohne Position, ohne Land, mit Orten. Antippen öffnet die Ortschaft: Land, Position und die Liste der Orte dort.
+- **Beim Erfassen** steht unter „Ort“ ein Hinweis „Naples · Position setzen“, solange eine Ortschaft keine Position hat. Im Ort-Editor öffnet das Antippen der Ortschaft dieselbe Ortschaft.
 
 - **Ortsliste:** alle Namen aus beiden Listen nach Häufigkeit, mit Anzahl Tage, Typ (und Art), Genauigkeit, Herkunft (Kaffeeort, spezifischer Ort oder beides) und einem Zeichen, ob Koordinaten vorhanden sind. Verweise erscheinen beim Zielort („+ Lalere“). Mit Suche und Filtern: ohne Koordinaten, ohne Typ, Ortschaft/Land, Kaffeeorte, spezifische Orte, nach Typ. Die Zahlen kommen direkt aus dem Suchindex.
 - **Ort bearbeiten:** Typ wählen (bei „Ort“ zusätzlich die Art), Genauigkeit wählen, Position setzen, entweder mit „aktuellen Standort übernehmen“ oder per Koordinaten bzw. Karten-Link einfügen (Google Maps, OpenStreetMap). Weil eine Karte das spätere Ziel ist, kann eine Karte zum Antippen später dazukommen.
@@ -137,5 +147,4 @@ Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“)
 
 - Welche Auswertungen neben der Karte konkret gewünscht sind.
 - Ob die Vorschläge für „Art“ so passen oder anders heissen sollen.
-- Ob die Positionen der Ortschaften später auch für die Tage genutzt werden (Karte „wo war ich“ aus `location`), getrennt von den Tageskoordinaten.
-- Eine eigene Liste der Ortschaften im Fenster „Orte“, falls das Setzen über die einzelnen Orte nicht reicht.
+

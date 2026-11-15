@@ -186,11 +186,11 @@ svg{display:block}
 .hint{font-size:12px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--text-3);transition:color .2s}
 .hint.warn{color:var(--accent)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{height:34px;padding:0 13px;border-radius:999px;background:var(--bg);color:var(--text-2);font-size:14px;display:inline-flex;align-items:center;gap:7px;
+.chip{height:34px;padding:0 13px;border-radius:999px;background:var(--bg);color:var(--text-2);box-shadow:inset 0 0 0 1px var(--border);font-size:14px;display:inline-flex;align-items:center;gap:7px;
   transition:background-color .2s,color .2s,transform .4s var(--spring)}
 .chip:hover{color:var(--text)}
 .chip .cd{width:6px;height:6px;border-radius:50%;background:currentColor;transform:scale(0);margin-left:-13px;transition:transform .4s var(--spring-pop),margin .4s var(--spring)}
-.chip.on{background:var(--accent-bg);color:var(--accent)}
+.chip.on{background:rgba(253,147,159,.24);color:#ffc4cb;font-weight:500;box-shadow:inset 0 0 0 1.5px rgba(253,147,159,.75)}
 .chip.on .cd{transform:scale(1);margin-left:0}
 .chip:active{transform:scale(.93);transition-duration:.08s}
 .chip .cc{font-size:11px;font-weight:600;letter-spacing:.3px;padding:2px 6px;border-radius:6px;background:rgba(253,147,159,.16);margin-right:-5px;font-variant-numeric:tabular-nums}
@@ -472,7 +472,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .o-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1*var(--px)) 0;padding:0 var(--px)}
 .o-filters::-webkit-scrollbar{display:none}
 @media (min-width:700px){.o-filters{flex-wrap:wrap;margin:10px 0 0;padding:0}}
-.o-filters .sg.on{background:var(--accent-bg);color:var(--accent)}
+.o-filters .sg.on{background:rgba(253,147,159,.24);color:#ffc4cb;box-shadow:inset 0 0 0 1.5px rgba(253,147,159,.75)}
 .o-filters .sg.on .c{color:inherit;opacity:.7}
 .o-filters .sep{flex:0 0 1px;background:var(--border-2);margin:6px 2px}
 .o-err{padding:14px 16px;font-size:14px;color:var(--text-2);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -601,7 +601,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <div class="ticks"><span style="left:3px">−2</span><span style="left:calc(3px + (100% - 6px) * .25)">−1</span><span style="left:50%">0</span><span style="left:calc(3px + (100% - 6px) * .75)">+1</span><span style="left:calc(100% - 3px)">+2</span></div>
         </div>
         <div class="card">
-          <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div>
+          <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div><div class="reg-hints" id="oHintLoc"></div>
             <div class="expand" id="ccWrap"><div><div class="cc-row"><span class="label">Land <span class="hint" id="ccHint">mehrfach tippen, Reihenfolge wie die Orte</span></span><div data-g="countries"></div></div></div></div></div>
           <div class="chip-group"><span class="label">Kaffee <span class="hint" id="coffeeHint"></span></span><div data-g="coffeeLocations"></div><div class="reg-hints" id="oHintCoffee"></div></div>
         </div>
@@ -710,6 +710,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
       <div class="o-top">
         <button class="icon-btn press" id="oBack" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
         <div class="s-title">Orte</div>
+        <div class="seg" id="oSeg" role="tablist" style="background:var(--surface)"><span class="thumb"></span><button role="tab" data-v="orte">Orte</button><button role="tab" data-v="os">Ortschaften</button></div>
       </div>
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="oq" type="search" placeholder="Ort suchen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
@@ -1987,6 +1988,13 @@ function oUsage(){
       x[k==='places'?'place':'coffee']++; if(!seen[n]){ seen[n]=1; x.days++; if(e.date<x.first) x.first=e.date; if(e.date>x.last) x.last=e.date; } })); });
   return oUse=u;
 }
+let oOsUse=null;
+function oOsUsage(){ if(oOsUse) return oOsUse; const u={};
+  DATA.forEach(e=>{ if(e.date>TODAY) return; new Set(e.locations||[]).forEach(n=>{ const x=u[n]||(u[n]={days:0,first:e.date,last:e.date}); x.days++; if(e.date<x.first) x.first=e.date; if(e.date>x.last) x.last=e.date; }); });
+  return oOsUse=u; }
+function oOsInfo(o){ const u=oOsUsage()[o]||{days:0,first:null,last:null}; return {name:o,...u,r:oOs(o),land:oOs(o).land||LOC_CC[o]||null,orte:oInOrtschaft(o)}; }
+function oAllOs(){ const names=new Set([...Object.keys(oOsUsage()),...Object.keys(OREG.ortschaften),...Object.values(OREG.orte).map(r=>r.ortschaft).filter(Boolean)]);
+  return [...names].map(oOsInfo).sort((a,b)=>b.days-a.days||b.orte.length-a.orte.length||a.name.localeCompare(b.name,'de')); }
 function oInfo(n){
   const U=oUsage(), names=[n,...oAliasesTo(n)], us=names.map(x=>U[x]).filter(Boolean);
   return {name:n, aliases:oAliasesTo(n), coffee:us.reduce((s,x)=>s+x.coffee,0), place:us.reduce((s,x)=>s+x.place,0), total:us.reduce((s,x)=>s+x.days,0),
@@ -1999,6 +2007,7 @@ function oAll(){
 const oDaysOf=n=>oUsage()[n]?.days||0;
 function oTop(list){ return [...new Set(list.map(oResolve))]; }   // Chip-Vorschläge: Verweise durch Ziel ersetzen
 function oMergeSugg(){ // Vorschläge beim Erfassen: Verweise zählen zum Ziel, nur Zielname wird vorgeschlagen
+  Object.entries(OREG.ortschaften).forEach(([o,v])=>{ if(v.land) LOC_CC[o]=v.land; });   // Land der Ortschaft gilt auch beim Erfassen
   O_KEYS.forEach(k=>{ if(!SUGG[k]) return; const c={}; SUGG[k].forEach(([v,n])=>{ const t=oResolve(v); c[t]=(c[t]||0)+n; }); SUGG[k]=Object.entries(c).sort((a,b)=>b[1]-a[1]); });
 }
 
@@ -2024,7 +2033,9 @@ function oDuplicates(list=oAll()){
 /* ─── Hinweis beim Erfassen: „Miro · Ort zuordnen“ ────── */
 function oHints(e){
   oUse=null;
-  const box={coffeeLocations:$('#oHintCoffee'),places:$('#oHintPlaces')}; if(!box.places) return;
+  const box={coffeeLocations:$('#oHintCoffee'),places:$('#oHintPlaces')}; if(!box.places) return; oOsUse=null;
+  const hl=$('#oHintLoc'), okS=OREG_STATE==='ok'||OREG_STATE==='demo';
+  if(hl) hl.innerHTML=okS?[...new Set(e.locations||[])].filter(o=>!oOs(o).koord).map(o=>`<button class="reg-hint" data-os-open="${esc(o)}"><b>${esc(o)}</b> · <span class="go">Position setzen</span></button>`).join(''):'';
   $('#orteCount').textContent=OREG_STATE==='loading'||OREG_STATE==='none'?'':fmt0(oAll().length);
   O_KEYS.forEach(k=>{
     const show=OREG_STATE==='ok'||OREG_STATE==='demo';
@@ -2032,24 +2043,28 @@ function oHints(e){
     box[k].innerHTML=show&&!tmpl?[...new Set(e[k]||[])].filter(v=>!oKnown(v)).map(v=>`<button class="reg-hint" data-ort="${esc(oResolve(v))}"><b>${esc(v)}</b> · <span class="go">Ort zuordnen</span></button>`).join(''):'';
   });
 }
-document.addEventListener('click',ev=>{ const h=ev.target.closest('.reg-hint[data-ort]'); if(h) oOpenOrt(h.dataset.ort); });
+document.addEventListener('click',ev=>{ const h=ev.target.closest('.reg-hint[data-ort]'); if(h) oOpenOrt(h.dataset.ort); const s=ev.target.closest('.reg-hint[data-os-open]'); if(s) oOpenOs(s.dataset.osOpen); });
 $('#openOrte').onclick=()=>oOpenList();
 
 /* ═══════════════════════════════════════════════════════════
    Navigation
    ═══════════════════════════════════════════════════════════ */
-let O_CUR=null, O_FROM='entry';
-function oOpenList(){ oUse=null; scrollMem.orte=0; oRenderList(); go('orte'); }
-function oOpenOrt(n,opt={}){
-  if(!oCanEdit()){ island(OREG_STATE==='loading'?'Orte werden noch geladen …':'orte.json nicht geladen','var(--bad)',2500); return; }
-  oUse=null; O_CUR=n; O_PANEL=opt.merge?'merge':null; O_MT=opt.merge||null; O_MQ=''; O_MODE='alias'; O_RN='';
-  if(view!=='ort') O_FROM=view; scrollMem.ort=0; oRenderOrt(); if(view!=='ort') go('ort'); else scrollTo({top:0});
+let O_CUR=null, O_KIND='ort', O_FROM='entry', O_STACK=[], O_TAB='orte';
+function oOpenList(tab){ if(tab) O_TAB=tab; oUse=null; scrollMem.orte=0; oSegSet?.(O_TAB,false); oRenderList(); go('orte'); }
+function oGuard(){ if(oCanEdit()) return true; island(OREG_STATE==='loading'?'Orte werden noch geladen …':'orte.json nicht geladen','var(--bad)',2500); return false; }
+function oShowDetail(kind,n){
+  if(view==='ort'&&!O_RUN) O_STACK.push({kind:O_KIND,name:O_CUR}); else if(view!=='ort'){ O_FROM=view; O_STACK=[]; }
+  O_KIND=kind; O_CUR=n; O_LANDOPEN=false; scrollMem.ort=0; oRenderOrt(); if(view!=='ort') go('ort'); else scrollTo({top:0});
 }
+function oOpenOrt(n,opt={}){ if(!oGuard()) return; O_PANEL=opt.merge?'merge':null; O_MT=opt.merge||null; O_MQ=''; O_MODE='alias'; O_RN=''; oShowDetail('ort',n); }
+function oOpenOs(o){ if(!oGuard()) return; O_PANEL=null; oShowDetail('os',o); }
 function oBack(){
   if(O_RUN) return;
+  if(view==='ort'&&O_STACK.length){ const s=O_STACK.pop(); O_KIND=s.kind; O_CUR=s.name; O_PANEL=null; oRenderOrt(); scrollTo({top:0}); return; }
   if(view==='ort'&&O_FROM==='orte'){ oRenderList(false); go('orte'); return; }
   const e=entryFor(cur); renderEntry(0); oHints(e); go('entry');
 }
+let oSegSet=null;
 $('#oBack').onclick=oBack; $('#dBack').onclick=oBack;
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&(view==='orte'||view==='ort')&&!$('#sheet').classList.contains('open')&&!e.target.closest('input')) oBack(); });
 addEventListener('scroll',()=>{ if(view==='orte') $('#oBar').classList.toggle('stuck',scrollY>4); if(view==='ort') $('#dBar').classList.toggle('stuck',scrollY>4); },{passive:true});
@@ -2072,7 +2087,8 @@ function oFiltered(all){
   });
 }
 function oRenderList(anim=true){
-  oUse=null;
+  oUse=null; oOsUse=null;
+  if(O_TAB==='os') return oRenderOsList(anim);
   const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
   const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
   $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Ortschaft/Land',cnt(p=>p.r.genau))
@@ -2112,9 +2128,27 @@ function oSub(p){
   return b.join(' · ');
 }
 $('#oFilters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'); if(!b) return; const k=b.dataset.f, v=b.dataset.val; OF[k]=OF[k]===v?null:v; O_SHOWN=150; oRenderList(); });
+oSegSet=segInit($('#oSeg'),'orte',v=>{ O_TAB=v; OF.flag=null; OF.typ=null; OF.src=null; O_SHOWN=150; $('#oq').placeholder=v==='os'?'Ortschaft suchen':'Ort suchen'; oRenderList(); scrollTo({top:0}); });
+function oRenderOsList(anim=true){
+  const all=oAllOs(), q=oNorm(OF.q), cnt=f=>all.filter(f).length;
+  const list=all.filter(o=>(!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q))&&(OF.flag!=='nopos'||!o.r.koord)&&(OF.flag!=='noland'||!o.land)&&(OF.flag!=='linked'||o.orte.length));
+  const sg=(val,label,n)=>`<button class="sg${OF.flag===val?' on':''}" data-f="flag" data-val="${val}">${label}<span class="c">${n}</span></button>`;
+  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Mit Orten',cnt(o=>o.orte.length));
+  $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`:'';
+  $('#oRetry')?.addEventListener('click',()=>oLoadReg());
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · Namen aus dem Feld <i>Ort</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
+  $('#dupWrap').innerHTML='';
+  const N=Math.min(list.length,O_SHOWN);
+  $('#olist').innerHTML=list.slice(0,N).map((o,i)=>`<button class="orow" data-os-row="${esc(o.name)}" style="${anim&&i<24&&!REDUCED?`animation-delay:${i*18}ms`:'animation:none'}">
+      <div class="nm"><div class="t1">${esc(o.name)}</div><div class="t2">${[o.land?esc(o.land):'<span class="none">kein Land</span>',o.orte.length?`${o.orte.length} ${o.orte.length===1?'Ort':'Orte'} verknüpft`:''].filter(Boolean).join(' · ')}</div></div>
+      <span class="pos${o.r.koord?' has':''}" title="${o.r.koord?'Position gesetzt':'keine Position'}"></span><span class="days">${fmt0(o.days)}</span></button>`).join('')
+    +(list.length>N?`<button class="more press" id="oMore">${fmt0(list.length-N)} weitere anzeigen</button>`:'')
+    ||'<p class="muted" style="text-align:center;padding:24px">Keine Ortschaften gefunden.</p>';
+  $('#oMore')?.addEventListener('click',()=>{ O_SHOWN+=150; oRenderList(false); });
+}
 $('#oq').addEventListener('input',e=>{ OF.q=e.target.value; $('#oqClear').hidden=!OF.q; O_SHOWN=150; oRenderList(false); });
 $('#oqClear').onclick=e=>{ e.preventDefault(); $('#oq').value=''; OF.q=''; $('#oqClear').hidden=true; oRenderList(false); };
-$('#olist').addEventListener('click',e=>{ const r=e.target.closest('[data-o]'); if(r) oOpenOrt(r.dataset.o); });
+$('#olist').addEventListener('click',e=>{ const r=e.target.closest('[data-o]'); if(r) oOpenOrt(r.dataset.o); const s=e.target.closest('[data-os-row]'); if(s) oOpenOs(s.dataset.osRow); });
 
 /* ═══════════════════════════════════════════════════════════
    Ort bearbeiten
@@ -2132,7 +2166,8 @@ const oDShort=s=>{ if(!s) return '–'; const d=parse(s); return `${d.getDate()}
 function oAllArten(){ return [...new Set([...O_ARTEN,...Object.values(OREG.orte).map(r=>r.art).filter(Boolean)])]; }
 
 function oRenderOrt(){
-  if(!O_CUR) return; oUse=null;
+  if(!O_CUR) return; oUse=null; oOsUse=null;
+  if(O_KIND==='os') return oRenderOs();
   const p=oInfo(O_CUR), r=p.r, pub=oIsPublic(r), pubType=O_PUBLIC.includes(r.typ);
   $('#dName').textContent=O_CUR;
   $('#dSub').textContent=`${oOrigin(p)} · ${fmt0(p.total)} ${p.total===1?'Tag':'Tage'}`;
@@ -2180,6 +2215,27 @@ function oRenderOrt(){
     </div>`;
   oBindOrt();
 }
+function oRenderOs(){
+  const o=oOsInfo(O_CUR), r=o.r;
+  $('#dName').textContent=O_CUR;
+  $('#dSub').textContent=`Ortschaft · ${fmt0(o.days)} ${o.days===1?'Tag':'Tage'} im Tagebuch · ${o.orte.length} ${o.orte.length===1?'Ort':'Orte'} verknüpft`;
+  const rows=o.orte.map(oInfo).sort((a,b)=>b.total-a.total).map(p=>`<button class="orow" data-o2="${esc(p.name)}" style="animation:none;background:var(--bg)">
+      <div class="nm"><div class="t1">${esc(p.name)}</div><div class="t2">${oSub(p)}</div></div>${oPosDot(p.r)}<span class="days">${fmt0(p.total)}</span></button>`).join('');
+  $('#dBody').innerHTML=`
+    <div class="o-stats">
+      <div class="stat"><div class="cl">Tage</div><div class="big">${fmt0(o.days)}</div><div class="avg">im Feld Ort</div></div>
+      <div class="stat"><div class="cl">Zuerst</div><div class="big d">${oDShort(o.first)}</div></div>
+      <div class="stat"><div class="cl">Zuletzt</div><div class="big d">${oDShort(o.last)}</div></div>
+    </div>
+    <div class="card"><div class="card-head"><span class="card-title">Land</span><span class="card-sub">${r.land?'':o.land?'aus den Tagen':'noch keins'}</span></div>${oLandPicker(o.land,'os')}
+      <div class="sec-hint">${O_ICO.info}<span>Gilt auch beim Erfassen: Wählst du ${esc(O_CUR)} als Ort, wird dieses Land vorgeschlagen.</span></div></div>
+    <div class="card"><div class="card-head"><span class="card-title">Position</span></div>${oKoordBlock(r.koord,'os',12)}
+      <div class="sec-hint">${O_ICO.info}<span>Gilt überall, wo ${esc(O_CUR)} vorkommt: für die Tage mit diesem Ort und für alle Orte, die „irgendwo in ${esc(O_CUR)}“ sind. Die Tagesdateien bleiben unverändert.</span></div></div>
+    <div class="card"><div class="card-head"><span class="card-title">Orte in ${esc(O_CUR)}</span><span class="card-sub">${o.orte.length||''}</span></div>
+      ${rows?`<div class="olist">${rows}</div>`:`<p class="muted">Noch keine. Bei einem Ort unter Position die Ortschaft wählen.</p>`}</div>`;
+  oBindOrt();
+  $('#dBody').querySelectorAll('[data-o2]').forEach(b=>b.onclick=()=>oOpenOrt(b.dataset.o2));
+}
 function oBindOrt(){
   const B=$('#dBody'), rerender=()=>{ oRenderOrt(); };
   B.querySelectorAll('[data-typ]').forEach(b=>b.onclick=()=>{ const t=b.dataset.typ, r=oReg(O_CUR)||{}, nt=r.typ===t?undefined:t;
@@ -2212,10 +2268,10 @@ function oBindOrt(){
     osAc.onpointerdown=e=>{ if(e.target.closest('.acs')) e.preventDefault(); };
   }
   B.querySelectorAll('[data-os]').forEach(b=>b.onclick=()=>oChooseOs(b.dataset.os));
-  B.querySelector('[data-os-chip]')?.addEventListener('click',e=>{ if(e.target.closest('[data-os-clear]')){ O_LANDOPEN=false; oSet(O_CUR,{ortschaft:undefined}); } else O_LANDOPEN=!O_LANDOPEN; rerender(); });
+  B.querySelector('[data-os-chip]')?.addEventListener('click',e=>{ if(e.target.closest('[data-os-clear]')){ O_LANDOPEN=false; oSet(O_CUR,{ortschaft:undefined}); rerender(); } else oOpenOs(oReg(O_CUR).ortschaft); });
   // Land wählen (für „irgendwo im Land“ oder für die Ortschaft)
   const setLand=(sc,c)=>{ c=c.trim().toUpperCase(); const r=oReg(O_CUR)||{};
-    if(sc==='os'){ const cur=oOs(r.ortschaft).land; oSetOs(r.ortschaft,{land:cur===c?undefined:c}); O_LANDOPEN=false; }
+    if(sc==='os'){ const o=oCurOs(), cur=oOs(o).land; oSetOs(o,{land:cur===c?undefined:c}); O_LANDOPEN=false; buildDatalists(); }
     else oSet(O_CUR,{land:r.land===c?undefined:c}); rerender(); };
   B.querySelectorAll('[data-land]').forEach(b=>b.onclick=()=>setLand(b.dataset.lscope,b.dataset.land));
   B.querySelectorAll('[data-landin]').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter'&&i.value.trim()){ e.preventDefault(); setLand(i.dataset.landin,i.value); } });
@@ -2257,14 +2313,15 @@ function oKoordBlock(k,scope,zoom){
       <button class="pill pill-accent press" data-kset="${scope}">Setzen</button></div>
     <div class="pos-err" data-kerr="${scope}"></div>`;
 }
-const oKSetter=scope=>scope==='os'?(k=>oSetOs(oReg(O_CUR)?.ortschaft,{koord:k})):(k=>oSet(O_CUR,{koord:k}));
+const oCurOs=()=>O_KIND==='os'?O_CUR:oReg(O_CUR)?.ortschaft;
+const oKSetter=scope=>scope==='os'?(k=>oSetOs(oCurOs(),{koord:k})):(k=>oSet(O_CUR,{koord:k}));
 let O_LANDOPEN=false;
 function oOrtPicker(r,optional=false){   // wie „Ort“ im Erfassen: Chip mit Land-Kürzel, Vorschläge aus den Tagen
   const o=r.ortschaft, land=o?(oOs(o).land||LOC_CC[o]||null):null;
   const top=o?[]:(SUGG.locations||[]).slice(0,6).map(x=>x[0]);
-  const chips=o?`<button class="chip on" data-os-chip><span class="cd"></span>${esc(o)}<span class="cc${land?'':' miss'}">${land?esc(land):'?'}</span><span class="x" data-os-clear aria-label="entfernen">✕</span></button>`
+  const chips=o?`<button class="chip on" data-os-chip><span class="cd"></span>${esc(o)}<span class="cc${land?'':' miss'}">${land?esc(land):'?'}</span><span class="x" data-os-clear aria-label="entfernen">✕</span></button><span class="hint" style="align-self:center">antippen für Land und Position</span>`
     :top.map(v=>`<button class="chip" data-os="${esc(v)}"><span class="cd"></span>${esc(v)}</button>`).join('');
-  const landRow=o&&(O_LANDOPEN||!land)?`<div class="cc-row" style="padding-top:10px"><span class="label">Land von ${esc(o)} <span class="hint">gilt überall</span></span>${oLandPicker(land,'os')}</div>`:'';
+  const landRow=o&&!land?`<div class="cc-row" style="padding-top:10px"><span class="label">Land von ${esc(o)} <span class="hint">gilt überall</span></span>${oLandPicker(land,'os')}</div>`:'';
   return `<div class="field-row"><span class="label">Ortschaft${optional?' <span class="hint">optional</span>':''}</span>
     <div class="chips">${chips}${o?'':`<input class="chip-add" id="oOsIn" placeholder="+ Ortschaft" enterkeyhint="done" autocomplete="off" autocorrect="off" spellcheck="false">`}</div>
     <div class="ac" id="oOsAc" role="listbox"></div>${landRow}</div>`;
