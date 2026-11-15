@@ -2220,7 +2220,7 @@ function oRenderOrt(){
       pos+=`<div class="field-row"><span class="label">Position</span>${oKoordBlock(r.koord,'ort',17)}</div>`+oOrtPicker(r,true);
     }
     if(r.typ==='zuhause') pos+=`<div class="sec-hint">${O_ICO.lock}<span>Zuhause-Orte dürfen Koordinaten haben, landen aber nie auf der Webseite.</span></div>`;
-    if(pubType){ const k=oKoord(r); pos+=`<button class="tgl press" id="oPub" role="switch" aria-checked="${r.oeffentlich!==false}" ${k?'':'disabled'}><div>Auf der Karte zeigen<p>${k?(pub?'Erscheint auf der Karte, sobald es sie gibt.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst eine Position.'}</p></div><span class="sw2"></span></button>`; }
+    if(pubType){ const k=oKoord(r); pos+=`<button class="tgl press" id="oPub" role="switch" aria-checked="${!!k&&r.oeffentlich!==false}" ${k?'':'disabled'}><div>Auf der Karte zeigen<p>${k?(pub?'Erscheint auf der Karte, sobald es sie gibt.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst eine Position.'}</p></div><span class="sw2"></span></button>`; }
   }
   const al=p.aliases.length?`<div style="margin-top:14px"><span class="label">Verweise auf diesen Ort</span><div style="margin-top:4px">${p.aliases.map(a=>`<div class="alias-row">${esc(a)} <span class="c">${fmt0(oDaysOf(a))} Tage</span>
       <button class="pill pill-ghost press" data-unalias="${esc(a)}">Aufheben</button><button class="pill pill-ghost press" data-replace="${esc(a)}">Überall ersetzen</button></div>`).join('')}</div></div>`:'';
@@ -2330,6 +2330,7 @@ function oBindOrt(){
       if(e.key==='Enter'){ e.preventDefault(); const q=osIn.value.trim().toLowerCase(), first=it[0]?.dataset.os;
         oChooseOs(sel>=0&&it[sel]?it[sel].dataset.os:first&&first.toLowerCase().startsWith(q)?first:osIn.value); } };
     osAc.onpointerdown=e=>{ if(e.target.closest('.acs')) e.preventDefault(); };
+    osAc.onclick=e=>{ const b=e.target.closest('[data-os]'); if(b) oChooseOs(b.dataset.os); };   // Vorschläge entstehen erst beim Tippen
   }
   B.querySelectorAll('[data-os]').forEach(b=>b.onclick=()=>oChooseOs(b.dataset.os));
   B.querySelector('[data-os-chip]')?.addEventListener('click',e=>{ if(e.target.closest('[data-os-clear]')){ O_LANDOPEN=false; oSet(O_CUR,{ortschaft:undefined}); rerender(); } else oOpenOs(oReg(O_CUR).ortschaft); });
