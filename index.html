@@ -634,7 +634,6 @@ input[type=search]{-webkit-appearance:none;appearance:none}
             <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
             <div class="chip-group"><span class="label">Personen</span><div data-g="people"></div></div>
             <div class="chip-group"><span class="label">Tags</span><div data-g="tags"></div></div>
-            <div class="chip-group"><span class="label">Koordinaten</span><input class="text-in" id="coords" placeholder="Keine – Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done"></div>
             <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Orte verwalten<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
           </div></div></div>
         </div>
@@ -988,6 +987,7 @@ function parseDay(raw,date){
 function buildDay(e){
   const L=items=>items.length?'\n'+items.map(i=>`  - ${i}`).join('\n'):'';
   const n=new Date(), ts=`${n.getFullYear()}-${pad(n.getMonth()+1)}-${pad(n.getDate())}T${pad(n.getHours())}:${pad(n.getMinutes())}:${pad(n.getSeconds())}`;
+  // Tageskoordinaten: kein Eingabefeld mehr (Orte/Ortschaften decken das ab), vorhandene Werte werden unverändert zurückgeschrieben
   const coords=(e.coords||'').split(',').map(c=>c.trim()).filter(Boolean), f=e._file||{};
   const km=e.sport.includes('Velo')?String(e.kmRaw??(e.cycling_km||'')).trim():'';
   const yaml=['---',`date: ${e.date}`,`apples: ${+e.apples||0}`,`bananas: ${+e.bananas||0}`,`coffee: ${+e.coffee||0}`,`mood: ${+e.mood||0}`,
@@ -1153,7 +1153,6 @@ function renderEntry(dir=0){
   setMood(e.mood,false);
   LIST_KEYS.forEach(k=>renderGroup(k,e));
   $('#kmWrap').classList.toggle('open', e.sport.includes('Velo')); $('#km').value=e.kmRaw??(e.cycling_km||'');
-  $('#coords').value=e.coords||'';
   $('#entry').value=e.text||''; autosize($('#entry')); wordCount(); renderPrev();
   ccOpen=false; ccState(e); coffeeHint(e); foldSummary(e);
 }
@@ -1367,16 +1366,14 @@ $('#v-entry').addEventListener('pointerdown',ev=>{ if(ev.target.closest('.acs'))
 $('#v-entry').addEventListener('click',ev=>{ const b=ev.target.closest('.acs'); if(!b) return; const k=b.parentElement.dataset.ac; acClose(k); addValue(k,b.dataset.v); });
 $('#v-entry').addEventListener('focusout',ev=>{ const inp=ev.target.closest?.('.chip-add'); if(inp) setTimeout(()=>{ if(document.activeElement!==inp) acClose(inp.dataset.k); },150); });
 $('#km').addEventListener('input',ev=>touch({...entryFor(cur),cycling_km:parseFloat(ev.target.value)||0,kmRaw:ev.target.value}));
-$('#coords').addEventListener('input',ev=>{ const e={...entryFor(cur),coords:ev.target.value}; touch(e); foldSummary(e); });
-$('#coords').addEventListener('paste',ev=>setTimeout(()=>{ const el=ev.target, k=oParseCoord(el.value); if(k&&el.value.trim()!==`${k[0]}, ${k[1]}`){ el.value=`${k[0]}, ${k[1]}`; el.dispatchEvent(new Event('input')); } },0));
 function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coffeeHint');
   if(!c&&n===1&&e.coffeeLocations[0]==='Home'){ h.textContent=''; h.classList.remove('warn'); return; } // leere Vorlage
   h.textContent = !c&&!n ? '' : n===c ? `alle ${c} zugeordnet` : `${n} von ${c} zugeordnet`; h.classList.toggle('warn', n!==c); }
 
 /* Details einklappbar */
 function foldSummary(e){
-  const bits=[e.places.length&&`${e.places.length} ${e.places.length>1?'Orte':'Ort'}`, e.people.length&&e.people.join(', '), e.tags.length&&e.tags.map(t=>'#'+t).join(' '), e.coords&&'📍'].filter(Boolean);
-  $('#foldSum').textContent=bits.join(' · ')||'Orte, Personen, Tags, Koordinaten';
+  const bits=[e.places.length&&`${e.places.length} ${e.places.length>1?'Orte':'Ort'}`, e.people.length&&e.people.join(', '), e.tags.length&&e.tags.map(t=>'#'+t).join(' ')].filter(Boolean);
+  $('#foldSum').textContent=bits.join(' · ')||'Orte, Personen, Tags';
   oHints(e);
 }
 function setFold(open){ $('#details').classList.toggle('open',open); $('#foldBody').classList.toggle('open',open); $('#foldBtn').setAttribute('aria-expanded',open); try{ localStorage.setItem('abkFold',open?'1':''); }catch{} }

@@ -141,7 +141,7 @@ Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“)
 
 ## Abgrenzung
 
-- **Tageskoordinaten** (`coordinates:` im Frontmatter) bleiben eigenständig: „wo war ich an diesem Tag“. Das Register sagt: „wo liegt dieser Ort“. Beides wird nicht vermischt.
+- **Tageskoordinaten** (`coordinates:` im Frontmatter) haben kein Eingabefeld mehr in der App; Orte und Ortschaften decken das ab. Vorhandene Werte bleiben in den Tagesdateien und werden beim Speichern unverändert zurückgeschrieben, das Feld `coordinates:` bleibt in der Struktur. Das Register sagt „wo liegt dieser Ort“, die Karte „wo war ich“ entsteht aus den Ortschaften im Feld `location`.
 - **Datenschutz:** Orte vom Typ „privat“ bekommen keine Koordinaten. Zuhause-Orte können Koordinaten haben, landen aber nie auf der Webseite. Das Register selbst bleibt im privaten Diary-Repo. Der bestehende Jahres-Export enthält keine Orte und ist nicht betroffen.
 
 ## Technische Notizen
@@ -151,6 +151,14 @@ Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“)
 - Beim Ersetzen über viele Tage die Schreibvorgänge nacheinander ausführen, mit Fortschritt und der Möglichkeit, bei einem Fehler sauber abzubrechen (Ablauf siehe oben).
 - Wechselt ein Ort auf „privat“, auf `genau: ortschaft` oder auf `genau: land`, werden seine eigenen Koordinaten gelöscht.
 - Beim Ersetzen in den Tagen bleiben bei Kaffee alle Einträge stehen (jede Zeile zählt einen Kaffee); nur bei den spezifischen Orten wird ein doppelter Eintrag auf einen reduziert.
+
+## To-do
+
+- **`coordinates:` aus den Tagesdateien entfernen.** Das Feld wurde nie genutzt, Orte und Ortschaften liegen jetzt in `orte.json`. Dafür müsste man:
+  - prüfen, ob irgendeine Tagesdatei doch einen Wert hat, und diese Werte vorher ins Register übernehmen,
+  - die Zeile `coordinates:` aus allen Tagesdateien löschen (einmaliger Durchlauf, ein Schreibvorgang pro Tag, mit Vorschau wie beim Umbenennen),
+  - die Vorlage für neue Tage (App und Obsidian-Template) und `buildDay` in der App anpassen, damit das Feld nicht wieder entsteht,
+  - prüfen, ob der Jahres-Export, `parsen` oder die alte Erfassen-Seite das Feld noch lesen.
 
 ## Offen
 
