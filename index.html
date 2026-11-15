@@ -1880,12 +1880,12 @@ function rangeSlider(el,n,a,b,onChange){
    ═══════════════════════════════════════════════════════════ */
 const O_TYPES=[['café','Café'],['arbeit','Arbeit'],['zuhause','Zuhause'],['privat','bei Freund*innen'],['ort','Ort']];
 const O_TYPE_LABEL=Object.fromEntries(O_TYPES);
-const O_GENAU=[['','Genauer Ort'],['stadt','Irgendwo in Stadt'],['land','Irgendwo im Land']];
+const O_GENAU=[['','Genauer Ort'],['ortschaft','Irgendwo in Ortschaft'],['land','Irgendwo im Land']];
 const O_ARTEN=['Berg','Pass','Veranstaltung','Quartier'];
 const O_PUBLIC=['café','arbeit','ort'];
 const O_KEYS=['coffeeLocations','places'];
 const O_FILE='orte.json';
-let OREG={v:1,orte:{},ignoriert:[]}, OREG_SHA=null, OREG_SAVED=null, OREG_STATE='none', OREG_ERR='';
+let OREG={v:1,orte:{},ortschaften:{},ignoriert:[]}, OREG_SHA=null, OREG_SAVED=null, OREG_STATE='none', OREG_ERR='';
 const O_ICO={
   cup:'<svg class="ico" viewBox="0 0 24 24"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17"/><path d="M8 3v2M12 3v2"/></svg>',
   pin:'<svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>',
@@ -1895,16 +1895,31 @@ const O_ICO={
 };
 
 /* ─── Register lesen / schreiben ──────────────────────── */
-function oNormReg(j){ return {v:1, orte:(j&&typeof j.orte==='object'&&j.orte)||{}, ignoriert:Array.isArray(j?.ignoriert)?j.ignoriert:[]}; }
+function oNormReg(j){
+  const R={v:1, orte:(j&&typeof j.orte==='object'&&j.orte)||{}, ortschaften:(j&&typeof j.ortschaften==='object'&&j.ortschaften)||{}, ignoriert:Array.isArray(j?.ignoriert)?j.ignoriert:[]};
+  // Migration: „stadt“ heisst jetzt „ortschaft“; Position einer unscharfen Ortschaft gehört zur Ortschaft
+  Object.entries(R.orte).forEach(([n,r])=>{ if(r.alias) return;
+    if(r.genau==='stadt') r.genau='ortschaft';
+    if(r.stadt!==undefined){ if(!r.ortschaft) r.ortschaft=r.stadt; delete r.stadt; }
+    if(r.genau==='ortschaft'&&!r.ortschaft&&!/_div$/.test(n)) r.ortschaft=n;
+    if(r.genau==='ortschaft'&&r.koord&&r.ortschaft){ const o=R.ortschaften[r.ortschaft]||(R.ortschaften[r.ortschaft]={}); if(!o.koord) o.koord=r.koord; delete r.koord; }
+    if(r.typ==='privat') delete r.koord;
+  });
+  return R;
+}
 function oDemoReg(){ return oNormReg({orte:{
-  Home:{typ:'zuhause'}, Bodara:{typ:'arbeit',koord:[47.38,8.53],stadt:'Zürich'}, Lab:{typ:'arbeit'},
-  Miro:{typ:'café',koord:[47.3769,8.5417],stadt:'Zürich'}, Bonheur:{typ:'café',koord:[47.3745,8.522],stadt:'Zürich'} }}); }
+  Home:{typ:'zuhause',ortschaft:'Zurich'}, Bodara:{typ:'arbeit',koord:[47.38,8.53],ortschaft:'Zurich'}, Lab:{typ:'arbeit'},
+  Miro:{typ:'café',koord:[47.3769,8.5417],ortschaft:'Zurich'}, Bonheur:{typ:'café',koord:[47.3745,8.522],ortschaft:'Zurich'} },
+  ortschaften:{ Zurich:{land:'CH',koord:[47.3769,8.5417]} }}); }
+const oOne=v=>JSON.stringify(v).replace(/,"/g,', "').replace(/":/g,'": ').replace(/^\{/,'{ ').replace(/\}$/,' }').replace(/\[([-\d.]+),([-\d.]+)\]/g,'[$1, $2]');
 function oRegJson(){ // eine Zeile pro Ort, alphabetisch – gut lesbar und kleine Diffs
   const keys=Object.keys(OREG.orte).sort((a,b)=>a.localeCompare(b,'de'));
   const one=v=>JSON.stringify(v).replace(/,"/g,', "').replace(/":/g,'": ').replace(/^\{/,'{ ').replace(/\}$/,' }').replace(/\[([-\d.]+),([-\d.]+)\]/g,'[$1, $2]');
   const rows=keys.map(k=>`    ${JSON.stringify(k)}: ${one(OREG.orte[k])}`);
+  const oks=Object.keys(OREG.ortschaften).filter(k=>Object.keys(OREG.ortschaften[k]).length).sort((a,b)=>a.localeCompare(b,'de'));
+  const orows=oks.map(k=>`    ${JSON.stringify(k)}: ${one(OREG.ortschaften[k])}`);
   const ign=OREG.ignoriert.length?`,\n  "ignoriert": ${JSON.stringify(OREG.ignoriert)}`:'';
-  return `{\n  "v": 1,\n  "orte": {\n${rows.join(',\n')}${rows.length?'\n':''}  }${ign}\n}\n`;
+  return `{\n  "v": 1,\n  "orte": {\n${rows.join(',\n')}${rows.length?'\n':''}  },\n  "ortschaften": {\n${orows.join(',\n')}${orows.length?'\n':''}  }${ign}\n}\n`;
 }
 async function oLoadReg(){
   if(SOURCE!=='github'||OFFLINE){ OREG=SOURCE==='github'?oNormReg({}):oDemoReg(); OREG_STATE=SOURCE==='github'?'error':'demo'; OREG_ERR=OFFLINE||''; OREG_SAVED=null; oAfterReg(); return; }
@@ -1917,7 +1932,13 @@ async function oLoadReg(){
   }catch(e){ OREG=oNormReg({}); OREG_STATE='error'; OREG_ERR=e.message; console.warn('orte.json:',e); }
   oAfterReg();
 }
-function oAfterReg(){ buildDatalists(); oHints(entryFor(cur)); if(view==='orte') oRenderList(false); if(view==='ort') oRenderOrt(); }
+function oFixOsNames(){ // „Zürich“ → „Zurich“, wenn die Tage den Ort so schreiben
+  const locs=(SUGG.locations||[]).map(x=>x[0]), by={}; locs.forEach(l=>{ const k=oNorm(l); if(!by[k]) by[k]=l; });
+  const fix=o=>o&&!locs.includes(o)&&by[oNorm(o)]?by[oNorm(o)]:o;
+  Object.values(OREG.orte).forEach(r=>{ if(r.ortschaft) r.ortschaft=fix(r.ortschaft); });
+  Object.keys(OREG.ortschaften).forEach(o=>{ const n=fix(o); if(n!==o){ OREG.ortschaften[n]={...OREG.ortschaften[o],...(OREG.ortschaften[n]||{})}; delete OREG.ortschaften[o]; } });
+}
+function oAfterReg(){ buildDatalists(); oFixOsNames(); oHints(entryFor(cur)); if(view==='orte') oRenderList(false); if(view==='ort') oRenderOrt(); }
 const oCanEdit=()=>OREG_STATE==='ok'||OREG_STATE==='demo';
 let oSaveT=null, oSaving=null;
 function oScheduleSave(){
@@ -1947,9 +1968,16 @@ function oResolve(n){ let s=n,k=0; while(oAliasOf(s)&&k++<8) s=oAliasOf(s); retu
 const oRes=(k,v)=>O_KEYS.includes(k)?oResolve(v):v;
 function oResolveCI(v){ if(OREG.orte[v]) return oResolve(v); const k=Object.keys(OREG.orte).find(x=>x.toLowerCase()===v.toLowerCase()); return k?oResolve(k):v; }
 const oAliasesTo=n=>Object.keys(OREG.orte).filter(k=>OREG.orte[k].alias===n);
-const oKnown=n=>{ const r=oReg(oResolve(n)); return !!(r&&(r.typ||r.koord||r.genau)); };
-const oNeedsKoord=r=>!r.koord&&r.typ!=='privat'&&r.genau!=='land';
-const oIsPublic=r=>!!(r.koord&&O_PUBLIC.includes(r.typ)&&r.oeffentlich!==false);
+const oKnown=n=>{ const r=oReg(oResolve(n)); return !!(r&&(r.typ||r.koord||r.genau||r.ortschaft)); };
+const oOs=o=>OREG.ortschaften[o]||{};
+function oKoord(r){ if(r.typ==='privat'||r.genau==='land') return null; if(r.genau==='ortschaft') return r.ortschaft?oOs(r.ortschaft).koord||null:null; return r.koord||null; }
+function oLand(r){ if(r.genau==='land') return r.land||null; return r.ortschaft?(oOs(r.ortschaft).land||LOC_CC[r.ortschaft]||null):null; }
+const oNeedsKoord=r=>r.typ!=='privat'&&r.genau!=='land'&&!oKoord(r);
+const oIsPublic=r=>!!(oKoord(r)&&O_PUBLIC.includes(r.typ)&&r.oeffentlich!==false);
+const oInOrtschaft=o=>Object.keys(OREG.orte).filter(n=>OREG.orte[n].ortschaft===o&&!OREG.orte[n].alias);
+function oSetOs(o,patch){ if(!oCanEdit()||!o) return false; const r={...oOs(o),...patch};
+  Object.keys(r).forEach(k=>{ if(r[k]===undefined||r[k]===null||r[k]==='') delete r[k]; });
+  if(Object.keys(r).length) OREG.ortschaften[o]=r; else delete OREG.ortschaften[o]; oScheduleSave(); return true; }
 const oNorm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[_\-\s.]/g,'');
 let oUse=null;   // Name → {coffee, place, days, first, last}  (Tage, nicht Kaffees)
 function oUsage(){
@@ -2033,7 +2061,7 @@ let OF={q:'',flag:null,typ:null,src:null};
 function oFiltered(all){
   const q=oNorm(OF.q);
   return all.filter(p=>{
-    if(q&&!oNorm(p.name).includes(q)&&!p.aliases.some(a=>oNorm(a).includes(q))&&!oNorm(p.r.stadt||'').includes(q)) return false;
+    if(q&&!oNorm(p.name).includes(q)&&!p.aliases.some(a=>oNorm(a).includes(q))&&!oNorm(p.r.ortschaft||'').includes(q)) return false;
     if(OF.flag==='nokoord'&&!oNeedsKoord(p.r)) return false;
     if(OF.flag==='notyp'&&p.r.typ) return false;
     if(OF.flag==='unscharf'&&!p.r.genau) return false;
@@ -2047,13 +2075,13 @@ function oRenderList(anim=true){
   oUse=null;
   const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
   const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
-  $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Stadt/Land',cnt(p=>p.r.genau))
+  $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Ortschaft/Land',cnt(p=>p.r.genau))
     +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Spezifische Orte',cnt(p=>p.place))
     +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('');
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt, damit nichts überschrieben wird.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`
     :OREG_STATE==='demo'?`<p class="muted" style="padding:0 4px">Demo-Daten: Änderungen bleiben nur bis zum Neuladen.</p>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>p.r.koord))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>oKoord(p.r)))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'');
   const d=OF.q||OF.flag||OF.typ||OF.src?[]:oDuplicates(all);
   $('#dupWrap').innerHTML=d.length?`<div class="card dup-card"><div class="card-head"><span class="card-title">Mögliche Doppelte</span><span class="card-sub">${d.length}</span></div>
     ${d.map((x,i)=>{ const [hi,lo]=x.a.total>=x.b.total?[x.a,x.b]:[x.b,x.a];
@@ -2073,11 +2101,13 @@ function oSrcIcons(p){ return `<span class="src" title="${p.coffee&&p.place?'Kaf
 function oPosDot(r){
   if(r.typ==='privat') return `<span class="pos lock" title="privat, keine Koordinaten">${O_ICO.lock}</span>`;
   if(r.genau==='land') return `<span class="pos na" title="irgendwo im Land, keine Koordinaten nötig"></span>`;
-  return `<span class="pos${r.koord?' has':''}" title="${r.koord?'Koordinaten vorhanden':'keine Koordinaten'}"></span>`; }
+  const k=oKoord(r); return `<span class="pos${k?' has':''}" title="${k?(r.genau==='ortschaft'?'Position der Ortschaft':'Koordinaten vorhanden'):'keine Koordinaten'}"></span>`; }
 function oSub(p){
-  const b=[p.r.typ?esc(O_TYPE_LABEL[p.r.typ])+(p.r.art?' · '+esc(p.r.art):''):'<span class="none">kein Typ</span>'];
-  if(p.r.genau) b.push(p.r.genau==='stadt'?'irgendwo in der Stadt':'irgendwo im Land');
-  if(p.r.stadt) b.push(esc(p.r.stadt));
+  const r=p.r, b=[r.typ?esc(O_TYPE_LABEL[r.typ])+(r.art?' · '+esc(r.art):''):'<span class="none">kein Typ</span>'];
+  const ld=oLand(r);
+  if(r.genau==='ortschaft') b.push('irgendwo in '+(r.ortschaft?esc(r.ortschaft)+(ld?', '+esc(ld):''):'…'));
+  else if(r.genau==='land') b.push('irgendwo in '+(ld?esc(ld):'…'));
+  else if(r.ortschaft) b.push(esc(r.ortschaft)+(ld?', '+esc(ld):''));
   if(p.aliases.length) b.push(`<span class="al">+ ${p.aliases.map(esc).join(', ')}</span>`);
   return b.join(' · ');
 }
@@ -2106,22 +2136,26 @@ function oRenderOrt(){
   const p=oInfo(O_CUR), r=p.r, pub=oIsPublic(r), pubType=O_PUBLIC.includes(r.typ);
   $('#dName').textContent=O_CUR;
   $('#dSub').textContent=`${oOrigin(p)} · ${fmt0(p.total)} ${p.total===1?'Tag':'Tage'}`;
-  let pos;
-  if(r.typ==='privat') pos=`<div class="sec-hint" style="margin-top:0">${O_ICO.lock}<span>Orte bei Freund*innen bekommen keine Koordinaten.</span></div>`;
-  else {
-    pos=`<div class="o-types" style="margin-bottom:12px">${O_GENAU.map(([g,l])=>`<button class="chip${(r.genau||'')===g?' on':''}" data-genau="${g}"><span class="cd"></span>${l}</button>`).join('')}</div>`;
-    pos+= r.genau==='land' ? `<div class="sec-hint">${O_ICO.info}<span>Irgendwo in einem Land: keine Koordinaten nötig. Zählt in Auswertungen normal mit, erscheint aber nicht auf der Karte.</span></div>`
-    : `<div class="pos-now">${r.koord?`<span class="k">${r.koord[0].toFixed(4)}, ${r.koord[1].toFixed(4)}</span>
-        <a href="https://www.openstreetmap.org/?mlat=${r.koord[0]}&mlon=${r.koord[1]}#map=${r.genau==='stadt'?12:17}/${r.koord[0]}/${r.koord[1]}" target="_blank" rel="noopener">Karte ↗</a>
-        <button class="x press" id="oKDel" aria-label="Koordinaten entfernen">✕</button>`:`<span class="k none">Keine Koordinaten</span>`}</div>
-      <div class="pos-row"><button class="pill pill-dark press" id="oKHere">${O_ICO.loc}Aktueller Standort</button></div>
-      <div class="pos-row" style="margin-top:8px"><input class="text-in" id="oKIn" placeholder="Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
-        <button class="pill pill-accent press" id="oKSet">Setzen</button></div>
-      <div class="pos-err" id="oKErr"></div>
-      <div class="field-row"><span class="label">Stadt</span><input class="text-in" id="oStadt" placeholder="optional, z. B. Zürich" value="${esc(r.stadt||'')}" autocomplete="off" enterkeyhint="done"></div>
-      ${r.genau==='stadt'?`<div class="sec-hint">${O_ICO.info}<span>Irgendwo in der Stadt: als Position das Stadtzentrum setzen. Auf der Karte erscheint eine Stadt-Markierung statt eines Punkts.</span></div>`:''}
-      ${r.typ==='zuhause'?`<div class="sec-hint">${O_ICO.lock}<span>Zuhause-Orte dürfen Koordinaten haben, landen aber nie auf der Webseite.</span></div>`:''}
-      ${pubType?`<button class="tgl press" id="oPub" role="switch" aria-checked="${r.oeffentlich!==false}" ${r.koord?'':'disabled'}><div>Auf der Karte zeigen<p>${r.koord?(pub?'Erscheint auf der Karte, sobald es sie gibt.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst Koordinaten.'}</p></div><span class="sw2"></span></button>`:''}`;
+  // Position: Typ „bei Freund*innen“ hat nur eine Ortschaft, nie Koordinaten.
+  // „Irgendwo in Ortschaft“ nutzt die Position der Ortschaft (gilt für alle Orte dort).
+  const os=r.ortschaft?oOs(r.ortschaft):{}, nIn=r.ortschaft?oInOrtschaft(r.ortschaft).filter(n=>OREG.orte[n].genau==='ortschaft').length:0;
+  let pos='';
+  if(r.typ==='privat'){
+    pos=oOrtPicker(r)+`<div class="sec-hint">${O_ICO.lock}<span>Orte bei Freund*innen bekommen keine eigenen Koordinaten und erscheinen nie auf der Karte. Die Ortschaft zählt für Auswertungen.</span></div>`;
+  } else {
+    pos=`<div class="o-types" style="margin-bottom:4px">${O_GENAU.map(([g,l])=>`<button class="chip${(r.genau||'')===g?' on':''}" data-genau="${g}"><span class="cd"></span>${l}</button>`).join('')}</div>`;
+    if(r.genau==='land'){
+      pos+=oLandPicker(r.land)+`<div class="sec-hint">${O_ICO.info}<span>Irgendwo in einem Land: keine Koordinaten nötig. Zählt in Auswertungen normal mit, erscheint aber nicht auf der Karte.</span></div>`;
+    } else if(r.genau==='ortschaft'){
+      pos+=oOrtPicker(r);
+      pos+=r.ortschaft?`<div class="field-row"><span class="label">Position von ${esc(r.ortschaft)} <span class="hint">gilt für ${nIn===1?'diesen Ort':`alle ${nIn} Orte in ${esc(r.ortschaft)}`}</span></span>${oKoordBlock(os.koord,'os',12)}</div>
+        <div class="sec-hint">${O_ICO.info}<span>Auf der Karte erscheint eine Markierung für die Ortschaft statt eines Punkts.</span></div>`
+        :`<div class="sec-hint">${O_ICO.info}<span>Zuerst die Ortschaft wählen. Ihre Position setzt du einmal, sie gilt dann für alle Orte dort.</span></div>`;
+    } else {
+      pos+=`<div class="field-row"><span class="label">Position</span>${oKoordBlock(r.koord,'ort',17)}</div>`+oOrtPicker(r,true);
+    }
+    if(r.typ==='zuhause') pos+=`<div class="sec-hint">${O_ICO.lock}<span>Zuhause-Orte dürfen Koordinaten haben, landen aber nie auf der Webseite.</span></div>`;
+    if(pubType){ const k=oKoord(r); pos+=`<button class="tgl press" id="oPub" role="switch" aria-checked="${r.oeffentlich!==false}" ${k?'':'disabled'}><div>Auf der Karte zeigen<p>${k?(pub?'Erscheint auf der Karte, sobald es sie gibt.':'Bleibt privat, obwohl der Typ öffentlich wäre.'):'Braucht zuerst eine Position.'}</p></div><span class="sw2"></span></button>`; }
   }
   const al=p.aliases.length?`<div style="margin-top:14px"><span class="label">Verweise auf diesen Ort</span><div style="margin-top:4px">${p.aliases.map(a=>`<div class="alias-row">${esc(a)} <span class="c">${fmt0(oDaysOf(a))} Tage</span>
       <button class="pill pill-ghost press" data-unalias="${esc(a)}">Aufheben</button><button class="pill pill-ghost press" data-replace="${esc(a)}">Überall ersetzen</button></div>`).join('')}</div></div>`:'';
@@ -2149,22 +2183,42 @@ function oRenderOrt(){
 function oBindOrt(){
   const B=$('#dBody'), rerender=()=>{ oRenderOrt(); };
   B.querySelectorAll('[data-typ]').forEach(b=>b.onclick=()=>{ const t=b.dataset.typ, r=oReg(O_CUR)||{}, nt=r.typ===t?undefined:t;
-    if(nt==='privat'&&r.koord) island('Koordinaten entfernt (privat)','var(--accent)');
-    oSet(O_CUR,{typ:nt,...(nt!=='ort'?{art:undefined}:{}),...(nt==='privat'?{koord:undefined,oeffentlich:undefined,genau:undefined}:{})}); rerender(); });
+    if(nt==='privat'&&r.koord) island('Eigene Koordinaten entfernt (privat)','var(--accent)');
+    oSet(O_CUR,{typ:nt,...(nt!=='ort'?{art:undefined}:{}),...(nt==='privat'?{koord:undefined,oeffentlich:undefined,genau:undefined,land:undefined}:{})}); rerender(); });
   B.querySelectorAll('[data-art]').forEach(b=>b.onclick=()=>{ const a=b.dataset.art; oSet(O_CUR,{art:(oReg(O_CUR)||{}).art===a?undefined:a}); rerender(); });
   $('#oArt')?.addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const v=e.target.value.trim(); if(!v) return; oSet(O_CUR,{art:v[0].toUpperCase()+v.slice(1)}); rerender(); });
   B.querySelectorAll('[data-genau]').forEach(b=>b.onclick=()=>{ const g=b.dataset.genau||undefined, r=oReg(O_CUR)||{};
-    if(g==='land'&&r.koord) island('Koordinaten entfernt (irgendwo im Land)','var(--accent)');
-    oSet(O_CUR,{genau:g,...(g==='land'?{koord:undefined}:{})}); rerender(); });
-  const kIn=$('#oKIn');
-  if(kIn){
-    const set=()=>{ const k=oParseCoord(kIn.value); if(!k){ $('#oKErr').textContent='Keine gültigen Koordinaten erkannt. Beispiel: 47.3769, 8.5417'; return; } oSet(O_CUR,{koord:k}); island('Position gesetzt'); rerender(); };
-    $('#oKSet').onclick=set; kIn.onkeydown=e=>{ if(e.key==='Enter') set(); }; kIn.oninput=()=>$('#oKErr').textContent='';
-    kIn.onpaste=()=>setTimeout(()=>{ if(oParseCoord(kIn.value)) set(); },0);
-    $('#oKHere').onclick=oHere;
-    $('#oStadt').onchange=e=>{ oSet(O_CUR,{stadt:e.target.value.trim()}); };
+    if(g&&r.koord) island(g==='land'?'Eigene Koordinaten entfernt (irgendwo im Land)':'Eigene Koordinaten entfernt, es gilt die Ortschaft','var(--accent)');
+    oSet(O_CUR,{genau:g,...(g?{koord:undefined}:{}),...(g!=='land'?{land:undefined}:{})}); rerender(); });
+  // Koordinaten (eigene oder der Ortschaft)
+  B.querySelectorAll('[data-kin]').forEach(inp=>{ const sc=inp.dataset.kin, err=B.querySelector(`[data-kerr="${sc}"]`);
+    const set=()=>{ const k=oParseCoord(inp.value); if(!k){ err.textContent='Keine gültigen Koordinaten erkannt. Beispiel: 47.3769, 8.5417'; return; } oKSetter(sc)(k); island(sc==='os'?'Position der Ortschaft gesetzt':'Position gesetzt'); rerender(); };
+    B.querySelector(`[data-kset="${sc}"]`).onclick=set; inp.onkeydown=e=>{ if(e.key==='Enter') set(); }; inp.oninput=()=>err.textContent='';
+    inp.onpaste=()=>setTimeout(()=>{ if(oParseCoord(inp.value)) set(); },0); });
+  B.querySelectorAll('[data-khere]').forEach(b=>b.onclick=()=>oHere(oKSetter(b.dataset.khere)));
+  B.querySelectorAll('[data-kdel]').forEach(b=>b.onclick=()=>{ oKSetter(b.dataset.kdel)(undefined); rerender(); });
+  // Ortschaft wählen
+  const osIn=$('#oOsIn'), osAc=$('#oOsAc');
+  if(osIn){ let sel=-1;
+    const draw=()=>{ const m=osIn.value.trim()?oOsMatches(osIn.value.trim()):[]; sel=-1;
+      osAc.innerHTML=m.map(([v,n],i)=>`<button class="acs" data-os="${esc(v)}" style="animation-delay:${i*22}ms"><span>${esc(v)}</span>${n?`<span class="c">${n}</span>`:''}${LOC_CC[v]?`<span class="c">${esc(LOC_CC[v])}</span>`:''}</button>`).join('');
+      osAc.classList.toggle('open',m.length>0); };
+    osIn.oninput=draw;
+    osIn.onkeydown=e=>{ const it=[...osAc.querySelectorAll('.acs')];
+      if((e.key==='ArrowDown'||e.key==='ArrowUp')&&it.length){ e.preventDefault(); sel=(sel+(e.key==='ArrowDown'?1:-1)+it.length+1)%(it.length+1)-1; it.forEach((b,i)=>b.classList.toggle('hl',i===sel)); return; }
+      if(e.key==='Escape'){ osIn.value=''; draw(); return; }
+      if(e.key==='Enter'){ e.preventDefault(); const q=osIn.value.trim().toLowerCase(), first=it[0]?.dataset.os;
+        oChooseOs(sel>=0&&it[sel]?it[sel].dataset.os:first&&first.toLowerCase().startsWith(q)?first:osIn.value); } };
+    osAc.onpointerdown=e=>{ if(e.target.closest('.acs')) e.preventDefault(); };
   }
-  $('#oKDel')?.addEventListener('click',()=>{ oSet(O_CUR,{koord:undefined}); rerender(); });
+  B.querySelectorAll('[data-os]').forEach(b=>b.onclick=()=>oChooseOs(b.dataset.os));
+  B.querySelector('[data-os-chip]')?.addEventListener('click',e=>{ if(e.target.closest('[data-os-clear]')){ O_LANDOPEN=false; oSet(O_CUR,{ortschaft:undefined}); } else O_LANDOPEN=!O_LANDOPEN; rerender(); });
+  // Land wählen (für „irgendwo im Land“ oder für die Ortschaft)
+  const setLand=(sc,c)=>{ c=c.trim().toUpperCase(); const r=oReg(O_CUR)||{};
+    if(sc==='os'){ const cur=oOs(r.ortschaft).land; oSetOs(r.ortschaft,{land:cur===c?undefined:c}); O_LANDOPEN=false; }
+    else oSet(O_CUR,{land:r.land===c?undefined:c}); rerender(); };
+  B.querySelectorAll('[data-land]').forEach(b=>b.onclick=()=>setLand(b.dataset.lscope,b.dataset.land));
+  B.querySelectorAll('[data-landin]').forEach(i=>i.onkeydown=e=>{ if(e.key==='Enter'&&i.value.trim()){ e.preventDefault(); setLand(i.dataset.landin,i.value); } });
   $('#oPub')?.addEventListener('click',()=>{ const r=oReg(O_CUR)||{}; oSet(O_CUR,{oeffentlich:r.oeffentlich===false?undefined:false}); rerender(); });
   B.querySelectorAll('[data-panel]').forEach(b=>b.onclick=()=>{ if(O_RUN) return; O_PANEL=O_PANEL===b.dataset.panel?null:b.dataset.panel; O_MT=null; O_MQ=''; O_RN=''; O_MODE='alias'; rerender();
     setTimeout(()=>{ const i=$('#oPanel input'); if(i&&!TOUCH) i.focus({preventScroll:true}); },60); });
@@ -2184,13 +2238,48 @@ function oParseCoord(s){
   if(!m) return null; const a=+m[1], b=+m[2]; if(Math.abs(a)>90||Math.abs(b)>180) return null;
   return [Math.round(a*1e4)/1e4, Math.round(b*1e4)/1e4];
 }
-function oHere(){
+function oHere(setter){
   if(!navigator.geolocation){ island('Standort nicht verfügbar','var(--bad)'); return; }
   const n=O_CUR; island('Standort wird bestimmt …','var(--c-km)',0);
   navigator.geolocation.getCurrentPosition(
-    p=>{ oSet(n,{koord:[Math.round(p.coords.latitude*1e4)/1e4,Math.round(p.coords.longitude*1e4)/1e4]}); island(`Standort übernommen (± ${Math.round(p.coords.accuracy)} m)`); if(O_CUR===n) oRenderOrt(); },
+    p=>{ setter([Math.round(p.coords.latitude*1e4)/1e4,Math.round(p.coords.longitude*1e4)/1e4]); island(`Standort übernommen (± ${Math.round(p.coords.accuracy)} m)`); if(O_CUR===n) oRenderOrt(); },
     e=>island('Standort nicht verfügbar: '+(e.code===1?'keine Berechtigung':e.message),'var(--bad)',3500),
     {enableHighAccuracy:true,timeout:10000,maximumAge:60000});
+}
+
+/* ─── Bausteine: Koordinaten, Ortschaft, Land ──────────── */
+function oKoordBlock(k,scope,zoom){
+  return `<div class="pos-now">${k?`<span class="k">${k[0].toFixed(4)}, ${k[1].toFixed(4)}</span>
+      <a href="https://www.openstreetmap.org/?mlat=${k[0]}&mlon=${k[1]}#map=${zoom}/${k[0]}/${k[1]}" target="_blank" rel="noopener">Karte ↗</a>
+      <button class="x press" data-kdel="${scope}" aria-label="Koordinaten entfernen">✕</button>`:`<span class="k none">Keine Koordinaten</span>`}</div>
+    <div class="pos-row"><button class="pill pill-dark press" data-khere="${scope}">${O_ICO.loc}Aktueller Standort</button></div>
+    <div class="pos-row" style="margin-top:8px"><input class="text-in" data-kin="${scope}" placeholder="Koordinaten oder Karten-Link einfügen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done">
+      <button class="pill pill-accent press" data-kset="${scope}">Setzen</button></div>
+    <div class="pos-err" data-kerr="${scope}"></div>`;
+}
+const oKSetter=scope=>scope==='os'?(k=>oSetOs(oReg(O_CUR)?.ortschaft,{koord:k})):(k=>oSet(O_CUR,{koord:k}));
+let O_LANDOPEN=false;
+function oOrtPicker(r,optional=false){   // wie „Ort“ im Erfassen: Chip mit Land-Kürzel, Vorschläge aus den Tagen
+  const o=r.ortschaft, land=o?(oOs(o).land||LOC_CC[o]||null):null;
+  const top=o?[]:(SUGG.locations||[]).slice(0,6).map(x=>x[0]);
+  const chips=o?`<button class="chip on" data-os-chip><span class="cd"></span>${esc(o)}<span class="cc${land?'':' miss'}">${land?esc(land):'?'}</span><span class="x" data-os-clear aria-label="entfernen">✕</span></button>`
+    :top.map(v=>`<button class="chip" data-os="${esc(v)}"><span class="cd"></span>${esc(v)}</button>`).join('');
+  const landRow=o&&(O_LANDOPEN||!land)?`<div class="cc-row" style="padding-top:10px"><span class="label">Land von ${esc(o)} <span class="hint">gilt überall</span></span>${oLandPicker(land,'os')}</div>`:'';
+  return `<div class="field-row"><span class="label">Ortschaft${optional?' <span class="hint">optional</span>':''}</span>
+    <div class="chips">${chips}${o?'':`<input class="chip-add" id="oOsIn" placeholder="+ Ortschaft" enterkeyhint="done" autocomplete="off" autocorrect="off" spellcheck="false">`}</div>
+    <div class="ac" id="oOsAc" role="listbox"></div>${landRow}</div>`;
+}
+function oLandPicker(cur,scope='ort'){
+  const list=[...new Set([...(cur?[cur]:[]),...(SUGG.countries||[]).slice(0,8).map(x=>x[0])])];
+  return `<div class="chips" style="margin-top:${scope==='ort'?'12px':'0'}">${list.map(c=>`<button class="chip${c===cur?' on':''}" data-land="${esc(c)}" data-lscope="${scope}"><span class="cd"></span>${esc(c)}</button>`).join('')}
+    <input class="chip-add" data-landin="${scope}" placeholder="+ Land" style="width:90px" enterkeyhint="done" autocomplete="off" autocapitalize="characters" spellcheck="false"></div>`;
+}
+function oOsMatches(q){ const ql=q.toLowerCase().replace(/\s+/g,'_');
+  return (SUGG.locations||[]).filter(([v])=>v.toLowerCase().includes(ql)).sort((a,b)=>(b[0].toLowerCase().startsWith(ql)-a[0].toLowerCase().startsWith(ql))||(b[1]-a[1])).slice(0,8); }
+function oChooseOs(v){
+  v=String(v).trim().replace(/\s+/g,'_'); if(!v) return;
+  const known=(SUGG.locations||[]).find(([x])=>x.toLowerCase()===v.toLowerCase()); if(known) v=known[0];
+  O_LANDOPEN=false; oSet(O_CUR,{ortschaft:v}); oRenderOrt();
 }
 
 /* ─── Umbenennen ──────────────────────────────────────── */
@@ -2238,6 +2327,7 @@ function oConflictNote(t){
   if(a.typ&&b.typ&&a.typ!==b.typ) notes.push(`Typ: ${O_TYPE_LABEL[b.typ]} von ${esc(t)} gilt (${esc(O_CUR)} war ${O_TYPE_LABEL[a.typ]}).`);
   else if(a.typ&&!b.typ) notes.push(`${esc(t)} übernimmt den Typ ${O_TYPE_LABEL[a.typ]}.`);
   if(a.koord&&b.koord) notes.push(`Position von ${esc(t)} gilt.`); else if(a.koord&&!b.koord) notes.push(`${esc(t)} übernimmt die Position.`);
+  if(a.ortschaft&&b.ortschaft&&a.ortschaft!==b.ortschaft) notes.push(`Ortschaft ${esc(b.ortschaft)} gilt.`);
   return notes.length?`<div class="sec-hint">${O_ICO.info}<span>${notes.join(' ')}</span></div>`:'';
 }
 function oBindPanel(){
@@ -2265,7 +2355,7 @@ function oBindPanel(){
   }
 }
 function oMergeData(from,to){ const a=oReg(from)||{}, b=oReg(to)||{}, add={};
-  ['typ','art','genau','koord','stadt','oeffentlich'].forEach(k=>{ if(a[k]!==undefined&&a[k]!==null&&b[k]===undefined) add[k]=a[k]; });
+  ['typ','art','genau','koord','ortschaft','land','oeffentlich'].forEach(k=>{ if(a[k]!==undefined&&a[k]!==null&&b[k]===undefined) add[k]=a[k]; });
   if(Object.keys(add).length) OREG.orte[to]={...b,...add}; }
 
 /* ─── Ersetzen in den Tagesdateien ────────────────────────
@@ -2359,16 +2449,16 @@ function oExport(){
   oAll().forEach(p=>{ const r=p.r;
     if(r.typ==='zuhause'||r.typ==='privat'){ skip[r.typ]++; return; }
     if(r.genau==='land'){ skip.land++; return; }
-    if(!r.koord||!O_PUBLIC.includes(r.typ)){ skip.ohne++; return; }
+    const k=oKoord(r); if(!k||!O_PUBLIC.includes(r.typ)){ skip.ohne++; return; }
     if(r.oeffentlich===false){ skip.aus++; return; }
-    out[p.name]={typ:r.typ,...(r.art?{art:r.art}:{}),...(r.genau?{genau:r.genau}:{}),koord:r.koord,...(r.stadt?{stadt:r.stadt}:{}),besuche:p.total,erster:p.first,letzter:p.last};
+    out[p.name]={typ:r.typ,...(r.art?{art:r.art}:{}),...(r.genau?{genau:r.genau}:{}),koord:k,...(r.ortschaft?{ortschaft:r.ortschaft}:{}),...(oLand(r)?{land:oLand(r)}:{}),besuche:p.total,erster:p.first,letzter:p.last};
   });
   return {out,skip};
 }
 $('#oShowExport').onclick=()=>{
   const {out,skip}=oExport();
-  openSheet(`<div class="sheet-head"><h2>Karten-Export</h2>${closeBtn}</div><div class="sheet-body"><pre class="o-json">${esc(JSON.stringify({v:1,orte:out},null,1))}</pre>
-    <p class="o-json-note">Vorschau, noch nicht veröffentlicht. Später als <i>data/orte.json</i> im öffentlichen Repo über Synchronisieren. Nicht enthalten: ${skip.zuhause} Zuhause, ${skip.privat} privat, ${skip.land} irgendwo im Land, ${skip.aus} ausgeblendet, ${skip.ohne} ohne Koordinaten oder Typ. Keine Tagestexte, keine Personen.</p></div>`);
+  openSheet(`<div class="sheet-head"><h2>Karten-Export</h2>${closeBtn}</div><div class="sheet-body"><pre class="o-json">${esc(`{\n  "v": 1,\n  "orte": {\n${Object.entries(out).map(([k,v])=>`    ${JSON.stringify(k)}: ${oOne(v)}`).join(',\n')}\n  }\n}`)}</pre>
+    <p class="o-json-note">Vorschau, noch nicht veröffentlicht. Später als <i>data/orte.json</i> im öffentlichen Repo über Synchronisieren. Nicht enthalten: ${skip.zuhause} Zuhause, ${skip.privat} privat, ${skip.land} irgendwo im Land, ${skip.aus} ausgeblendet, ${skip.ohne} ohne Koordinaten oder Typ. Orte mit <i>genau: ortschaft</i> erscheinen als Markierung der Ortschaft. Keine Tagestexte, keine Personen.</p></div>`);
 };
 
 /* ═══════════════════════════════════════════════════════════
