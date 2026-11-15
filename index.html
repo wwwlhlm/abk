@@ -567,6 +567,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .run-actions .pill[disabled]{opacity:.35;pointer-events:none}
 .o-json{font:12px/1.6 ui-monospace,SFMono-Regular,monospace;color:var(--text-2);background:var(--bg);border-radius:14px;padding:14px;white-space:pre;overflow:auto;max-height:52vh;margin:0}
 .pill-danger{background:rgba(229,115,115,.18)!important;color:var(--bad)!important}
+.s-back{display:inline-flex;align-items:center;gap:4px;height:32px;max-width:100%;padding:0 13px 0 7px;margin:2px 0 10px;border-radius:999px;background:var(--surface);color:var(--text-2);font-size:14px;animation:pop .45s var(--spring-pop)}
+.s-back:hover{color:var(--text);background:var(--surface-2)}
+.s-back .ico{width:16px;height:16px;flex-shrink:0}
+.s-back span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s-back[hidden]{display:none}
 .o-json-note{font-size:12px;color:var(--text-3);margin:10px 2px 0;line-height:1.5}
 </style>
 </head>
@@ -686,6 +691,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
   <!-- ═══════════════ SUCHE ═══════════════ -->
   <section class="view" id="v-search" aria-label="Suche" hidden>
     <div class="s-bar" id="sBar">
+      <button class="s-back press" id="sBack" hidden><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><span id="sBackName"></span></button>
       <div class="s-title">Suche</div>
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="q" type="search" placeholder="Suchen oder tag:, ort:, person: …" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
@@ -2250,7 +2256,18 @@ const O_SEARCH_ICO='<svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11"
 function oSearchLinks(items){ // items: [{p:'kaffee', v:'Miro', n:12, label:'…'}]
   return items.filter(x=>x.n).map(x=>`<button class="fold-link press" style="margin-top:0;background:var(--surface)" data-osearch="${x.p}" data-v="${esc(x.v)}">${O_SEARCH_ICO}${x.label}<span class="n">${fmt0(x.n)}</span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>`).join('');
 }
-function oSearch(p,v){ filters=[{p,v}]; $('#q').value=''; shown=80; searchDirty=true; scrollMem.search=0; go('search'); }
+let O_RET=null;   // Rückweg aus der Suche zum Ort / zur Ortschaft
+function oSearch(p,v){
+  O_RET=view==='ort'?{kind:O_KIND,name:O_CUR,from:O_FROM,stack:[...O_STACK],p,v}:null;
+  filters=[{p,v}]; $('#q').value=''; shown=80; searchDirty=true; scrollMem.search=0; go('search');
+}
+function oSearchBack(){ // sichtbar, solange der Filter aus dem Register noch aktiv ist
+  const on=!!O_RET&&filters.some(f=>f.p===O_RET.p&&f.v===O_RET.v);
+  $('#sBack').hidden=!on; if(on) $('#sBackName').textContent=O_RET.name; else O_RET=null;
+}
+{ const rs=renderSearch; renderSearch=function(...a){ const r=rs.apply(this,a); oSearchBack(); return r; }; }
+$('#sBack').onclick=()=>{ if(!O_RET) return; const r=O_RET; O_RET=null; $('#sBack').hidden=true;
+  O_KIND=r.kind; O_CUR=r.name; O_FROM=r.from; O_STACK=r.stack; O_PANEL=null; scrollMem.ort=0; oRenderOrt(); go('ort'); };
 document.addEventListener('click',e=>{ const b=e.target.closest('[data-osearch]'); if(b) oSearch(b.dataset.osearch,b.dataset.v); });
 function oRenderOs(){
   const o=oOsInfo(O_CUR), r=o.r;
