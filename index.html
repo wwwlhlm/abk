@@ -467,6 +467,8 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .o-bar.stuck{box-shadow:0 1px 0 var(--border)}
 .o-top{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
 .o-top .s-title{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#oBar .o-top{flex-wrap:wrap;row-gap:10px}
+#oBar .o-top .s-title{flex:1 0 auto;overflow:visible}
 .o-sum{font-size:13px;color:var(--text-2);padding:2px 4px 0}
 .o-sum b{font-weight:500;color:var(--text)}
 .o-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1*var(--px)) 0;padding:0 var(--px)}
@@ -606,8 +608,8 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <div class="ticks"><span style="left:3px">−2</span><span style="left:calc(3px + (100% - 6px) * .25)">−1</span><span style="left:50%">0</span><span style="left:calc(3px + (100% - 6px) * .75)">+1</span><span style="left:calc(100% - 3px)">+2</span></div>
         </div>
         <div class="card">
-          <div class="chip-group"><span class="label">Ort <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div><div class="reg-hints" id="oHintLoc"></div>
-            <div class="expand" id="ccWrap"><div><div class="cc-row"><span class="label">Land <span class="hint" id="ccHint">mehrfach tippen, Reihenfolge wie die Orte</span></span><div data-g="countries"></div></div></div></div></div>
+          <div class="chip-group"><span class="label">Ortschaft <button class="cc-toggle press" id="ccToggle" aria-expanded="false"><span id="ccSum">Land</span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></span><div data-g="locations"></div><div class="reg-hints" id="oHintLoc"></div>
+            <div class="expand" id="ccWrap"><div><div class="cc-row"><span class="label">Land <span class="hint" id="ccHint">mehrfach tippen, Reihenfolge wie die Ortschaften</span></span><div data-g="countries"></div></div></div></div></div>
           <div class="chip-group"><span class="label">Kaffee <span class="hint" id="coffeeHint"></span></span><div data-g="coffeeLocations"></div><div class="reg-hints" id="oHintCoffee"></div></div>
         </div>
         <div class="card">
@@ -634,7 +636,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
             <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
             <div class="chip-group"><span class="label">Personen</span><div data-g="people"></div></div>
             <div class="chip-group"><span class="label">Tags</span><div data-g="tags"></div></div>
-            <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Orte verwalten<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
+            <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Ortsregister<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
           </div></div></div>
         </div>
       </div>
@@ -667,7 +669,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <div class="card">
           <div class="card-head"><span class="card-title">Verteilung</span>
             <div class="seg" id="meterSeg" role="tablist"><span class="thumb"></span>
-              <button role="tab" data-v="sport">Sport</button><button role="tab" data-v="locations">Orte</button><button role="tab" data-v="coffeeLocations">Kaffee</button><button role="tab" data-v="people">Leute</button></div>
+              <button role="tab" data-v="sport">Sport</button><button role="tab" data-v="locations">Ortschaften</button><button role="tab" data-v="coffeeLocations">Kaffee</button><button role="tab" data-v="people">Leute</button></div>
           </div>
           <div class="meter-num"><span class="big" id="meterBig"><span class="roll"></span></span><span class="of" id="meterOf"></span></div>
           <div class="meter-bar" id="meterBar"></div>
@@ -709,11 +711,11 @@ input[type=search]{-webkit-appearance:none;appearance:none}
     <textarea class="w-ta" id="writerTa" placeholder="Was war heute?"></textarea>
   </section>
   <!-- ═══════════════ ORTE (Register) ═══════════════ -->
-  <section class="view" id="v-orte" aria-label="Orte" hidden>
+  <section class="view" id="v-orte" aria-label="Ortsregister" hidden>
     <div class="o-bar" id="oBar">
       <div class="o-top">
         <button class="icon-btn press" id="oBack" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <div class="s-title">Orte</div>
+        <div class="s-title">Ortsregister</div>
         <div class="seg" id="oSeg" role="tablist" style="background:var(--surface)"><span class="thumb"></span><button role="tab" data-v="orte">Orte</button><button role="tab" data-v="os">Ortschaften</button></div>
       </div>
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
@@ -1272,7 +1274,7 @@ function setMood(v,commit=true){
    toggle: an/aus · multi: jedes Tippen zählt hoch (wie bisher bei
    Land und Kaffee), ✕ entfernt, nach max wieder auf 0.          */
 const GROUPS={
-  locations:{mode:'toggle', top:()=>TOP.locations, ph:'+ Ort'},
+  locations:{mode:'toggle', top:()=>TOP.locations, ph:'+ Ortschaft'},
   countries:{mode:'multi', max:5, top:()=>TOP.countries, ph:'+ Land', upper:true},   // wie bisher: mehrfach tippen, je Ort ein Land
   coffeeLocations:{mode:'multi', max:6, top:()=>oTop(TOP.coffeeLocations), ph:'+ Ort'},
   sport:{mode:'toggle', top:()=>TOP.sport, ph:'+ Sport'},
@@ -1297,7 +1299,7 @@ function buildLocCC(){ const c={}; DATA.forEach(e=>{ if(e.locations.length===e.c
 let ccOpen=false;
 function ccState(e,forceOpen=false){
   const ok=e.countries.length===e.locations.length, t=$('#ccToggle');
-  $('#ccSum').textContent=ok?'Land':`${e.locations.length} ${e.locations.length===1?'Ort':'Orte'} · ${e.countries.length} ${e.countries.length===1?'Land':'Länder'}`;
+  $('#ccSum').textContent=ok?'Land':`${e.locations.length} ${e.locations.length===1?'Ortschaft':'Ortschaften'} · ${e.countries.length} ${e.countries.length===1?'Land':'Länder'}`;
   t.classList.toggle('warn',!ok);
   if(!ok||forceOpen) ccOpen=true;
   $('#ccWrap').classList.toggle('open',ccOpen); t.setAttribute('aria-expanded',ccOpen);
@@ -1601,7 +1603,7 @@ function renderMeter(){
   bar.innerHTML=rows.map((r,i)=>`<i data-i="${i}" style="background:${PALETTE[i]}"></i>`).join('')||'<i style="flex-basis:100%;background:var(--surface-3)"></i>';
   leg.innerHTML=rows.map((r,i)=>`<button class="ml press" data-i="${i}"><i class="sw" style="background:${PALETTE[i]}"></i>${esc(r[0])}<span class="c">${r[1]}</span></button>`).join('')||'<span class="muted">Keine Daten in diesem Zeitraum</span>';
   requestAnimationFrame(()=>requestAnimationFrame(()=>bar.querySelectorAll('i[data-i]').forEach((el,i)=>el.style.flexBasis=`calc(${rows[i][1]/total*100}% - 3px)`)));
-  const unit={sport:'Einheiten',locations:'Tage an Orten',coffeeLocations:'Kaffees zugeordnet',people:'Begegnungen'}[meterKind];
+  const unit={sport:'Einheiten',locations:'Tage in Ortschaften',coffeeLocations:'Kaffees zugeordnet',people:'Begegnungen'}[meterKind];
   const hl=i=>{ meterHl=i; bar.classList.toggle('dim',i!==null);
     bar.querySelectorAll('i').forEach(el=>el.classList.toggle('hl',+el.dataset.i===i)); leg.querySelectorAll('.ml').forEach(el=>el.classList.toggle('hl',+el.dataset.i===i));
     if(i===null){ roll($('#meterBig'),fmt0(total)); $('#meterOf').textContent=unit; } else { roll($('#meterBig'),fmt0(rows[i][1])); $('#meterOf').textContent=`${rows[i][0]} · ${Math.round(rows[i][1]/total*100)} %`; } };
@@ -1658,8 +1660,8 @@ function saveConn(){
    SUCHE – eigene Seite. Freitext, Filter-Chips (UND), Präfixe wie bisher,
    Vorschläge passen sich den aktuellen Treffern an.
    ═══════════════════════════════════════════════════════════ */
-const PREFIX={tag:['tags','Tag'],ort:['locations','Ort'],land:['countries','Land'],kaffee:['coffeeLocations','Kaffee'],sport:['sport','Sport'],place:['places','Spez. Ort'],person:['people','Person']};
-const ALIAS={tags:'tag',location:'ort',country:'land',kaffeeort:'kaffee',ort2:'place',people:'person'};
+const PREFIX={tag:['tags','Tag'],ort:['locations','Ortschaft'],land:['countries','Land'],kaffee:['coffeeLocations','Kaffee'],sport:['sport','Sport'],place:['places','Spez. Ort'],person:['people','Person']};
+const ALIAS={ortschaft:'ort',tags:'tag',location:'ort',country:'land',kaffeeort:'kaffee',ort2:'place',people:'person'};
 let filters=[], TERMS=[], searchDirty=true, sortNew=true, shown=80, HITS=[];
 const parsePrefix=q=>{ const m=q.match(/^([a-zA-Z0-9]+)[=:]\s*(.*)$/); if(!m) return null; const p=ALIAS[m[1].toLowerCase()]||m[1].toLowerCase(); return PREFIX[p]?{p,v:m[2].trim()}:null; };
 const pLabel=p=>PREFIX[p]?.[1]||(p==='jahr'?'Jahr':p==='monat'?'Monat':p);
@@ -2100,7 +2102,7 @@ function oFiltered(all){
   });
 }
 function oRenderList(anim=true){
-  oUse=null; oOsUse=null;
+  oUse=null; oOsUse=null; $('#oq').placeholder=O_TAB==='os'?'Ortschaft suchen':'Ort suchen';
   if(O_TAB==='os') return oRenderOsList(anim);
   const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
   const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
@@ -2149,16 +2151,16 @@ function oRenderOsList(anim=true){
   const all=oAllOs(), q=oNorm(OF.q), cnt=f=>all.filter(f).length;
   const list=all.filter(o=>(!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q))&&(OF.flag!=='nopos'||!o.r.koord)&&(OF.flag!=='noland'||!o.land)&&(OF.flag!=='linked'||o.orte.length)&&(OF.flag!=='unused'||oUnusedOs(o)));
   const sg=(val,label,n)=>`<button class="sg${OF.flag===val?' on':''}" data-f="flag" data-val="${val}">${label}<span class="c">${n}</span></button>`;
-  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Mit Orten',cnt(o=>o.orte.length))+(cnt(oUnusedOs)||OF.flag==='unused'?sg('unused','Nicht mehr verwendet',cnt(oUnusedOs)):'');
+  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Verknüpft',cnt(o=>o.orte.length))+(cnt(oUnusedOs)||OF.flag==='unused'?sg('unused','Nicht mehr verwendet',cnt(oUnusedOs)):'');
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · Namen aus dem Feld <i>Ort</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
+  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · aus dem Feld <i>Ortschaft</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
     +(OF.flag==='unused'&&list.length?` <button class="pill pill-ghost press" id="oRmAll" style="margin-left:6px">Alle ${list.length} entfernen</button>`:'');
   if($('#oRmAll')) oConfirmBtn($('#oRmAll'),`Wirklich ${list.length} entfernen?`,()=>{ list.forEach(o=>oRemoveOs(o.name)); island(`${list.length} Ortschaften entfernt`); OF.flag=null; oRenderList(false); });
   $('#dupWrap').innerHTML='';
   const N=Math.min(list.length,O_SHOWN);
   $('#olist').innerHTML=list.slice(0,N).map((o,i)=>`<button class="orow" data-os-row="${esc(o.name)}" style="${anim&&i<24&&!REDUCED?`animation-delay:${i*18}ms`:'animation:none'}">
-      <div class="nm"><div class="t1">${esc(o.name)}</div><div class="t2">${[o.land?esc(o.land):'<span class="none">kein Land</span>',o.orte.length?`${o.orte.length} ${o.orte.length===1?'Ort':'Orte'} verknüpft`:''].filter(Boolean).join(' · ')}</div></div>
+      <div class="nm"><div class="t1">${esc(o.name)}</div><div class="t2">${[o.land?esc(o.land):'<span class="none">kein Land</span>',o.orte.length?`${o.orte.length} verknüpft`:''].filter(Boolean).join(' · ')}</div></div>
       <span class="pos${o.r.koord?' has':''}" title="${o.r.koord?'Position gesetzt':'keine Position'}"></span><span class="days">${fmt0(o.days)}</span></button>`).join('')
     +(list.length>N?`<button class="more press" id="oMore">${fmt0(list.length-N)} weitere anzeigen</button>`:'')
     ||'<p class="muted" style="text-align:center;padding:24px">Keine Ortschaften gefunden.</p>';
@@ -2245,12 +2247,12 @@ function oRenderOs(){
       <div class="nm"><div class="t1">${esc(p.name)}</div><div class="t2">${oSub(p)}</div></div>${oPosDot(p.r)}<span class="days">${fmt0(p.total)}</span></button>`).join('');
   $('#dBody').innerHTML=`
     <div class="o-stats">
-      <div class="stat"><div class="cl">Tage</div><div class="big">${fmt0(o.days)}</div><div class="avg">im Feld Ort</div></div>
+      <div class="stat"><div class="cl">Tage</div><div class="big">${fmt0(o.days)}</div><div class="avg">im Tagebuch</div></div>
       <div class="stat"><div class="cl">Zuerst</div><div class="big d">${oDShort(o.first)}</div></div>
       <div class="stat"><div class="cl">Zuletzt</div><div class="big d">${oDShort(o.last)}</div></div>
     </div>
     <div class="card"><div class="card-head"><span class="card-title">Land</span><span class="card-sub">${r.land?'':o.land?'aus den Tagen':'noch keins'}</span></div>${oLandPicker(o.land,'os')}
-      <div class="sec-hint">${O_ICO.info}<span>Gilt auch beim Erfassen: Wählst du ${esc(O_CUR)} als Ort, wird dieses Land vorgeschlagen.</span></div></div>
+      <div class="sec-hint">${O_ICO.info}<span>Gilt auch beim Erfassen: Wählst du ${esc(O_CUR)} als Ortschaft, wird dieses Land vorgeschlagen.</span></div></div>
     <div class="card"><div class="card-head"><span class="card-title">Position</span></div>${oKoordBlock(r.koord,'os',12)}
       <div class="sec-hint">${O_ICO.info}<span>Gilt überall, wo ${esc(O_CUR)} vorkommt: für die Tage mit diesem Ort und für alle Orte, die „irgendwo in ${esc(O_CUR)}“ sind. Die Tagesdateien bleiben unverändert.</span></div></div>
     <div class="card"><div class="card-head"><span class="card-title">Orte in ${esc(O_CUR)}</span><span class="card-sub">${o.orte.length||''}</span></div>

@@ -1,6 +1,6 @@
 # Ortsregister – Konzept
 
-Stand: 15. November 2026 · in `abk/index.html` umgesetzt (Fenster „Orte“)
+Stand: 15. November 2026 · in `abk/index.html` umgesetzt (Fenster „Ortsregister“)
 
 ## Ziel
 
@@ -96,6 +96,14 @@ Alle Felder ausser dem Namen sind optional.
   3. Erst am Schluss wird der Verweis entfernt und der Suchindex aktualisiert.
   4. Bei einem Abbruch oder Fehler bleibt der Verweis stehen. Der Zustand ist stimmig und lässt sich später fortsetzen.
 
+## Begriffe
+
+- **Ortsregister** – das Fenster in der App und die Datei `orte.json`.
+- **Ort** – ein Eintrag aus *Kaffee* (`coffee_locations`) oder *Spezifische Orte* (`places`), z. B. Miro, Bodara, Pragelpass.
+- **Ortschaft** – ein Eintrag aus dem Feld `location` der Tage, z. B. Zurich, Berlin. Beim Erfassen heisst dieses Feld ebenfalls „Ortschaft“, im Dashboard die Verteilung „Ortschaften“.
+- In der Suche funktionieren `ort:` und `ortschaft:` für Ortschaften, `kaffee:` und `place:` für Orte.
+- Das sind nur Beschriftungen, die Feldnamen in den Tagesdateien bleiben gleich.
+
 ## Ortschaften: eine Verknüpfung für alles
 
 - Eine Ortschaft (z. B. `Zurich`) ist **ein** Eintrag im Register. Die Tage (Feld `location`) und die Orte (Feld `ortschaft`) zeigen beide darauf.
@@ -105,9 +113,9 @@ Alle Felder ausser dem Namen sind optional.
 
 ## In der App
 
-Eigenes Fenster **„Orte“**, aus den Details geöffnet („Orte verwalten“). Wegen der Suche ist es eine eigene Seite wie die Suche, kein Sheet. Oben umschaltbar zwischen **Orte** und **Ortschaften**.
+Eigenes Fenster **„Ortsregister“**, aus den Details geöffnet („Ortsregister“). Wegen der Suche ist es eine eigene Seite wie die Suche, kein Sheet. Oben umschaltbar zwischen **Orte** und **Ortschaften**.
 
-- **Ortschaften:** alle Namen aus dem Feld Ort der Tage, mit Anzahl Tage, Land, Position und Anzahl verknüpfter Orte. Filter: ohne Position, ohne Land, mit Orten. Antippen öffnet die Ortschaft: Land, Position und die Liste der Orte dort.
+- **Ortschaften:** alle Namen aus dem Feld Ort der Tage, mit Anzahl Tage, Land, Position und Anzahl verknüpfter Orte. Filter: ohne Position, ohne Land, verknüpft (mit Orten), nicht mehr verwendet. Antippen öffnet die Ortschaft: Land, Position und die Liste der Orte dort.
 - **Beim Erfassen** steht unter „Ort“ ein Hinweis „Naples · Position setzen“, solange eine Ortschaft keine Position hat. Im Ort-Editor öffnet das Antippen der Ortschaft dieselbe Ortschaft.
 
 - **Ortsliste:** alle Namen aus beiden Listen nach Häufigkeit, mit Anzahl Tage, Typ (und Art), Genauigkeit, Herkunft (Kaffeeort, spezifischer Ort oder beides) und einem Zeichen, ob Koordinaten vorhanden sind. Verweise erscheinen beim Zielort („+ Lalere“). Mit Suche und Filtern: ohne Koordinaten, ohne Typ, Ortschaft/Land, Kaffeeorte, spezifische Orte, nach Typ. Die Zahlen kommen direkt aus dem Suchindex.
