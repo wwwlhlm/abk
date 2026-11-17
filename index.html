@@ -367,7 +367,8 @@ svg{display:block}
 .sugg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1*var(--px));padding:10px var(--px) 0}
 .sugg::-webkit-scrollbar{display:none}
 .sugg:empty{display:none}
-@media (min-width:700px){.sugg{flex-wrap:wrap;margin:0;padding:10px 0 0}}
+/* Maus/Trackpad: umbrechen statt seitlich scrollen (horizontal scrollen geht dort nicht mit dem Mausrad) */
+@media (min-width:700px),(pointer:fine){.sugg{flex-wrap:wrap;margin:0;padding:10px 0 0}}
 .sg{flex-shrink:0;height:32px;padding:0 12px;border-radius:999px;background:var(--surface);font-size:14px;color:var(--text-2);display:inline-flex;align-items:center;gap:6px;animation:pop .35s var(--spring-pop) backwards}
 .sg:hover{color:var(--text);background:var(--surface-2)}
 .sg .pt{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
@@ -388,8 +389,9 @@ mark{background:var(--accent-bg);color:var(--accent);border-radius:3px;padding:0
 .hit .ht{font-size:15px;color:var(--text);margin-top:3px;line-height:1.55}
 .hit .hm{font-size:13px;color:var(--text-3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .more{height:44px;border-radius:14px;background:var(--surface);color:var(--text-2);font-size:14px;margin-top:4px}
-.syntax{font-size:13px;color:var(--text-3);line-height:1.9;padding:6px 4px}
-.syntax code{font-family:ui-monospace,monospace;font-size:12px;background:var(--surface);padding:2px 6px;border-radius:6px;color:var(--text-2)}
+.syntax{font-size:13px;color:var(--text-3);line-height:1.5;padding:6px 4px}
+.syntax .sx-codes{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.syntax code{font-family:ui-monospace,monospace;font-size:12px;background:var(--surface);padding:1px 6px;border-radius:6px;color:var(--text-2)}
 .s-foot{display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;color:var(--text-3);padding:18px 0 4px}
 .s-foot .dot{width:6px;height:6px;border-radius:50%;background:var(--good)}
 
@@ -1776,8 +1778,8 @@ function renderSearch(){
 function drawHits(){
   const q=$('#q').value.trim(), idle=!filters.length&&(q.length<2||q.startsWith('/'))&&!(HPP&&HPP.v);
   $('#sMeta').style.display=idle?'none':'';
-  if(idle){ $('#hits').innerHTML=`<div class="syntax">Text eingeben oder Vorschlag antippen. Mit <code>/</code> wählst du eine Filterart. Filter lassen sich kombinieren, ein Jahr zeigt danach seine Monate.<br>
-      <code>tag:</code> <code>ort:</code> <code>land:</code> <code>kaffee:</code> <code>sport:</code> <code>person:</code> <code>place:</code></div>`; return; }
+  if(idle){ $('#hits').innerHTML=`<div class="syntax">Text eingeben oder Vorschlag antippen. Mit <code>/</code> wählst du eine Filterart. Filter lassen sich kombinieren, ein Jahr zeigt danach seine Monate.
+      <div class="sx-codes"><code>tag:</code><code>ort:</code><code>land:</code><code>kaffee:</code><code>sport:</code><code>person:</code><code>place:</code></div></div>`; return; }
   $('#qCount').textContent=HITS.length?`${fmt0(HITS.length)} Treffer`:'';
   const list=[...HITS].sort((a,b)=>sortNew?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
   const hlH=html=>HQ?html.replace(new RegExp(`(<[^>]+>)|(${reEsc(esc(HQ))})`,'ig'),(m,tag,hit)=>tag||`<mark>${hit}</mark>`):html;
