@@ -373,6 +373,10 @@ svg{display:block}
 .sg .pt{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
 .sg .c{font-size:12px;color:var(--text-3);font-variant-numeric:tabular-nums}
 .sg.ctx{background:var(--surface-2);color:var(--text)}
+/* Slash-Menü: Kategorien statt Begriffe */
+.sg.cat{gap:8px;color:var(--text)}
+.sg.cat code{font-family:ui-monospace,monospace;font-size:11px;color:var(--text-3)}
+.sg.cat.sel{background:var(--surface-3);box-shadow:inset 0 0 0 1.5px var(--border-2)}
 mark{background:var(--accent-bg);color:var(--accent);border-radius:3px;padding:0 1px}
 .s-meta{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text-2);padding:2px 4px;min-height:36px}
 .s-meta .seg{background:var(--surface)}
@@ -694,7 +698,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
       <button class="s-back press" id="sBack" hidden><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg><span id="sBackName"></span></button>
       <div class="s-title">Suche</div>
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="q" type="search" placeholder="Suchen oder tag:, ort:, person: …" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        <input id="q" type="search" placeholder="Suchen oder / für Filter …" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <button class="clr" id="qClear" aria-label="Leeren" hidden>✕</button></label>
       <div class="filters" id="filters"></div>
       <div class="sugg" id="sugg"></div>
@@ -1682,15 +1686,33 @@ function countTerms(entries){
   return [...c].map(([k,n])=>{ const [p,v]=k.split('\u0000'); return {p,v,n}; }).sort((a,b)=>b.n-a.n);
 }
 function openSearch(){ go('search', ()=>$('#q').focus({preventScroll:true})); }
-$('#q').addEventListener('input',()=>{ shown=80; renderSearch(); });
+
+/* Slash-Menü: „/“ am Anfang zeigt die Filterarten, Auswahl schreibt das Präfix (z. B. „person: “) ins Feld.
+   „/pe“ grenzt ein, „/person tom“ wird direkt zu „person: tom“. Pfeiltasten + Enter/Tab, Esc bricht ab. */
+const CAT_ORDER=['tag','person','ort','land','kaffee','place','sport'];
+let catSel=0;
+const catMatches=w=>{ w=(w||'').toLowerCase();
+  return CAT_ORDER.filter(p=>!w||p.startsWith(w)||PREFIX[p][1].toLowerCase().startsWith(w)||PREFIX[p][1].toLowerCase().includes(' '+w)||Object.entries(ALIAS).some(([a,t])=>t===p&&a.startsWith(w))); };
+const slashQ=q=>{ const m=q.match(/^\/(\S*)(\s+(.*))?$/); return m?{w:m[1],rest:m[2]!==undefined?m[3]:null}:null; };
+function pickCat(p,rest=''){ const q=$('#q'); q.value=p+': '+(rest||''); catSel=0; shown=80; renderSearch(); q.focus({preventScroll:true}); q.setSelectionRange(q.value.length,q.value.length); }
+$('#q').addEventListener('input',()=>{ shown=80; catSel=0;
+  const sq=slashQ($('#q').value);   // „/person tom“ → „person: tom“
+  if(sq&&sq.rest!==null){ const c=catMatches(sq.w); if(c.length) return pickCat(c[0],sq.rest); }
+  renderSearch(); });
 $('#q').addEventListener('keydown',e=>{
+  const sq=slashQ(e.target.value);
+  if(sq){ const c=catMatches(sq.w);
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); if(c.length){ catSel=(catSel+(e.key==='ArrowDown'?1:-1)+c.length)%c.length; renderSearch(); } return; }
+    if(e.key==='Enter'||e.key==='Tab'){ if(c.length){ e.preventDefault(); pickCat(c[Math.min(catSel,c.length-1)]); } return; }
+    if(e.key==='Escape'){ e.preventDefault(); e.target.value=''; renderSearch(); return; }
+  }
   if(e.key==='Enter'){ const pp=parsePrefix(e.target.value); if(pp&&pp.v) addFilter(pp.p,pp.v); else e.target.blur(); }
   if(e.key==='Backspace'&&!e.target.value&&filters.length){ filters.pop(); renderSearch(); }
 });
 $('#qClear').onclick=e=>{ e.preventDefault(); $('#q').value=''; filters=[]; renderSearch(); $('#q').focus(); };
 function addFilter(p,v){ if(!filters.some(f=>f.p===p&&f.v.toLowerCase()===v.toLowerCase())) filters.push({p,v}); $('#q').value=''; shown=80; renderSearch(); if(!TOUCH) $('#q').focus({preventScroll:true}); scrollTo({top:0,behavior:'smooth'}); }
 $('#sugg').addEventListener('pointerdown',e=>{ if(document.activeElement===$('#q')) e.preventDefault(); }); // Tastatur bleibt offen
-$('#sugg').addEventListener('click',e=>{ const b=e.target.closest('.sg'); if(b) addFilter(b.dataset.p,b.dataset.v); });
+$('#sugg').addEventListener('click',e=>{ const b=e.target.closest('.sg'); if(!b) return; if(b.dataset.cat) pickCat(b.dataset.cat); else addFilter(b.dataset.p,b.dataset.v); });
 $('#filters').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(b){ filters.splice(+b.dataset.rm,1); renderSearch(); } });
 $('#hits').addEventListener('click',e=>{ const b=e.target.closest('.hit'); if(b) openDay(b.dataset.d); if(e.target.closest('.more')){ shown+=80; drawHits(); } });
 segInit($('#sortSeg'),'new',v=>{ sortNew=v==='new'; drawHits(); });
@@ -1724,6 +1746,14 @@ function renderSearch(){
   });
   HQ=pp?pp.v:(q.length>=2?q:''); HPP=pp;
 
+  // Slash-Menü
+  const sq=slashQ(q);
+  if(sq){ const c=catMatches(sq.w), T=countTerms(base), n=p=>T.filter(t=>t.p===p).length;
+    HITS=base; HQ=''; HPP=null;
+    $('#sugg').innerHTML=c.length?c.map((p,i)=>`<button class="sg cat press${i===Math.min(catSel,c.length-1)?' sel':''}" style="animation-delay:${i*18}ms" data-cat="${p}">${PREFIX[p][1]}<code>${p}:</code><span class="c">${n(p)}</span></button>`).join('')
+      :'<span class="muted" style="font-size:13px;padding:6px 4px">Keine Filterart passt.</span>';
+    drawHits(); return; }
+
   // Vorschläge: beim Tippen passende Begriffe, sonst Begriffe aus den aktuellen Treffern
   let sg=[];
   const taken=t=>filters.some(f=>f.p===t.p&&f.v===t.v);
@@ -1744,9 +1774,9 @@ function renderSearch(){
   drawHits();
 }
 function drawHits(){
-  const q=$('#q').value.trim(), idle=!filters.length&&q.length<2&&!(HPP&&HPP.v);
+  const q=$('#q').value.trim(), idle=!filters.length&&(q.length<2||q.startsWith('/'))&&!(HPP&&HPP.v);
   $('#sMeta').style.display=idle?'none':'';
-  if(idle){ $('#hits').innerHTML=`<div class="syntax">Text eingeben oder Vorschlag antippen. Filter lassen sich kombinieren, ein Jahr zeigt danach seine Monate.<br>
+  if(idle){ $('#hits').innerHTML=`<div class="syntax">Text eingeben oder Vorschlag antippen. Mit <code>/</code> wählst du eine Filterart. Filter lassen sich kombinieren, ein Jahr zeigt danach seine Monate.<br>
       <code>tag:</code> <code>ort:</code> <code>land:</code> <code>kaffee:</code> <code>sport:</code> <code>person:</code> <code>place:</code></div>`; return; }
   $('#qCount').textContent=HITS.length?`${fmt0(HITS.length)} Treffer`:'';
   const list=[...HITS].sort((a,b)=>sortNew?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
