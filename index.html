@@ -644,7 +644,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
           <button class="fold-head" id="foldBtn" aria-expanded="false"><span class="fh-t"><span class="card-title">Details</span><span class="card-sub" id="foldSum"></span></span>
             <svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
           <div class="expand" id="foldBody"><div><div class="fold-body">
-            <div class="chip-group"><span class="label">Spezifische Orte</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
+            <div class="chip-group"><span class="label">Check-in</span><div data-g="places"></div><div class="reg-hints" id="oHintPlaces"></div></div>
             <div class="chip-group"><span class="label">Personen</span><div data-g="people"></div></div>
             <div class="chip-group"><span class="label">Tags</span><div data-g="tags"></div></div>
             <button class="fold-link press" id="openOrte"><svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Ortsregister<span class="n" id="orteCount"></span><svg class="ico" viewBox="0 0 24 24" style="margin-left:2px"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -1293,7 +1293,7 @@ const GROUPS={
   countries:{mode:'multi', max:5, top:()=>TOP.countries, ph:'+ Land', upper:true},   // wie bisher: mehrfach tippen, je Ort ein Land
   coffeeLocations:{mode:'multi', max:6, top:()=>oTop(TOP.coffeeLocations), ph:'+ Ort'},
   sport:{mode:'toggle', top:()=>TOP.sport, ph:'+ Sport'},
-  places:{mode:'toggle', top:()=>oTop(usage('places')).slice(0,6), ph:'+ Ort'},
+  places:{mode:'toggle', top:()=>oTop(usage('places')).slice(0,6), ph:'+ Check-in'},
   people:{mode:'toggle', top:()=>TOP.people, ph:'+ Person'},
   tags:{mode:'toggle', top:()=>usage('tags').slice(0,8), ph:'+ Tag'},
 };
@@ -1389,8 +1389,8 @@ function coffeeHint(e){ const n=e.coffeeLocations.length, c=e.coffee, h=$('#coff
 
 /* Details einklappbar */
 function foldSummary(e){
-  const bits=[e.places.length&&`${e.places.length} ${e.places.length>1?'Orte':'Ort'}`, e.people.length&&e.people.join(', '), e.tags.length&&e.tags.map(t=>'#'+t).join(' ')].filter(Boolean);
-  $('#foldSum').textContent=bits.join(' · ')||'Orte, Personen, Tags';
+  const bits=[e.places.length&&`${e.places.length} ${e.places.length>1?'Check-ins':'Check-in'}`, e.people.length&&e.people.join(', '), e.tags.length&&e.tags.map(t=>'#'+t).join(' ')].filter(Boolean);
+  $('#foldSum').textContent=bits.join(' · ')||'Check-in, Personen, Tags';
   oHints(e);
 }
 function setFold(open){ $('#details').classList.toggle('open',open); $('#foldBody').classList.toggle('open',open); $('#foldBtn').setAttribute('aria-expanded',open); try{ localStorage.setItem('abkFold',open?'1':''); }catch{} }
@@ -1677,8 +1677,8 @@ function saveConn(){
    SUCHE – eigene Seite. Freitext, Filter-Chips (UND), Präfixe wie bisher,
    Vorschläge passen sich den aktuellen Treffern an.
    ═══════════════════════════════════════════════════════════ */
-const PREFIX={tag:['tags','Tag'],ort:['locations','Ortschaft'],land:['countries','Land'],kaffee:['coffeeLocations','Kaffee'],sport:['sport','Sport'],place:['places','Spez. Ort'],person:['people','Person']};
-const ALIAS={ortschaft:'ort',tags:'tag',location:'ort',country:'land',kaffeeort:'kaffee',ort2:'place',people:'person'};
+const PREFIX={tag:['tags','Tag'],ort:['locations','Ortschaft'],land:['countries','Land'],kaffee:['coffeeLocations','Kaffee'],sport:['sport','Sport'],checkin:['places','Check-in'],person:['people','Person']};
+const ALIAS={place:'checkin',checkin:'checkin',ortschaft:'ort',tags:'tag',location:'ort',country:'land',kaffeeort:'kaffee',ort2:'checkin',people:'person'};
 let filters=[], TERMS=[], searchDirty=true, sortNew=true, shown=80, HITS=[];
 const parsePrefix=q=>{ const m=q.match(/^([a-zA-Z0-9]+)[=:]\s*(.*)$/); if(!m) return null; const p=ALIAS[m[1].toLowerCase()]||m[1].toLowerCase(); return PREFIX[p]?{p,v:m[2].trim()}:null; };
 const pLabel=p=>PREFIX[p]?.[1]||(p==='jahr'?'Jahr':p==='monat'?'Monat':p);
@@ -1691,7 +1691,7 @@ function openSearch(){ go('search', ()=>$('#q').focus({preventScroll:true})); }
 
 /* Slash-Menü: „/“ am Anfang zeigt die Filterarten, Auswahl schreibt das Präfix (z. B. „person: “) ins Feld.
    „/pe“ grenzt ein, „/person tom“ wird direkt zu „person: tom“. Pfeiltasten + Enter/Tab, Esc bricht ab. */
-const CAT_ORDER=['tag','person','ort','land','kaffee','place','sport'];
+const CAT_ORDER=['tag','person','ort','land','kaffee','checkin','sport'];
 let catSel=0;
 const catMatches=w=>{ w=(w||'').toLowerCase();
   return CAT_ORDER.filter(p=>!w||p.startsWith(w)||PREFIX[p][1].toLowerCase().startsWith(w)||PREFIX[p][1].toLowerCase().includes(' '+w)||Object.entries(ALIAS).some(([a,t])=>t===p&&a.startsWith(w))); };
@@ -1779,7 +1779,7 @@ function drawHits(){
   const q=$('#q').value.trim(), idle=!filters.length&&(q.length<2||q.startsWith('/'))&&!(HPP&&HPP.v);
   $('#sMeta').style.display=idle?'none':'';
   if(idle){ $('#hits').innerHTML=`<div class="syntax">Text eingeben oder Vorschlag antippen. Mit <code>/</code> wählst du eine Filterart. Filter lassen sich kombinieren, ein Jahr zeigt danach seine Monate.
-      <div class="sx-codes"><code>tag:</code><code>ort:</code><code>land:</code><code>kaffee:</code><code>sport:</code><code>person:</code><code>place:</code></div></div>`; return; }
+      <div class="sx-codes"><code>tag:</code><code>ort:</code><code>land:</code><code>kaffee:</code><code>sport:</code><code>person:</code><code>checkin:</code></div></div>`; return; }
   $('#qCount').textContent=HITS.length?`${fmt0(HITS.length)} Treffer`:'';
   const list=[...HITS].sort((a,b)=>sortNew?b.date.localeCompare(a.date):a.date.localeCompare(b.date));
   const hlH=html=>HQ?html.replace(new RegExp(`(<[^>]+>)|(${reEsc(esc(HQ))})`,'ig'),(m,tag,hit)=>tag||`<mark>${hit}</mark>`):html;
@@ -1922,7 +1922,7 @@ function rangeSlider(el,n,a,b,onChange){
 
 
 /* ═══════════════════════════════════════════════════════════
-   ORTE – Register für Kaffeeorte und spezifische Orte (orte.json)
+   ORTE – Register für Kaffeeorte und Check-ins (orte.json)
    Konzept: Ortsregister_Konzept.md. Frontmatter bleibt unverändert,
    der Name ist der Schlüssel. Typ (wo) und Genauigkeit (wie genau) sind getrennt.
    ═══════════════════════════════════════════════════════════ */
@@ -2150,7 +2150,7 @@ function oRenderList(anim=true){
   const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
   const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
   $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Ortschaft/Land',cnt(p=>p.r.genau))
-    +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Spezifische Orte',cnt(p=>p.place))
+    +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Check-ins',cnt(p=>p.place))
     +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('')
     +(cnt(oUnusedOrt)||OF.flag==='unused'?'<span class="sep"></span>'+sg('flag','unused','Nicht mehr verwendet',cnt(oUnusedOrt)):'');
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt, damit nichts überschrieben wird.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`
@@ -2174,7 +2174,7 @@ function oRenderList(anim=true){
   $('#oMore')?.addEventListener('click',()=>{ O_SHOWN+=150; oRenderList(false); });
 }
 let O_SHOWN=150;
-function oSrcIcons(p){ return `<span class="src" title="${p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':p.place?'Spezifischer Ort':'nicht mehr verwendet'}"><span class="${p.coffee?'':'off'}">${O_ICO.cup}</span><span class="${p.place?'':'off'}">${O_ICO.pin}</span></span>`; }
+function oSrcIcons(p){ return `<span class="src" title="${p.coffee&&p.place?'Kaffeeort und Check-in':p.coffee?'Kaffeeort':p.place?'Check-in':'nicht mehr verwendet'}"><span class="${p.coffee?'':'off'}">${O_ICO.cup}</span><span class="${p.place?'':'off'}">${O_ICO.pin}</span></span>`; }
 function oPosDot(r){
   if(r.typ==='privat') return `<span class="pos lock" title="privat, keine Koordinaten">${O_ICO.lock}</span>`;
   if(r.genau==='land') return `<span class="pos na" title="irgendwo im Land, keine Koordinaten nötig"></span>`;
@@ -2224,7 +2224,7 @@ function oSet(n,patch){
   if(Object.keys(r).length) OREG.orte[n]=r; else delete OREG.orte[n];
   oScheduleSave(); return true;
 }
-const oOrigin=p=>p.coffee&&p.place?'Kaffeeort und spezifischer Ort':p.coffee?'Kaffeeort':p.place?'Spezifischer Ort':'Nicht mehr verwendet';
+const oOrigin=p=>p.coffee&&p.place?'Kaffeeort und Check-in':p.coffee?'Kaffeeort':p.place?'Check-in':'Nicht mehr verwendet';
 const oDShort=s=>{ if(!s) return '–'; const d=parse(s); return `${d.getDate()}. ${MON3[d.getMonth()]} ${d.getFullYear()}`; };
 function oAllArten(){ return [...new Set([...O_ARTEN,...Object.values(OREG.orte).map(r=>r.art).filter(Boolean)])]; }
 
@@ -2263,8 +2263,8 @@ function oRenderOrt(){
       <div class="stat"><div class="cl">Zuerst</div><div class="big d">${oDShort(p.first)}</div></div>
       <div class="stat"><div class="cl">Zuletzt</div><div class="big d">${oDShort(p.last)}</div></div>
     </div>
-    ${oSearchLinks(p.coffee&&p.place?[{p:'kaffee',v:O_CUR,n:p.coffee,label:'Tage mit Kaffee hier anzeigen'},{p:'place',v:O_CUR,n:p.place,label:'Tage als spezifischer Ort anzeigen'}]
-      :[{p:p.place?'place':'kaffee',v:O_CUR,n:p.total,label:'Alle Tage in der Suche anzeigen'}])}
+    ${oSearchLinks(p.coffee&&p.place?[{p:'kaffee',v:O_CUR,n:p.coffee,label:'Tage mit Kaffee hier anzeigen'},{p:'checkin',v:O_CUR,n:p.place,label:'Tage als Check-in anzeigen'}]
+      :[{p:p.place?'checkin':'kaffee',v:O_CUR,n:p.total,label:'Alle Tage in der Suche anzeigen'}])}
     <div class="card"><div class="card-head"><span class="card-title">Typ</span><span class="card-sub">${r.typ?'':'noch keiner'}</span></div>
       <div class="o-types">${O_TYPES.map(([t,l])=>`<button class="chip${r.typ===t?' on':''}" data-typ="${t}"><span class="cd"></span>${esc(l)}</button>`).join('')}</div>
       ${r.typ==='ort'?`<div class="field-row"><span class="label">Art <span class="hint">optional</span></span><div class="o-types">${oAllArten().map(a=>`<button class="chip${r.art===a?' on':''}" data-art="${esc(a)}"><span class="cd"></span>${esc(a)}</button>`).join('')}<input class="chip-add" id="oArt" placeholder="+ Art" enterkeyhint="done" autocomplete="off"></div></div>`:''}
@@ -2449,7 +2449,7 @@ function oRenamePanel(){
       ?`<span class="err">„${esc(O_RN)}“ gibt es schon.</span> <button class="pill pill-accent press" data-to-merge="${esc(O_RN)}" style="margin-left:6px">Stattdessen zusammenführen</button>`
       :chk.err?`<span class="err">${chk.err}</span>`
       :chk.ok?`<div class="big">${esc(O_CUR)} <span class="ar">→</span> ${esc(O_RN)}</div>
-        <ul><li>${n?`${fmt0(n)} ${n===1?'Tag wird':'Tage werden'} geändert${u.coffee&&u.place?` (${u.coffee} in <i>Kaffee</i>, ${u.place} in <i>Spezifische Orte</i>)`:''}`:'Kommt in keinem Tag vor, nur das Register ändert sich'}</li>
+        <ul><li>${n?`${fmt0(n)} ${n===1?'Tag wird':'Tage werden'} geändert${u.coffee&&u.place?` (${u.coffee} in <i>Kaffee</i>, ${u.place} in <i>Check-in</i>)`:''}`:'Kommt in keinem Tag vor, nur das Register ändert sich'}</li>
         <li>Typ, Position und Verweise ziehen mit um</li>${n&&SOURCE==='github'?'<li>Danach wird der Suchindex aktualisiert</li>':''}</ul>`
       :`<span style="color:var(--text-3)">Neuer Name ohne Leerzeichen, z. B. <i>${esc(O_CUR)}_Kafi</i></span>`}</div>
     <div class="run-actions"><button class="pill pill-accent press" id="oGo" ${chk.ok?'':'disabled'}>${n?`${fmt0(n)} ${n===1?'Tag':'Tage'} ändern`:'Umbenennen'}</button></div>
@@ -2467,7 +2467,7 @@ function oMergePanel(){
     ${t?`<div class="o-prev"><div class="big">${esc(O_CUR)} <span class="c">${fmt0(n)} Tage</span> <span class="ar">→</span> ${esc(t)} <span class="c">${fmt0(oInfo(t).total)} Tage</span></div></div>
     <div class="o-mode">
       <div class="opt" role="radio" tabindex="0" data-mode="alias" aria-checked="${O_MODE==='alias'}"><span class="rd"></span><div><strong>Als Verweis</strong><p>Beide Namen gelten als ein Ort, vorgeschlagen wird nur noch ${esc(t)}. Die Tage bleiben unverändert, jederzeit rückgängig.</p></div></div>
-      <div class="opt" role="radio" tabindex="0" data-mode="replace" aria-checked="${O_MODE==='replace'}"><span class="rd"></span><div><strong>Überall ersetzen</strong><p>${esc(O_CUR)} wird in ${fmt0(n)} ${n===1?'Tag':'Tagen'} durch ${esc(t)} ersetzt, damit es auch in Obsidian sauber ist.${bothPl?` Bei den spezifischen Orten bleibt ${esc(t)} an ${bothPl} ${bothPl===1?'Tag':'Tagen'} nur einmal stehen.`:''}${both-bothPl?` Bei Kaffee bleibt jeder Eintrag erhalten, weil er einen Kaffee zählt.`:''}</p></div></div>
+      <div class="opt" role="radio" tabindex="0" data-mode="replace" aria-checked="${O_MODE==='replace'}"><span class="rd"></span><div><strong>Überall ersetzen</strong><p>${esc(O_CUR)} wird in ${fmt0(n)} ${n===1?'Tag':'Tagen'} durch ${esc(t)} ersetzt, damit es auch in Obsidian sauber ist.${bothPl?` Bei den Check-ins bleibt ${esc(t)} an ${bothPl} ${bothPl===1?'Tag':'Tagen'} nur einmal stehen.`:''}${both-bothPl?` Bei Kaffee bleibt jeder Eintrag erhalten, weil er einen Kaffee zählt.`:''}</p></div></div>
     </div>
     ${oConflictNote(t)}
     <div class="run-actions"><button class="pill pill-accent press" id="oGo">${O_MODE==='alias'?'Verweis setzen':`${fmt0(n)} ${n===1?'Tag':'Tage'} ändern`}</button></div>
@@ -2523,7 +2523,7 @@ function oReplaceText(raw,from,to){
     if(it&&(key==='coffee_locations'||key==='places')){
       let v=it[2].replace(/^['"]|['"]$/g,'');
       if(v===from){ v=to; changed=true; }
-      if(key==='places'){ if(seen.has(v)) continue; seen.add(v); }   // spezifische Orte: einmal pro Tag
+      if(key==='places'){ if(seen.has(v)) continue; seen.add(v); }   // Check-ins: einmal pro Tag
       out.push(it[1]+v); continue;                                     // Kaffee: jede Zeile ist ein Kaffee, bleibt
     }
     out.push(l);
