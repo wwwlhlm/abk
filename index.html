@@ -36,7 +36,7 @@
 }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{background:var(--bg);color-scheme:dark;touch-action:manipulation}   /* kein Doppeltipp-Zoom, Pinch-Zoom bleibt */
+html{background:var(--bg);color-scheme:dark;touch-action:manipulation;overscroll-behavior-y:none}   /* kein Doppeltipp-Zoom, Pinch-Zoom bleibt */
 body{margin:0;overflow-x:clip;font:15px/1.5 var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior-y:none}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 input,textarea{font:inherit;color:inherit}
@@ -142,6 +142,28 @@ svg{display:block}
 .day-nav{display:flex;gap:6px;align-items:center}
 .today-pill{transition:opacity .25s,transform .45s var(--spring-pop)}
 .today-pill[hidden]{display:inline-flex;opacity:0;transform:scale(.6);pointer-events:none}
+.back-pill{background:var(--surface-2);color:var(--text-2)}
+.back-pill:hover{color:var(--text)}
+.back-pill .ico{width:15px;height:15px}
+.back-pill[hidden]{width:0;padding:0;margin-left:-10px;overflow:hidden}
+@media (max-width:599px){ .back-pill{width:30px;padding:0;justify-content:center} .back-pill span{display:none} }
+
+/* ─── Ziehen für Zufallstag ──────────────────────────────── */
+.pull{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 16px);z-index:56;translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:7px;
+  pointer-events:none;opacity:0;transform:translateY(-14px) scale(.6);transition:opacity .25s,transform .45s var(--spring)}
+.pull-ring{width:42px;height:42px;border-radius:50%;background:#000;box-shadow:0 8px 26px rgba(0,0,0,.5);display:grid;place-items:center}
+.pull-dots{position:relative;width:0;height:0}
+.pull-dots i{position:absolute;left:-2.5px;top:-2.5px;width:5px;height:5px;border-radius:50%;background:var(--text);opacity:.16;
+  transform:rotate(calc(var(--i) * 60deg)) translateY(-11px);transition:opacity .12s}
+.pull-dots i.lit{opacity:1}
+.pull-t{font-size:12px;font-weight:500;color:var(--text-2);white-space:nowrap;transition:color .2s}
+.pull.ready .pull-ring{animation:pullPop .45s var(--spring-pop)}
+.pull.ready .pull-t{color:var(--text)}
+.pull.spin{opacity:1;transform:none}
+.pull.spin .pull-dots{animation:pullSpin .8s linear infinite}
+.pull.spin .pull-dots i{opacity:calc(.25 + var(--i) * .15)}
+@keyframes pullPop{45%{scale:1.16}}
+@keyframes pullSpin{to{rotate:360deg}}
 
 .strip{display:flex;gap:4px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:0 -16px;padding:6px 16px 2px;
 }
@@ -589,6 +611,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
   <button class="fdate" id="fDate" tabindex="-1"><span id="fDateIn"></span></button>
   <button class="press" id="fNext" aria-label="Nächster Tag" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
 </div>
+<div class="pull" id="pull" aria-hidden="true"><div class="pull-ring"><div class="pull-dots"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i></div></div><span class="pull-t" id="pullT">Zufälliger Tag</span></div>
 <div class="island" id="island" role="status" aria-live="polite"><span class="dot"></span><span id="islandText">Demo-Daten</span></div>
 
 <main style="overflow-x:clip">
@@ -600,6 +623,7 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <div class="day-date"><span id="dayDate"></span><svg class="ico" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div>
       </div></div>
       <div class="day-nav">
+        <button class="pill press today-pill back-pill" id="backBtn" hidden aria-label="Zurück zum vorherigen Tag" title="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg><span id="backLbl"></span></button>
         <button class="pill pill-accent press today-pill" id="todayBtn" hidden>Heute</button>
         <button class="icon-btn press" id="prevDay" aria-label="Vorheriger Tag"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
         <button class="icon-btn press" id="nextDay" aria-label="Nächster Tag"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -1154,7 +1178,7 @@ function go(v, onShown){
 /* ═══════════════════════════════════════════════════════════
    ERFASSEN
    ═══════════════════════════════════════════════════════════ */
-let cur=TODAY;
+let cur=TODAY, RET=null;   // RET: Tag vor dem letzten Zufallssprung
 const COUNTERS=[['coffee','Kaffee','var(--c-coffee)'],['apples','Äpfel','var(--c-apple)'],['bananas','Bananen','var(--c-banana)']];
 const fmtDay = s => { const d=parse(s); return `${d.getDate()}. ${MON[d.getMonth()]}`; };
 
@@ -1166,6 +1190,7 @@ function renderEntry(dir=0){
   });
   fnavDate(dir);
   $('#todayBtn').hidden=cur===TODAY;
+  $('#backBtn').hidden=!RET||RET===TODAY; if(RET){ const r=parse(RET); $('#backLbl').textContent=`${r.getDate()}. ${MON3[r.getMonth()]}${r.getFullYear()!==d.getFullYear()?' '+r.getFullYear():''}`; }
   COUNTERS.forEach(([k])=>roll($('#cnt-'+k), e[k]));
   setMood(e.mood,false);
   LIST_KEYS.forEach(k=>renderGroup(k,e));
@@ -1213,15 +1238,62 @@ function buildCounters(){
     const e={...entryFor(cur)}; e[b.dataset.k]=Math.max(0,(e[b.dataset.k]||0)+ +b.dataset.d);
     roll($('#cnt-'+b.dataset.k), e[b.dataset.k]); touch(e); coffeeHint(e); });
 }
-function setDay(d){ if(d===cur) return; flushSaves(); const dir=d>cur?1:-1; cur=d; renderEntry(dir); renderStrip(); centerStrip(); ensureDay(d).then(()=>prefetchAround(d)).catch(()=>{}); }
+function setDay(d,keepRet=false){ if(d===cur) return; if(!keepRet) RET=null; flushSaves(); const dir=d>cur?1:-1; cur=d; renderEntry(dir); renderStrip(); centerStrip(); ensureDay(d).then(()=>prefetchAround(d)).catch(()=>{}); }
 $('#prevDay').onclick=()=>setDay(addDays(cur,-1));
 $('#nextDay').onclick=()=>setDay(addDays(cur,1));
 $('#todayBtn').onclick=()=>setDay(TODAY);
+$('#backBtn').onclick=()=>{ const r=RET; RET=null; if(r) setDay(r); };
+
+/* Zufälliger Tag: nur Tage mit Text, nicht heute und nicht der aktuelle.
+   Kein Tag kommt doppelt, bis alle einmal dran waren (gemerkt im Browser). */
+function randomDay(){
+  const pool=[...DATA.values()].filter(e=>e.date<TODAY&&e.date!==cur&&e.text&&e.text.trim()&&e.text.trim()!=='—').map(e=>e.date);
+  if(!pool.length){ island('Noch keine Einträge','var(--text-3)'); return; }
+  let seen; try{ seen=new Set(JSON.parse(localStorage.getItem('randSeen')||'[]')); }catch{ seen=new Set(); }
+  let left=pool.filter(d=>!seen.has(d)); if(!left.length){ seen=new Set(); left=pool; }
+  const pick=left[Math.floor(Math.random()*left.length)]; seen.add(pick);
+  try{ localStorage.setItem('randSeen',JSON.stringify([...seen])); }catch{}
+  const back=RET||cur; RET=back; setDay(pick,true);
+}
+
+/* Ziehen nach unten (ganz oben auf Erfassen) = Zufallstag. Punkte füllen sich mit dem Weg, ab der Linie „Loslassen“. */
+(function pullRandom(){
+  if(!TOUCH) return;
+  const v=$('#v-entry'), P=$('#pull'), T=$('#pullT'), dots=[...P.querySelectorAll('.pull-dots i')], W=P.querySelector('.pull-dots');
+  const MAX=130, TH=80, rub=dy=>MAX*dy/(dy+100);   // weich: ~160px Fingerweg = Schwelle
+  let y0=null,x0=0,lock=null,ready=false;
+  const can=e=>view==='entry'&&scrollY<=0&&!root.classList.contains('kb')&&!$('#sheet').classList.contains('open')&&!e.target.closest('input,textarea,select,[role=slider],#mood');
+  const reset=()=>{ P.className='pull'; P.style.cssText=''; W.style.rotate=''; dots.forEach(i=>i.classList.remove('lit')); T.textContent='Zufälliger Tag'; ready=false; };
+  const settle=()=>{ v.style.transition='translate .6s var(--spring)'; v.style.translate=''; setTimeout(()=>{ if(y0===null) v.style.transition=''; },650); };
+  v.addEventListener('touchstart',e=>{ if(e.touches.length!==1||!can(e)){ y0=null; return; } y0=e.touches[0].clientY; x0=e.touches[0].clientX; lock=null; },{passive:true});
+  v.addEventListener('touchmove',e=>{ if(y0===null) return;
+    const dy=e.touches[0].clientY-y0, dx=e.touches[0].clientX-x0;
+    if(lock===null){ if(Math.hypot(dx,dy)<8) return; lock=dy>0&&dy>Math.abs(dx)*1.2&&scrollY<=0?'pull':'no'; }
+    if(lock!=='pull') return;
+    e.preventDefault();
+    const d=rub(Math.max(0,dy)), p=Math.min(1,d/TH);
+    v.style.transition='none'; v.style.translate=`0 ${d}px`;
+    P.style.transition='none'; P.style.opacity=Math.min(1,p*1.8); P.style.transform=`translateY(${(p-1)*14}px) scale(${.6+.4*p})`;
+    W.style.rotate=`${p*90}deg`; dots.forEach((i,k)=>i.classList.toggle('lit',p>=(k+1)/6));
+    if(p>=1&&!ready){ ready=true; P.classList.add('ready'); T.textContent='Loslassen'; }
+    else if(p<1&&ready){ ready=false; P.classList.remove('ready'); T.textContent='Zufälliger Tag'; }
+  },{passive:false});
+  const end=()=>{ if(y0===null) return; y0=null; if(lock!=='pull') return;
+    P.style.transition=''; P.style.transform=''; P.style.opacity='';
+    if(ready){
+      P.classList.add('spin'); T.textContent='Zufälliger Tag'; W.style.rotate='';
+      v.style.transition='translate .45s var(--spring)'; v.style.translate='0 64px';
+      setTimeout(()=>{ randomDay(); settle(); P.classList.remove('spin','ready'); setTimeout(reset,450); },420);
+    } else { settle(); P.classList.remove('ready'); setTimeout(reset,300); }
+  };
+  v.addEventListener('touchend',end); v.addEventListener('touchcancel',end);
+})();
 addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); openSearch(); return; }
   if(e.key==='Escape'){ closeSheet(); if(view==='write') closeWriter(); if(view==='search') $('#q').blur(); return; }
   if(e.target.closest('input,textarea,[role=slider],[role=spinbutton],[role=tab]')||e.metaKey||e.ctrlKey||e.altKey) return;
   if($('#sheet').classList.contains('open')){ if(DP_OPEN&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){ e.preventDefault(); dpShift(e.key==='ArrowLeft'?-1:1); } return; }
+  if(e.key.toLowerCase()==='z'&&view==='entry'){ e.preventDefault(); randomDay(); return; }
   const d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0; if(!d) return;
   if(view==='entry'){ e.preventDefault(); setDay(addDays(cur,d)); }
   if(view==='dash'){ e.preventDefault(); if(d>0&&$('#nextPer').disabled) return; shiftPeriod(d); }
@@ -1459,11 +1531,12 @@ function openDatePicker(forDash=false){
     <div class="dp-nav"><button class="icon-btn press" id="dpPrev" aria-label="Zurück"><svg class="ico" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
     <button class="icon-btn press" id="dpNext" aria-label="Weiter"><svg class="ico" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button></div></div>
     <div class="dp-stage" id="dpStage"><div id="dpBody"></div></div>
-    <div class="dp-foot"><button class="pill pill-accent press" id="dpToday">${forDash?{week:'Diese Woche',month:'Dieser Monat',year:'Dieses Jahr'}[per]:'Heute'}</button>${forDash?'':'<button class="pill press" style="background:var(--surface-2)" id="dpLast">Letzter Eintrag</button>'}</div>`);
+    <div class="dp-foot"><button class="pill pill-accent press" id="dpToday">${forDash?{week:'Diese Woche',month:'Dieser Monat',year:'Dieses Jahr'}[per]:'Heute'}</button>${forDash?'':'<button class="pill press" style="background:var(--surface-2)" id="dpLast">Letzter Eintrag</button><button class="pill press" style="background:var(--surface-2)" id="dpRand" title="Taste Z">Zufall</button>'}</div>`);
   DP_OPEN=true; renderDp(0);
   $('#dpTitle').onclick=()=>{ dpMode=dpMode==='days'?'months':dpMode==='months'?'years':'days'; renderDp(0,true); };
   $('#dpPrev').onclick=()=>dpShift(-1); $('#dpNext').onclick=()=>dpShift(1);
   $('#dpToday').onclick=()=>forDash?pickPeriod(TODAY):pickDay(TODAY);
+  if(!forDash) $('#dpRand').onclick=()=>{ closeSheet(); setTimeout(()=>{ if(view!=='entry') go('entry'); randomDay(); },120); };
   if(!forDash) $('#dpLast').onclick=()=>{ const last=[...DATA.keys()].filter(d=>d<=TODAY).sort().pop(); if(last) pickDay(last); };
   $('#dpBody').onclick=e=>{ const b=e.target.closest('[data-pick]'); if(!b) return; const [kind,val]=b.dataset.pick.split(':');
     if(kind==='d') return forDash?pickPeriod(val):pickDay(val);
