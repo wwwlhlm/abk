@@ -1786,8 +1786,16 @@ $('#q').addEventListener('keydown',e=>{
 });
 $('#qClear').onclick=e=>{ e.preventDefault(); $('#q').value=''; filters=[]; renderSearch(); $('#q').focus(); };
 function addFilter(p,v){ if(!filters.some(f=>f.p===p&&f.v.toLowerCase()===v.toLowerCase())) filters.push({p,v}); $('#q').value=''; shown=80; renderSearch(); if(!TOUCH) $('#q').focus({preventScroll:true}); scrollTo({top:0,behavior:'smooth'}); }
-$('#sugg').addEventListener('pointerdown',e=>{ if(document.activeElement===$('#q')) e.preventDefault(); }); // Tastatur bleibt offen
-$('#sugg').addEventListener('click',e=>{ const b=e.target.closest('.sg'); if(!b) return; if(b.dataset.cat) pickCat(b.dataset.cat); else addFilter(b.dataset.p,b.dataset.v); });
+/* Tastatur bleibt offen, wenn ein Vorschlag angetippt wird.
+   Maus: pointerdown abfangen. Touch: NICHT bei pointerdown (sonst lässt sich die Leiste auf iOS nicht wischen),
+   sondern erst beim Loslassen – und nur, wenn der Finger nicht gewischt hat. */
+const sgAct=b=>{ if(b.dataset.cat) pickCat(b.dataset.cat); else addFilter(b.dataset.p,b.dataset.v); };
+let sgT=null;
+$('#sugg').addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse'&&document.activeElement===$('#q')) e.preventDefault(); });
+$('#sugg').addEventListener('touchstart',e=>{ const t=e.touches[0]; sgT={x:t.clientX,y:t.clientY,f:document.activeElement===$('#q')}; },{passive:true});
+$('#sugg').addEventListener('touchend',e=>{ if(!sgT) return; const t=e.changedTouches[0], moved=Math.hypot(t.clientX-sgT.x,t.clientY-sgT.y)>8, f=sgT.f; sgT=null;
+  if(moved||!f) return; const b=e.target.closest('.sg'); if(!b) return; e.preventDefault(); sgAct(b); });
+$('#sugg').addEventListener('click',e=>{ const b=e.target.closest('.sg'); if(b) sgAct(b); });
 $('#filters').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(b){ filters.splice(+b.dataset.rm,1); renderSearch(); } });
 $('#hits').addEventListener('click',e=>{ const b=e.target.closest('.hit'); if(b) openDay(b.dataset.d); if(e.target.closest('.more')){ shown+=80; drawHits(); } });
 segInit($('#sortSeg'),'new',v=>{ sortNew=v==='new'; drawHits(); });
