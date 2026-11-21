@@ -785,9 +785,9 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 <div class="dock-wrap">
   <div class="dock-shell"><nav class="dock" id="dock" aria-label="Navigation">
     <div class="dock-tip" id="dockTip"></div>
-    <button class="dock-item" data-go="entry" data-tip="Erfassen" aria-label="Erfassen" aria-current="page"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
-    <button class="dock-item" data-go="dash" data-tip="Dashboard" aria-label="Dashboard"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
-    <button class="dock-item" data-go="search" data-tip="Suche  ⌘K" aria-label="Suche"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
+    <button class="dock-item" data-go="entry" data-tip="Erfassen  E" aria-label="Erfassen" aria-current="page"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+    <button class="dock-item" data-go="dash" data-tip="Dashboard  D" aria-label="Dashboard"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></button>
+    <button class="dock-item" data-go="search" data-tip="Suche  S" aria-label="Suche"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></button>
     <span class="dock-sep"></span>
     <button class="dock-item" data-act="sync" data-tip="Synchronisieren" aria-label="Synchronisieren"><svg class="ico" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/><path d="M3 12A9 9 0 0 1 18.5 5.8L21 8"/><path d="M21 3v5h-5"/></svg></button>
     <button class="dock-item" data-act="settings" data-tip="Einstellungen" aria-label="Einstellungen"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg></button>
@@ -1294,6 +1294,9 @@ addEventListener('keydown',e=>{
   if(e.target.closest('input,textarea,[role=slider],[role=spinbutton],[role=tab]')||e.metaKey||e.ctrlKey||e.altKey) return;
   if($('#sheet').classList.contains('open')){ if(DP_OPEN&&(e.key==='ArrowLeft'||e.key==='ArrowRight')){ e.preventDefault(); dpShift(e.key==='ArrowLeft'?-1:1); } return; }
   if(e.key.toLowerCase()==='z'&&view==='entry'){ e.preventDefault(); randomDay(); return; }
+  // Ansichten: E = Erfassen, D = Dashboard, S = Suche
+  const goKey={e:'entry',d:'dash',s:'search'}[e.key.toLowerCase()];
+  if(goKey&&!e.shiftKey){ e.preventDefault(); if(goKey==='search') openSearch(); else go(goKey); return; }
   const d=e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0; if(!d) return;
   if(view==='entry'){ e.preventDefault(); setDay(addDays(cur,d)); }
   if(view==='dash'){ e.preventDefault(); if(d>0&&$('#nextPer').disabled) return; shiftPeriod(d); }
