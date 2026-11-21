@@ -1792,8 +1792,23 @@ function addFilter(p,v){ if(!filters.some(f=>f.p===p&&f.v.toLowerCase()===v.toLo
 const sgAct=b=>{ if(b.dataset.cat) pickCat(b.dataset.cat); else addFilter(b.dataset.p,b.dataset.v); };
 let sgT=null;
 $('#sugg').addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse'&&document.activeElement===$('#q')) e.preventDefault(); });
-$('#sugg').addEventListener('touchstart',e=>{ const t=e.touches[0]; sgT={x:t.clientX,y:t.clientY,f:document.activeElement===$('#q')}; },{passive:true});
-$('#sugg').addEventListener('touchend',e=>{ if(!sgT) return; const t=e.changedTouches[0], moved=Math.hypot(t.clientX-sgT.x,t.clientY-sgT.y)>8, f=sgT.f; sgT=null;
+/* iOS scrollt die Leiste nicht, solange das Suchfeld beim Öffnen schon aktiv ist.
+   Darum: Bewegt sich die Leiste beim seitlichen Wischen nicht von selbst, übernimmt die App das Scrollen (mit Auslaufen).
+   Scrollt iOS normal, greift die App nicht ein. */
+const SG=$('#sugg'); let sgRaf=0;
+SG.addEventListener('touchstart',e=>{ cancelAnimationFrame(sgRaf); const t=e.touches[0];
+  sgT={x:t.clientX,y:t.clientY,f:document.activeElement===$('#q'),sl:SG.scrollLeft,ax:null,manual:false,lx:t.clientX,lt:performance.now(),v:0}; },{passive:true});
+SG.addEventListener('touchmove',e=>{ if(!sgT) return; const t=e.touches[0], dx=t.clientX-sgT.x, dy=t.clientY-sgT.y;
+  if(!sgT.ax&&Math.hypot(dx,dy)>6) sgT.ax=Math.abs(dx)>Math.abs(dy)?'x':'y';
+  if(sgT.ax!=='x') return;
+  if(!sgT.manual&&Math.abs(dx)>12&&Math.abs(SG.scrollLeft-sgT.sl)<1) sgT.manual=true;   // iOS bewegt nichts → selbst scrollen
+  const now=performance.now(), dt=Math.max(1,now-sgT.lt); sgT.v=.8*((sgT.lx-t.clientX)/dt)+.2*sgT.v; sgT.lx=t.clientX; sgT.lt=now;
+  if(sgT.manual){ e.preventDefault(); SG.scrollLeft=sgT.sl-dx; }
+},{passive:false});
+SG.addEventListener('touchend',e=>{ if(!sgT) return; const t=e.changedTouches[0], moved=Math.hypot(t.clientX-sgT.x,t.clientY-sgT.y)>8, f=sgT.f, st=sgT; sgT=null;
+  if(st.manual){ let v=st.v*16, last=performance.now();   // Auslaufen wie beim normalen Scrollen
+    const step=now=>{ const k=Math.min(3,(now-last)/16); last=now; SG.scrollLeft+=v*k; v*=Math.pow(.95,k); if(Math.abs(v)>.3) sgRaf=requestAnimationFrame(step); };
+    sgRaf=requestAnimationFrame(step); return; }
   if(moved||!f) return; const b=e.target.closest('.sg'); if(!b) return; e.preventDefault(); sgAct(b); });
 $('#sugg').addEventListener('click',e=>{ const b=e.target.closest('.sg'); if(b) sgAct(b); });
 $('#filters').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(b){ filters.splice(+b.dataset.rm,1); renderSearch(); } });
