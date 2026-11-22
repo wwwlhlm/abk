@@ -513,7 +513,9 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .o-top .s-title{margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #oBar .o-top{flex-wrap:wrap;row-gap:10px}
 #oBar .o-top .s-title{flex:1 0 auto;overflow:visible}
-.o-sum{font-size:13px;color:var(--text-2);padding:2px 4px 0}
+.o-sum{flex-wrap:wrap}
+/* Ortsregister schmal: Umschalter Orte/Ortschaften als ganze Zeile unter dem Titel */
+@media (max-width:520px){ #oBar .o-top .seg{flex:1 1 100%} #oBar .o-top .seg button{flex:1} }
 .o-sum b{font-weight:500;color:var(--text)}
 .o-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1*var(--px)) 0;padding:0 var(--px)}
 .o-filters::-webkit-scrollbar{display:none}
@@ -776,14 +778,16 @@ input[type=search]{-webkit-appearance:none;appearance:none}
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="oq" type="search" placeholder="Ort suchen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <button class="clr" id="oqClear" aria-label="Leeren" hidden>✕</button></label>
+      <div class="filters" id="oActive"></div>
       <div class="sugg-wrap o-fwrap"><div class="o-filters" id="oFilters"></div>
         <button class="sg-arr l" aria-label="Zurückblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
         <button class="sg-arr r" aria-label="Weiterblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
     <div id="oErr"></div>
-    <div class="o-sum" id="oSum"></div>
+    <div class="s-meta o-sum" id="oSum"></div>
     <div id="dupWrap"></div>
     <div class="olist" id="olist"></div>
+    <p class="s-foot" id="oFootHint" hidden></p>
     <div class="olist-foot">
       <button class="pill pill-ghost press" id="oShowJson">orte.json ansehen</button>
       <button class="pill pill-ghost press" id="oShowExport">Karten-Export ansehen</button>
@@ -2249,7 +2253,7 @@ $('#openOrte').onclick=()=>oOpenList();
    Navigation
    ═══════════════════════════════════════════════════════════ */
 let O_CUR=null, O_KIND='ort', O_FROM='entry', O_STACK=[], O_TAB='orte';
-function oOpenList(tab){ if(tab) O_TAB=tab; oUse=null; scrollMem.orte=0; oSegSet?.(O_TAB,false); oRenderList(); go('orte'); }
+function oOpenList(tab){ if(tab&&tab!==O_TAB){ O_TAB=tab; OF.flag=OF.typ=OF.src=null; } oUse=null; scrollMem.orte=0; oSegSet?.(O_TAB,false); oRenderList(); go('orte'); }
 function oGuard(){ if(oCanEdit()) return true; island(OREG_STATE==='loading'?'Orte werden noch geladen …':'orte.json nicht geladen','var(--bad)',2500); return false; }
 function oShowDetail(kind,n){
   if(view==='ort'&&!O_RUN) O_STACK.push({kind:O_KIND,name:O_CUR}); else if(view!=='ort'){ O_FROM=view; O_STACK=[]; }
@@ -2272,6 +2276,15 @@ addEventListener('scroll',()=>{ if(view==='orte') $('#oBar').classList.toggle('s
    Ortsliste
    ═══════════════════════════════════════════════════════════ */
 let OF={q:'',flag:null,typ:null,src:null};
+/* Filter wie in der Suche: Gewählte stehen als Chip über der Leiste, die Leiste zeigt nur, was noch wählbar ist (ohne Nullen). */
+const OF_LABEL={nokoord:'Ohne Koordinaten',notyp:'Ohne Typ',unscharf:'Ortschaft/Land',unused:'Nicht mehr verwendet',nopos:'Ohne Position',noland:'Ohne Land',linked:'Verknüpft',coffee:'Kaffeeorte',place:'Check-ins'};
+const OF_PT={flag:'Filter',src:'Quelle',typ:'Typ'};
+function oActiveChips(){
+  $('#oActive').innerHTML=['flag','src','typ'].filter(k=>OF[k]).map(k=>`<span class="fchip"><span class="pt">${OF_PT[k]}</span>${esc(k==='typ'?O_TYPE_LABEL[OF.typ]:OF_LABEL[OF[k]])}<button data-rm="${k}" aria-label="Filter entfernen">✕</button></span>`).join('');
+}
+const oSgGroups=groups=>groups.map(g=>g.join('')).filter(Boolean).join('<span class="sep"></span>');
+const oSg=(kind,val,label,n)=>OF[kind]===val||!n?'':`<button class="sg" data-f="${kind}" data-val="${val}">${label}<span class="c">${fmt0(n)}</span></button>`;
+const oCountLine=(n,all,one,many,manyDat=many)=>n===all?`<span><b>${fmt0(all)}</b> ${all===1?one:many}</span>`:`<span><b>${fmt0(n)}</b> von ${fmt0(all)} ${manyDat}</span>`;
 function oFiltered(all){
   const q=oNorm(OF.q);
   return all.filter(p=>{
@@ -2290,15 +2303,19 @@ function oRenderList(anim=true){
   oUse=null; oOsUse=null; $('#oq').placeholder=O_TAB==='os'?'Ortschaft suchen':'Ort suchen';
   if(O_TAB==='os') return oRenderOsList(anim);
   const all=oAll(), list=oFiltered(all), cnt=f=>all.filter(f).length;
-  const sg=(kind,val,label,n)=>`<button class="sg${OF[kind]===val?' on':''}" data-f="${kind}" data-val="${val}">${label}<span class="c">${n}</span></button>`;
-  $('#oFilters').innerHTML=sg('flag','nokoord','Ohne Koordinaten',cnt(p=>oNeedsKoord(p.r)))+sg('flag','notyp','Ohne Typ',cnt(p=>!p.r.typ))+sg('flag','unscharf','Ortschaft/Land',cnt(p=>p.r.genau))
-    +'<span class="sep"></span>'+sg('src','coffee','Kaffeeorte',cnt(p=>p.coffee))+sg('src','place','Check-ins',cnt(p=>p.place))
-    +'<span class="sep"></span>'+O_TYPES.map(([t,l])=>sg('typ',t,esc(l),cnt(p=>p.r.typ===t))).join('')
-    +(cnt(oUnusedOrt)||OF.flag==='unused'?'<span class="sep"></span>'+sg('flag','unused','Nicht mehr verwendet',cnt(oUnusedOrt)):'');
+  oActiveChips();
+  // Zahlen wie in der Suche: was bei den übrigen Filtern übrig bliebe (eigene Filterart ausgenommen, sie wird ersetzt)
+  const cK=(k,f)=>{ const keep=OF[k]; OF[k]=null; const n=oFiltered(all).filter(f).length; OF[k]=keep; return n; };
+  $('#oFilters').innerHTML=oSgGroups([
+    [oSg('flag','nokoord','Ohne Koordinaten',cK('flag',p=>oNeedsKoord(p.r))),oSg('flag','notyp','Ohne Typ',cK('flag',p=>!p.r.typ)),oSg('flag','unscharf','Ortschaft/Land',cK('flag',p=>p.r.genau))],
+    [oSg('src','coffee','Kaffeeorte',cK('src',p=>p.coffee)),oSg('src','place','Check-ins',cK('src',p=>p.place))],
+    O_TYPES.map(([t,l])=>oSg('typ',t,esc(l),cK('typ',p=>p.r.typ===t))),
+    [oSg('flag','unused','Nicht mehr verwendet',cK('flag',oUnusedOrt))]]);
+  $('#oFootHint').hidden=true;
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt, damit nichts überschrieben wird.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`
     :OREG_STATE==='demo'?`<p class="muted" style="padding:0 4px">Demo-Daten: Änderungen bleiben nur bis zum Neuladen.</p>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Orte · ${fmt0(cnt(p=>oKoord(p.r)))} mit Koordinaten · ${fmt0(cnt(p=>!p.r.typ))} ohne Typ`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
+  $('#oSum').innerHTML=oCountLine(list.length,all.length,'Ort','Orte','Orten')
     +(OF.flag==='unused'&&list.length?` <button class="pill pill-ghost press" id="oRmAll" style="margin-left:6px">Alle ${list.length} entfernen</button>`:'');
   if($('#oRmAll')) oConfirmBtn($('#oRmAll'),`Wirklich ${list.length} entfernen?`,()=>{ list.forEach(p=>oRemoveOrt(p.name)); island(`${list.length} Orte entfernt`); OF.flag=null; oRenderList(false); });
   const d=OF.q||OF.flag||OF.typ||OF.src?[]:oDuplicates(all);
@@ -2330,16 +2347,20 @@ function oSub(p){
   if(p.aliases.length) b.push(`<span class="al">+ ${p.aliases.map(esc).join(', ')}</span>`);
   return b.join(' · ');
 }
-$('#oFilters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'); if(!b) return; const k=b.dataset.f, v=b.dataset.val; OF[k]=OF[k]===v?null:v; O_SHOWN=150; oRenderList(); });
+$('#oFilters').addEventListener('click',e=>{ const b=e.target.closest('[data-f]'); if(!b) return; OF[b.dataset.f]=b.dataset.val; O_SHOWN=150; oRenderList(); scrollTo({top:0}); });
+$('#oActive').addEventListener('click',e=>{ const b=e.target.closest('[data-rm]'); if(!b) return; OF[b.dataset.rm]=null; O_SHOWN=150; oRenderList(); });
 oSegSet=segInit($('#oSeg'),'orte',v=>{ O_TAB=v; OF.flag=null; OF.typ=null; OF.src=null; O_SHOWN=150; $('#oq').placeholder=v==='os'?'Ortschaft suchen':'Ort suchen'; oRenderList(); scrollTo({top:0}); });
 function oRenderOsList(anim=true){
   const all=oAllOs(), q=oNorm(OF.q), cnt=f=>all.filter(f).length;
   const list=all.filter(o=>(!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q))&&(OF.flag!=='nopos'||!o.r.koord)&&(OF.flag!=='noland'||!o.land)&&(OF.flag!=='linked'||o.orte.length)&&(OF.flag!=='unused'||oUnusedOs(o)));
-  const sg=(val,label,n)=>`<button class="sg${OF.flag===val?' on':''}" data-f="flag" data-val="${val}">${label}<span class="c">${n}</span></button>`;
-  $('#oFilters').innerHTML=sg('nopos','Ohne Position',cnt(o=>!o.r.koord))+sg('noland','Ohne Land',cnt(o=>!o.land))+sg('linked','Verknüpft',cnt(o=>o.orte.length))+(cnt(oUnusedOs)||OF.flag==='unused'?sg('unused','Nicht mehr verwendet',cnt(oUnusedOs)):'');
+  oActiveChips();
+  const qOs=all.filter(o=>!q||oNorm(o.name).includes(q)||oNorm(o.land||'').includes(q)), cQ=f=>qOs.filter(f).length;
+  $('#oFilters').innerHTML=oSgGroups([[oSg('flag','nopos','Ohne Position',cQ(o=>!o.r.koord)),oSg('flag','noland','Ohne Land',cQ(o=>!o.land)),oSg('flag','linked','Verknüpft',cQ(o=>o.orte.length))],
+    [oSg('flag','unused','Nicht mehr verwendet',cQ(oUnusedOs))]]);
+  const fh=$('#oFootHint'); fh.hidden=false; fh.innerHTML='Ortschaften stammen aus dem Feld <i>Ortschaft</i> der Tage.';
   $('#oErr').innerHTML=OREG_STATE==='error'?`<div class="card o-err">orte.json konnte nicht geladen werden${OREG_ERR?': '+esc(OREG_ERR):''}. Bearbeiten ist gesperrt.<button class="pill pill-accent press" id="oRetry">Erneut laden</button></div>`:'';
   $('#oRetry')?.addEventListener('click',()=>oLoadReg());
-  $('#oSum').innerHTML=`<b>${fmt0(all.length)}</b> Ortschaften · ${fmt0(cnt(o=>o.r.koord))} mit Position · aus dem Feld <i>Ortschaft</i> der Tage`+(list.length!==all.length?` · <b>${fmt0(list.length)}</b> angezeigt`:'')
+  $('#oSum').innerHTML=oCountLine(list.length,all.length,'Ortschaft','Ortschaften')
     +(OF.flag==='unused'&&list.length?` <button class="pill pill-ghost press" id="oRmAll" style="margin-left:6px">Alle ${list.length} entfernen</button>`:'');
   if($('#oRmAll')) oConfirmBtn($('#oRmAll'),`Wirklich ${list.length} entfernen?`,()=>{ list.forEach(o=>oRemoveOs(o.name)); island(`${list.length} Ortschaften entfernt`); OF.flag=null; oRenderList(false); });
   $('#dupWrap').innerHTML='';
