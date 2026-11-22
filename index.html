@@ -389,8 +389,24 @@ svg{display:block}
 .sugg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1*var(--px));padding:10px var(--px) 0}
 .sugg::-webkit-scrollbar{display:none}
 .sugg:empty{display:none}
-/* Maus/Trackpad: umbrechen statt seitlich scrollen (horizontal scrollen geht dort nicht mit dem Mausrad) */
-@media (min-width:700px),(pointer:fine){.sugg{flex-wrap:wrap;margin:0;padding:10px 0 0}}
+/* Eine Zeile wie auf dem iPhone. Ränder blenden aus, wenn es dort weitergeht. */
+.sugg-wrap{position:relative}
+.sugg{--fl:0px;--fr:0px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
+.sugg.fl{--fl:40px}.sugg.fr{--fr:40px}
+@media (min-width:700px){.sugg{margin:0;padding:10px 0 0}}
+/* Maus: Pfeile an den Rändern und Ziehen mit gedrückter Taste */
+.sg-arr{display:none}
+@media (pointer:fine){
+  .sugg{cursor:grab}
+  .sugg.drag{cursor:grabbing;user-select:none;-webkit-user-select:none}
+  .sugg.drag .sg{pointer-events:none}
+  .sg-arr{display:grid;place-items:center;position:absolute;bottom:0;width:32px;height:32px;border-radius:50%;background:var(--surface-2);color:var(--text);z-index:2;
+    box-shadow:0 2px 10px rgba(0,0,0,.45);opacity:0;pointer-events:none;transform:scale(.7);transition:opacity .2s,transform .35s var(--spring-pop),background-color .2s}
+  .sg-arr .ico{width:16px;height:16px}
+  .sg-arr:hover{background:var(--surface-3)}
+  .sg-arr.l{left:-4px}.sg-arr.r{right:-4px}
+  .sugg-wrap:hover .sg-arr.on{opacity:1;pointer-events:auto;transform:none}
+}
 .sg{flex-shrink:0;height:32px;padding:0 12px;border-radius:999px;background:var(--surface);font-size:14px;color:var(--text-2);display:inline-flex;align-items:center;gap:6px;animation:pop .35s var(--spring-pop) backwards}
 .sg:hover{color:var(--text);background:var(--surface-2)}
 .sg .pt{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
@@ -727,7 +743,9 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <input id="q" type="search" placeholder="Suchen oder / für Filter …" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <button class="clr" id="qClear" aria-label="Leeren" hidden>✕</button></label>
       <div class="filters" id="filters"></div>
-      <div class="sugg" id="sugg"></div>
+      <div class="sugg-wrap"><div class="sugg" id="sugg"></div>
+        <button class="sg-arr l" id="sgL" aria-label="Zurückblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="sg-arr r" id="sgR" aria-label="Weiterblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
     <div class="s-meta" id="sMeta"><span id="qCount"></span>
       <div class="seg" id="sortSeg" role="tablist"><span class="thumb"></span><button role="tab" data-v="new">Neueste</button><button role="tab" data-v="old">Älteste</button></div></div>
@@ -1799,6 +1817,25 @@ $('#sugg').addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse'&&docum
    Darum: Bewegt sich die Leiste beim seitlichen Wischen nicht von selbst, übernimmt die App das Scrollen (mit Auslaufen).
    Scrollt iOS normal, greift die App nicht ein. */
 const SG=$('#sugg'); let sgRaf=0;
+
+/* Ränder: Ausblenden und Pfeile nur dort, wo es weitergeht */
+function sgEdges(){ const max=SG.scrollWidth-SG.clientWidth, l=SG.scrollLeft>2, r=SG.scrollLeft<max-2;
+  SG.classList.toggle('fl',l); SG.classList.toggle('fr',r); $('#sgL').classList.toggle('on',l); $('#sgR').classList.toggle('on',r); }
+SG.addEventListener('scroll',sgEdges,{passive:true});
+new MutationObserver(()=>{ SG.scrollLeft=0; requestAnimationFrame(sgEdges); }).observe(SG,{childList:true});
+new ResizeObserver(sgEdges).observe(SG);
+$('#sgL').onclick=()=>SG.scrollBy({left:-SG.clientWidth*.75,behavior:'smooth'});
+$('#sgR').onclick=()=>SG.scrollBy({left: SG.clientWidth*.75,behavior:'smooth'});
+$('#sgL').addEventListener('pointerdown',e=>e.preventDefault()); $('#sgR').addEventListener('pointerdown',e=>e.preventDefault()); // Fokus bleibt im Suchfeld
+
+/* Maus: mit gedrückter Taste seitlich ziehen. Nach dem Ziehen löst der Klick keinen Filter aus. */
+let sgM=null, sgDragged=false;
+SG.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.button!==0) return; sgM={x:e.clientX,sl:SG.scrollLeft}; sgDragged=false; });
+addEventListener('pointermove',e=>{ if(!sgM) return; const dx=e.clientX-sgM.x;
+  if(!sgDragged&&Math.abs(dx)>5){ sgDragged=true; SG.classList.add('drag'); }
+  if(sgDragged) SG.scrollLeft=sgM.sl-dx; });
+addEventListener('pointerup',()=>{ if(!sgM) return; sgM=null; SG.classList.remove('drag'); });
+SG.addEventListener('click',e=>{ if(sgDragged){ e.stopImmediatePropagation(); e.preventDefault(); sgDragged=false; } },true);
 SG.addEventListener('touchstart',e=>{ cancelAnimationFrame(sgRaf); const t=e.touches[0];
   sgT={x:t.clientX,y:t.clientY,f:document.activeElement===$('#q'),sl:SG.scrollLeft,ax:null,manual:false,lx:t.clientX,lt:performance.now(),v:0}; },{passive:true});
 SG.addEventListener('touchmove',e=>{ if(!sgT) return; const t=e.touches[0], dx=t.clientX-sgT.x, dy=t.clientY-sgT.y;
