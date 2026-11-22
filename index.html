@@ -391,15 +391,15 @@ svg{display:block}
 .sugg:empty{display:none}
 /* Eine Zeile wie auf dem iPhone. Ränder blenden aus, wenn es dort weitergeht. */
 .sugg-wrap{position:relative}
-.sugg{--fl:0px;--fr:0px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
-.sugg.fl{--fl:40px}.sugg.fr{--fr:40px}
+.sugg,.o-filters{--fl:0px;--fr:0px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl),#000 calc(100% - var(--fr)),transparent)}
+.sugg.fl,.o-filters.fl{--fl:40px}.sugg.fr,.o-filters.fr{--fr:40px}
 @media (min-width:700px){.sugg{margin:0;padding:10px 0 0}}
 /* Maus: Pfeile an den Rändern und Ziehen mit gedrückter Taste */
 .sg-arr{display:none}
 @media (pointer:fine){
-  .sugg{cursor:grab}
-  .sugg.drag{cursor:grabbing;user-select:none;-webkit-user-select:none}
-  .sugg.drag .sg{pointer-events:none}
+  .sugg,.o-filters{cursor:grab}
+  .sugg.drag,.o-filters.drag{cursor:grabbing;user-select:none;-webkit-user-select:none}
+  .sugg.drag .sg,.o-filters.drag .sg{pointer-events:none}
   .sg-arr{display:grid;place-items:center;position:absolute;bottom:0;width:32px;height:32px;border-radius:50%;background:var(--surface-2);color:var(--text);z-index:2;
     box-shadow:0 2px 10px rgba(0,0,0,.45);opacity:0;pointer-events:none;transform:scale(.7);transition:opacity .2s,transform .35s var(--spring-pop),background-color .2s}
   .sg-arr .ico{width:16px;height:16px}
@@ -517,7 +517,8 @@ input[type=search]{-webkit-appearance:none;appearance:none}
 .o-sum b{font-weight:500;color:var(--text)}
 .o-filters{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px calc(-1*var(--px)) 0;padding:0 var(--px)}
 .o-filters::-webkit-scrollbar{display:none}
-@media (min-width:700px){.o-filters{flex-wrap:wrap;margin:10px 0 0;padding:0}}
+@media (min-width:700px){.o-filters{margin:10px 0 0;padding:0}}
+.sugg-wrap.o-fwrap .sg-arr{bottom:0}
 .o-filters .sg.on{background:rgba(253,147,159,.24);color:#ffc4cb;box-shadow:inset 0 0 0 1.5px rgba(253,147,159,.75)}
 .o-filters .sg.on .c{color:inherit;opacity:.7}
 .o-filters .sep{flex:0 0 1px;background:var(--border-2);margin:6px 2px}
@@ -744,8 +745,8 @@ input[type=search]{-webkit-appearance:none;appearance:none}
         <button class="clr" id="qClear" aria-label="Leeren" hidden>✕</button></label>
       <div class="filters" id="filters"></div>
       <div class="sugg-wrap"><div class="sugg" id="sugg"></div>
-        <button class="sg-arr l" id="sgL" aria-label="Zurückblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
-        <button class="sg-arr r" id="sgR" aria-label="Weiterblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
+        <button class="sg-arr l" aria-label="Zurückblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="sg-arr r" aria-label="Weiterblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
     <div class="s-meta" id="sMeta"><span id="qCount"></span>
       <div class="seg" id="sortSeg" role="tablist"><span class="thumb"></span><button role="tab" data-v="new">Neueste</button><button role="tab" data-v="old">Älteste</button></div></div>
@@ -775,7 +776,9 @@ input[type=search]{-webkit-appearance:none;appearance:none}
       <label class="search-box"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="oq" type="search" placeholder="Ort suchen" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
         <button class="clr" id="oqClear" aria-label="Leeren" hidden>✕</button></label>
-      <div class="o-filters" id="oFilters"></div>
+      <div class="sugg-wrap o-fwrap"><div class="o-filters" id="oFilters"></div>
+        <button class="sg-arr l" aria-label="Zurückblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="sg-arr r" aria-label="Weiterblättern" tabindex="-1"><svg class="ico" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></div>
     </div>
     <div id="oErr"></div>
     <div class="o-sum" id="oSum"></div>
@@ -1818,24 +1821,27 @@ $('#sugg').addEventListener('pointerdown',e=>{ if(e.pointerType==='mouse'&&docum
    Scrollt iOS normal, greift die App nicht ein. */
 const SG=$('#sugg'); let sgRaf=0;
 
-/* Ränder: Ausblenden und Pfeile nur dort, wo es weitergeht */
-function sgEdges(){ const max=SG.scrollWidth-SG.clientWidth, l=SG.scrollLeft>2, r=SG.scrollLeft<max-2;
-  SG.classList.toggle('fl',l); SG.classList.toggle('fr',r); $('#sgL').classList.toggle('on',l); $('#sgR').classList.toggle('on',r); }
-SG.addEventListener('scroll',sgEdges,{passive:true});
-new MutationObserver(()=>{ SG.scrollLeft=0; requestAnimationFrame(sgEdges); }).observe(SG,{childList:true});
-new ResizeObserver(sgEdges).observe(SG);
-$('#sgL').onclick=()=>SG.scrollBy({left:-SG.clientWidth*.75,behavior:'smooth'});
-$('#sgR').onclick=()=>SG.scrollBy({left: SG.clientWidth*.75,behavior:'smooth'});
-$('#sgL').addEventListener('pointerdown',e=>e.preventDefault()); $('#sgR').addEventListener('pointerdown',e=>e.preventDefault()); // Fokus bleibt im Suchfeld
-
-/* Maus: mit gedrückter Taste seitlich ziehen. Nach dem Ziehen löst der Klick keinen Filter aus. */
-let sgM=null, sgDragged=false;
-SG.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.button!==0) return; sgM={x:e.clientX,sl:SG.scrollLeft}; sgDragged=false; });
-addEventListener('pointermove',e=>{ if(!sgM) return; const dx=e.clientX-sgM.x;
-  if(!sgDragged&&Math.abs(dx)>5){ sgDragged=true; SG.classList.add('drag'); }
-  if(sgDragged) SG.scrollLeft=sgM.sl-dx; });
-addEventListener('pointerup',()=>{ if(!sgM) return; sgM=null; SG.classList.remove('drag'); });
-SG.addEventListener('click',e=>{ if(sgDragged){ e.stopImmediatePropagation(); e.preventDefault(); sgDragged=false; } },true);
+/* Seitlich scrollende Leiste (Suche, Ortsregister): Ränder blenden aus, wo es weitergeht.
+   Maus: Pfeile an den Rändern und Ziehen mit gedrückter Taste. resetOnRender: bei neuem Inhalt wieder links beginnen. */
+function hScroll(el,resetOnRender){
+  const wrap=el.parentElement, L=wrap.querySelector('.sg-arr.l'), Rb=wrap.querySelector('.sg-arr.r');
+  const edges=()=>{ const max=el.scrollWidth-el.clientWidth, l=el.scrollLeft>2, r=el.scrollLeft<max-2;
+    el.classList.toggle('fl',l); el.classList.toggle('fr',r); L&&L.classList.toggle('on',l); Rb&&Rb.classList.toggle('on',r); };
+  el.addEventListener('scroll',edges,{passive:true});
+  new MutationObserver(()=>{ if(resetOnRender) el.scrollLeft=0; requestAnimationFrame(edges); }).observe(el,{childList:true});
+  new ResizeObserver(edges).observe(el);
+  [[L,-1],[Rb,1]].forEach(([b,d])=>{ if(!b) return; b.onclick=()=>el.scrollBy({left:d*el.clientWidth*.75,behavior:'smooth'}); b.addEventListener('pointerdown',e=>e.preventDefault()); });
+  let m=null, dragged=false;
+  el.addEventListener('pointerdown',e=>{ if(e.pointerType!=='mouse'||e.button!==0) return; m={x:e.clientX,sl:el.scrollLeft}; dragged=false; });
+  addEventListener('pointermove',e=>{ if(!m) return; const dx=e.clientX-m.x;
+    if(!dragged&&Math.abs(dx)>5){ dragged=true; el.classList.add('drag'); }
+    if(dragged) el.scrollLeft=m.sl-dx; });
+  addEventListener('pointerup',()=>{ if(!m) return; m=null; el.classList.remove('drag'); });
+  el.addEventListener('click',e=>{ if(dragged){ e.stopImmediatePropagation(); e.preventDefault(); dragged=false; } },true);
+  return edges;
+}
+hScroll(SG,true);
+hScroll($('#oFilters'),false);
 SG.addEventListener('touchstart',e=>{ cancelAnimationFrame(sgRaf); const t=e.touches[0];
   sgT={x:t.clientX,y:t.clientY,f:document.activeElement===$('#q'),sl:SG.scrollLeft,ax:null,manual:false,lx:t.clientX,lt:performance.now(),v:0}; },{passive:true});
 SG.addEventListener('touchmove',e=>{ if(!sgT) return; const t=e.touches[0], dx=t.clientX-sgT.x, dy=t.clientY-sgT.y;
